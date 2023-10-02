@@ -1,0 +1,225 @@
+,Country,Continent,Location,Latitude_,Longitude
+1,USA,North America,Alaska,66.160507,-153.369141
+2,China,Asia,Hebei province,39.074094,115.983687
+3,Laos,Asia,Vientiane,17.974855,102.630867
+4,South Korea,Asia,,37.5326,127.024612
+5,China,Asia,Chenzhou,25.77051,113.014718
+6,Mexico,North America,,19.432608,-99.133209
+7,Costa Rica,North America,,9.934739,-84.087502
+8,Kyrgyzstan,Asia,,42.882004,74.582748
+9,China,Asia,Heilongjiang,45.811573,126.546707
+10,India,Asia,Dibrugarh,27.472834,94.911964
+11,China,Asia,Changsha,28.228001,112.939003
+12,Australia,Oceania,Murray-Darling Basin,-35.40926,143.762027
+13,Australia,Oceania,Victoria,-37.0201,144.9646
+14,Australia,Oceania,South East,-36.480196,143.93136
+15,Australia,Oceania,Melbourne,-37.840935,144.946457
+16,USA,North America,North central plains,33.188714,-102.827989
+17,USA,North America,Califronian channel islands,34.00966663,-119.8023301
+18,China,Asia,XI'an,34.341568,108.940178
+19,Slovakia,Europe,,48.669,19.699
+20,Australia,Oceania,,-25.2744,133.7751
+21,Bangladesh,Asia,,23.685,90.3563
+22,Australia,Asia,,-25.2744,133.7751
+23,Sweden,Europe,Vasterbotten,64.344665,18.314209
+24,South Africa,Africa,Free State,-28,27
+25,Brazil,South America,Sao Luis,-2.52972,-44.30278
+26,Brazil,South America,Brasilia,-15.793889,-47.882778
+27,Brazil,South America,Fortaleza,-3.731862,-38.526669
+28,Brazil,South America,Recife,-8.05,-34.900002
+29,Brazil,South America,Manaus,-3.117034,-60.02578
+30,India,Asia,,20.5937,78.9629
+31,China,Asia,,35.8617,104.1954
+32,Saudi Arabia,Asia,Riyadh,24.774265,46.738586
+33,Uganda,Africa,West nile region,3,31.2
+34,China,Asia,Molidawahaner,49.113162,124.796886
+35,China,Asia,Elunchun,50.591858,123.726194
+36,China,Asia,Jieshou,33.26338,115.36108
+37,China,Asia,Yilong,31.51986111,106.4016667
+38,China,Asia,Mengla,21.4667,101.5833
+39,New Zealand,Oceania,,-40.9006,174.886
+40,India,Asia,Bihar state,25.708597,85.803162
+41,China,Asia,Yinshang,32.62945,116.27013
+42,Czech Republic,Europe,,49.8175,15.473
+43,Iran,Asia,Sistan-va-Baluchistan,29.850463,60.029143
+44,Nigeria,Africa,Northern,10.5538,8.16155
+45,Colombia,South America,,4.5709,-74.2973
+46,China,Asia,Inner mongolia,40.8173,111.7652
+47,Kenya,Africa,Garissa county,-0.451154,39.648942
+48,Kenya,Africa,Kwale county,-4.171332648,39.45616484
+49,Kenya,Africa,Thika county,-1.0499998,37.083333
+50,South Africa,Africa,,-30.5595,22.9375
+51,China,Asia,Yulin,38.244372,109.726449
+52,Philippines,Asia,Manila,14.599512,120.984222
+53,China,Asia,Changchun,43.891262,125.331345
+54,Iran,Asia,,32.4207423,53.6830157
+55,China,Asia,Hunan,27.643219,112.95367
+56,China,Asia,Laiwu,36.19278,117.65694
+57,Iberian penninsula,Europe,Spain and Portugal,40.4637,-3.7492
+58,Brazil,South America,Santa Catarina,-27.14234,-50.517612
+59,China,Asia,Upper Yangtze River Basin,29.4337,112.3656
+60,France,Europe,Franche-Comte,47.240002,6.02
+61,Belgium,Europe,,50.5039,4.4699
+62,Bulgaria,Europe,,42.7339,25.4858
+63,Democratic Republic of the Congo,Africa,,-4.0383,21.7587
+64,China,Asia,Guizhou,26.646999,106.629997
+65,Vietnam,Asia,Ho Chi Minh City,10.762622,106.660172
+66,Nigeria,Africa,,9.082,8.6753
+67,South Korea,Asia,,35.9078,127.7669
+68,China,Asia,Jilin,43.700001,126.199997
+69,China,Asia,Shanxi,37.87146,112.551208
+70,Australia,Oceania,"Queensland, New South Wales",-31.2532,146.9211
+71,Iran,Asia,Qazvin province,36.269363,50.003201
+72,Madagascar,Africa,,-18.7669,46.8691
+73,India,Asia,Gorakhpur,26.752228,83.378751
+74,Argentina,South America,"Salta, Jujuy",-24.7821,-65.4232
+75,USA,North America,"Kansas, Missouri, Oklahoma, Arkansas",39.0119,-98.4842
+76,Tanzania,Africa,Mbeya,-8.909401,33.460773
+77,French Guiana,South America,,3.9339,-53.1258
+78,China,Asia,Sichuan,31.456781,102.843018
+79,Germany,Europe,Lower bavaria,48.85382992,13.65316405
+80,Kenya,Africa,Laikipia,0.36386,36.805827
+81,Switzerland,Europe,,46.8182,8.2275
+82,Jamaica,North America,,18.1096,-77.2975
+83,China,Asia,Wehei plain,33.998642,107.999559
+84,China,Asia,Huludao city,40.711052,120.836929
+85,China,Asia,Shenyang city,41.799999,123.400002
+86,China,Asia,Southwest,25.9559,102.599
+87,Europe,Europe,"Belgium, Finland, France, Netherlands, Norway, Sweden",52.1326,5.2913
+88,Brazil,South America,Rio Branco,-9.979561,-67.823891
+89,Malaysia,Asia,Kelantan,6.127463,102.242287
+90,China,Asia,Qingdao,36.066898,120.382698
+91,USA,North America,Northeast,43.2994,74.2179
+92,USA,North America,Southeast,31.7753,-84.0137
+93,USA,North America,Northern Rockies/ Plains,41.4925,-99.9018
+94,USA,North America,Northwest,46.3151,-123.4935
+95,USA,North America,Upper midwest,44.9778,-93.265
+96,USA,North America,Ohio valley,40.4173,-82.9071
+97,USA,North America,East South Central,40.8596,-98.1217
+98,USA,North America,West,41.1911,-116.8424
+99,USA,North America,West South Central,41.1911,-116.8424
+100,USA,North America,Southwest,33.5186,-110.778
+101,Japan,Asia,Yamagata,38.250397,140.339837
+102,China,Asia,Guangzhou,23.128994,113.25325
+103,China,Asia,Jiaonan,35.872464,120.046421
+104,Thailand,Asia,North,18.168,99.99
+105,Thailand,Asia,Northeast,17.0376,103.62
+106,Chile,South America,,-35.675,-71.543
+107,Iran,Asia,Abadeh,31.159404,52.647015
+108,Iran,Asia,Khorambid,28.472372,53.733784
+109,Iran,Asia,Fasa,31.159404,52.647015
+110,Iran,Asia,Eghlid,30.896876,52.694234
+111,Iran,Asia,Neiriz,29.1998,54.327
+112,Iran,Asia,Fasa,28.945916,53.637839
+113,India,Asia,Kurnool,15.810423,78.040334
+114,Brazil,South America,Salvador, -12.974722,-38.476665
+115,Italy,Europe,Trento,46.080742,11.121358
+116,China,Asia,East Chongqing,30.967821,109.393953
+117,China,Asia,Middle Chongqing,29.843532,107.661767
+118,China,Asia,Western Chongqing,29.747604,106.719419
+119,Hungary,Europe,,47.162,19.503
+120,Taiwan,Asia,,23.697,120.961
+121,Germany,Europe,Baden-Wurttemberg,48.601905,9.01282
+122,China,Asia,Pearl River Basin,22.7667,113.6333
+123,Spain,Europe,,40.4637,-3.749
+124,Sweden,Europe,Stockholm county,59.334591,18.06324
+125,Taiwan,Asia,Kinmen islands,24.449071,118.391168
+126,Taiwan,Asia,Matou islands,26.15066606,119.9229963
+127,Taiwan,Asia,Central west,23.692,121.43
+128,Taiwan,Asia,Southwest,22.946214,120.25411
+129,Taiwan,Asia,Pescadore islands,23.57117,119.609012
+130,Taiwan,Asia,Southeast,23.345218,121.440576
+131,Taiwan,Asia,North,25.077283,121.620187
+132,Taiwan,Asia,Northwest,24.789041,120.962792
+133,Taiwan,Asia,Northeast,24.729557,121.762056
+134,Africa,Africa,,,NA
+135,France,Africa,Reunion island,-21.133831,55.535504
+136,Africa,Africa,Reunion island,-21.133831,55.535504
+137,Kenya,Africa,Reunion island,0.36386,36.805827
+138,Russia,Europe,Arkhangelsk Oblast,63.530444,42.752618
+139,Italy,Europe,North Sardinia,40.526078,8.928481
+140,Iran,Asia,,32.4279,53.688
+141,USA,North America,Yosemite National Park,37.865101,-119.53833
+142,Iran,Asia,Chaharmahal & Bakhtiari,32.020045,50.769563
+143,Russia,Europe,Volgograd,48.700001,44.516666
+144,Guyana,South America,Georgetown,6.791701,-58.148598
+145,Nepal,Asia,,28.3949,84.124
+146,USA,North America,,37.09,-95.7129
+147,India,Asia,Reunion island,13.067439,80.237617
+148,China,Asia,Reunion island,35.861,104.195
+149,China,Asia,Shaanbei upland plateau,37.482401,109.553283
+150,China,Asia,Guanzhong basin,34.271738,108.76156
+151,China,Asia,Hubei province,30.9666628,112.2333324
+152,Germany,Europe,,51.1657,10.4515
+153,Belgium,Europe,Flanders,51.061018,4.26965
+154,Finland,Europe,,61.9241,25.7482
+155,Argentina,South America,,38.4161,63.6167
+156,China,Asia,Chongqing,29.439325,106.887703
+157,Croatia,Europe,,45.1,15.2
+158,Sweden,Europe,Southern,60.1282,18.645
+159,Russia,Europe,Astrakhan,46.358803,48.059937
+160,Zambia,Africa,Upper Zambezi floodplain,-15.0333332,22.8833298
+161,Japan,Asia,South,36.2048,138.2529
+162,France,Europe,Lyon,45.76342,4.834277
+163,Thailand,Asia,Chiangrai province,19.827164,99.873449
+164,China,Asia,Junan county,35.174846,118.835163
+165,China,Asia,Qinghai-Tibet plateau,29.6472,91.1174
+166,USA,North America,New Mexico,34.572181,-105.903649
+167,Japan,Asia,Central,37.505,140.757
+168,Australia,Oceania,Far North Queensland,-12.363,142.305
+169,Iran,Asia,Fars,29.778872,51.570223
+170,China,Asia,Linyi,35.102074,118.345329
+171,Sri Lanka,Asia,Wet Zone,6.720033,80.360904
+172,Sri Lanka,Asia,Highland zone,6.986405,81.058501
+173,Sri Lanka,Asia,Dry Zone,8.337524,80.403307
+174,Australia,Oceania,East,-29.311,152
+175,Iran,Asia,South Khorasan,32.842236,58.954037
+176,Argentina,South America,Cordoba,-33.026111,-64.189167
+177,Canada,North America,Nunavut-Northwest,65.955394,-94.512438
+178,China,Asia,Anqiu City,36.468514,119.211978
+179,Russia,Europe,Komi Republic,64.460335,54.850609
+180,China,Asia,Yongchang region,38.237412,101.995659
+181,China,Asia,Subtropical zone,22.513,108.78
+182,China,Asia,Temperate zone,38.266,107.119
+183,China,Asia,Warm Temperate zone,29.118,109.725
+184,Canada,North America,,56.13,-106.346
+185,Kenya,Africa,,-0.023,37.906
+186,Argentina,South America,Otamendi Nature Reserve,-34.165952,-58.802682
+187,China,Asia,Dazhou,31.21592,107.50092
+188,Thailand,Asia,,15.87,100.9925
+189,Japan,Asia,West,34.899,132.781
+190,Iran,Asia,Zahedan district,29.4963,60.8629
+191,Brazil,South America,,-14.235,-51.925
+192,Brazil,South America,Sao paulo,-23.533773,-46.62529
+193,China,Asia,West,31.078,102.55
+194,China,Asia,North East,46.315,123.247
+195,Russia,Europe,Rostov,47.233334,39.700001
+196,West Africa,Africa,,NA,NA
+197,Japan,Asia,North,44.539,142.58
+198,China,Asia,Taizhou city,32.49069,119.90812
+199,USA,North America,Arizona,34.048927,-111.093735
+200,Brazil,South America,Atlantic region,-19.18,-42.843
+201,Canada,North America,Greater vancouver,49.246292,-123.116226
+202,Argentina,South America,"Neuquén, Río Negro and Chubu",-41.478218,-68.925354
+203,Malaysia,Asia,Sarawak,1.55311,110.345032
+204,Italy,Europe,Trento province,46.098255,11.206577
+205,China,Asia,Shandong province,36.066898,120.382698
+206,Northern Arctic Region,Europe,"Sweden, Finland",66.815,23.767
+207,Northern Arctic Region,Europe,"Norway, Finland, Russia",66.815,23.767
+208,Northern Arctic Region,Europe,"Finland, Sweden, Norway, Russia",66.815,23.767
+209,Northern Arctic Region,Europe,"Finland, Russia",66.815,23.767
+210,Europe,Europe,"Croatia, Greece, Bulgaria, Italy, Germany, Slovenia, Bosnia, Slovakia, France, Poland, Serbia, Montenegro, Switzerland, Denmark, Czech Republic, UK",45.029,18.151
+211,Mexico,North America,Nuevo Leon State,25.686613,-100.316116
+212,USA,North America,Colorado,40.841922,-104.090663
+213,Iran,Asia,"Khuzestan, Fars, Beshehr, Kohgiluyeh, Boyerahmad",32.427,53.688
+214,China,Asia,Xishuangbanna Dai,21.992937,100.802652
+215,Australia,Oceania,"North NSW, South Queensland",-27.470125,153.021072
+216,Australia,Oceania,Brisbane,-27.470125,153.021072
+217,China,Asia,Jinan,36.666668,116.98333
+218,Brazil,South America,Cerrado,-23.731039,-49.223838
+219,West & Central Africa,Africa,,,NA
+220,Tanzania,Africa,Serengeti,-1.8936,34.6857
+221,Malaysia,Asia,,4.2105,101.9758
+222,Fiji,Oceania,,-17.76925,178.044315
+223,Iran,Asia,Zanjan province,36.674339,48.484467
+224,Uruguay,South America,,-32.522,-55.765
