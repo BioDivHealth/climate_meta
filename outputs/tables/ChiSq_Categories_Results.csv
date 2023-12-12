@@ -1,0 +1,31 @@
+"Environmental_condition","group","chisq_adjusted_pvalue"
+"Humidity","Vectored",0.0923819426685941
+"Precipitation","Vectored",0.0897664342337363
+"Temperature","Vectored",0.128387194489957
+"Humidity","Non-vectored",0.419686734513313
+"Precipitation","Non-vectored",0.58330759626097
+"Temperature","Non-vectored",0.121062238693087
+"Humidity","Rodents",0.183744498332017
+"Precipitation","Rodents",0.450468088461787
+"Temperature","Rodents",0.0442736377151887
+"Humidity","Mammals (multispecies)",0.0534574648089102
+"Precipitation","Mammals (multispecies)",0.231224843858345
+"Temperature","Mammals (multispecies)",0.00643775120687858
+"Humidity","Livestock",0.000106420330672735
+"Precipitation","Livestock",0.00166354160759739
+"Temperature","Livestock",0.00107273744625238
+"Humidity","Virus",0.212641466055814
+"Precipitation","Virus",0.339511107594793
+"Temperature","Virus",0.116241679599722
+"Humidity","Bacteria",0.0965194810852447
+"Precipitation","Bacteria",0.57951965333324
+"Temperature","Bacteria",0.193064325458245
+"Humidity","Mosquito",NA
+"Precipitation","Mosquito",0.187902314859436
+"Temperature","Mosquito",0.0182682929169381
+"Humidity","Tick",0.236835370355016
+"Precipitation","Tick",0.178021663788485
+"Temperature","Tick",0.000190306432218098
+"Humidity","Mite",0.419647881723916
+"Precipitation","Mite",0.115167156723424
+"Temperature","Mite",0.00936746720991713

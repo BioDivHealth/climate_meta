@@ -6,15 +6,7 @@ library(patchwork)
 # -------------------- Load data --------------------
 
 # effect size data
-df = read.csv('~/Projects/climate_meta/data/lewis_dataset/Effect_sizes_2023-10-04.csv')
-
-# add Rory's annotations for reservoir and disease group
-df = df %>%
-  left_join(read.csv("~/Projects/climate_meta/data/rory_annotations/dz_harm.csv"))
-
-# add in modeling method
-df = df%>%
-  left_join(read.csv("~/Projects/climate_meta/data/rory_annotations/method_harm.csv"))
+df = read.csv('~/Projects/climate_meta/data/lewis_dataset/Effect_sizes_2023-11-17.csv')
 
 # exclude non-eligible studies
 df = df%>%
