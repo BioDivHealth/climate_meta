@@ -46,31 +46,13 @@ out = df%>%
   subset(Environmental_condition == 'Humidity')%>%
   select(c(es, esrank, se, crosszero))
 
-# -------------------- Remove outliers --------------------
-# Get Expected Values:
-# Set the number of studies and observations
-n = n_distinct(df$study)
-k = n_distinct(df$Reference_ID, na.rm = T)
-
-# Calculate the sampling variance
-v = (n - 1) / (n - k)
-
-# Calculate the expected range of effect sizes
-upperexp = round(qnorm(0.025, lower.tail = FALSE) * sqrt(v), 3)
-lowerexp = round(qnorm(0.975, lower.tail = FALSE) * sqrt(v), 3)
-
-# max effect size
-max_effect_size <- 4*sd(df$es)
-
-
-
 # -------------------- Plot theme --------------------
 plot_theme =   theme(
   #strip.background = element_blank(),
   panel.background = element_rect(color="black", fill=NA),
   panel.grid.major = element_blank(),
   panel.grid.minor = element_blank(),
-  axis.line.x = element_line(),
+  axis.line.x = element_line()
 )
 
 colors = c('#0060FF', '#FF0060')
@@ -119,54 +101,81 @@ p2 = df%>%
         strip.text = element_text(size=12),
         strip.background = element_rect(fill=NA, color="black"))
 
+
+# Create and save figure
 fig = p1 + p2 + plot_layout(guides="collect")
-ggsave(filename = 'outputs/Figure3.png', plot=fig)
+#ggsave(filename = 'outputs/Figure3.png', plot=fig)
 
 
+# -------------------- Stats test --------------------
+# separate into bins
+# group effect sizes
+df = df%>%
+  mutate(es_cat = ifelse(abs(es) < 0.2, '', #if CI contains 0
+                         ifelse(abs(es) < 0.5, 'small (0.2 < g < 0.5)', # otherwise negative
+                                ifelse(abs(es) < 0.8, 'medium (0.5 < g < 0.8)',
+                                       'large (g > 0.8)'))) # or positive
+  )      
 
-df%>%
-  labs(y=NULL, x= "effect size")+
-  theme(axis.text.y = element_blank())+
-  theme(axis.ticks.y = element_blank())+
-  labs(colour=NULL)
+# Determine cut points based on effect size
+cut_points = c(-Inf, -0.2, 0.2, Inf)
 
-df%>%
-  ggplot(aes(x = es)) +
-  geom_histogram(binwidth = 0.2, fill = "blue", color = "black", alpha = 0.5, position = position_nudge(0.022)) +
-  theme_void() +
-  theme(plot.margin = margin(0, 0, 5, 0)) +
-  geom_vline(xintercept = 0, linetype = 2, size = 0.75) 
+# cut up effect size
+df$es_bin = cut(df$es, breaks = cut_points, labels=c('neg', 'none', 'pos'))
 
+# -------------------- Do the tests --------------------
+# subset data and create table for the chi-square test
 
-combined_plot <- histogram / figure4 +
-  plot_layout(guides = "collect",heights = c(0.5,3))
+### Temperature ###
+df_sub = df%>%
+  filter(Environmental_condition == 'Temperature')
 
-combined_plot
+df_sub$es_bin = droplevels(df_sub$es_bin)
 
+contingency_table <- table(df_sub$es_bin, df_sub$type)
 
-fig4_temp_og<-zooALL_effect_size_filtered %>% filter(zooALL_effect_size_filtered$Environmental_condition=="Temperature") #temperature only
-fig4_temp<-fig4_temp_og %>% #temperature only with standard error values
-  filter(!is.na(se))
+# Step 5: Perform a chi-square test for differences between groups within each bin
+temp_chisq<- chisq.test(contingency_table)
+resid(temp_chisq)
 
+# Display the result
+print(temp_chisq)
 
+### Precipitation ### 
+df_sub = df%>%
+  filter(Environmental_condition == 'Precipitation')
 
-figure4_temp<-figure4_temp+theme_cowplot()+
-  labs(y=NULL, x= "effect size")+
-  theme(axis.text.y = element_blank())+
-  theme(axis.ticks.y = element_blank())+
-  labs(colour=NULL)
+df_sub$es_bin = droplevels(df_sub$es_bin)
 
+contingency_table <- table(df_sub$es_bin, df_sub$type)
 
-df%>% 
-  ggplot(aes(x = es, fill=type)) +
-  stat_halfeye(binwidth = 0.2) +
-  theme(plot.margin = margin(0, 0, 5, 0)) +
-  geom_vline(xintercept = 0, linetype = 2, size = 0.75)+
-  facet_grid(Environmental_condition~.)
+#Perform a chi-square test for differences between groups within each bin
+precip_chisq <- chisq.test(contingency_table)
+resid(precip_chisq)
 
+# Display the result
+print(precip_chisq)
 
+### Humidity ### 
+df_sub = df%>%
+  filter(Environmental_condition == 'Humidity')
 
-combined_plot_temp <- histogram_temp / figure4_temp +
-  plot_layout(guides = "collect",heights = c(0.5,3))
+df_sub$es_bin = droplevels(df_sub$es_bin)
 
-combined_plot_temp
+contingency_table <- table(df_sub$es_bin, df_sub$type)
+
+#Perform a chi-square test for differences between groups within each bin
+humidity_chisq <- chisq.test(contingency_table)
+resid(humidity_chisq)
+
+# Display the result
+print(humidity_chisq)
+
+### Save a table of results ###
+results = data.frame(group = c('Temperature', 'Precipitation', 'Humidity'),
+                     chi_sq = c(temp_chisq$statistic, precip_chisq$statistic, humidity_chisq$statistic),
+                     pval = c(temp_chisq$p.value, precip_chisq$p.value, humidity_chisq$statistic)
+                     )
+
+write.csv(results, '~/Projects/climate_meta/outputs/tables/ChiSq_EnviroCats_Results.csv', row.names = F)
+
