@@ -3,100 +3,6 @@ library(ggplot2)
 library(dplyr)
 library(patchwork)
 
-# -------------------- Load data --------------------
-
-# effect size data
-df = read.csv('~/Projects/climate_meta/data/lewis_dataset/Effect_sizes_2023-11-17.csv')
-
-# exclude non-eligible studies
-df = df%>%
-  subset(Include == 'Y')%>%
-  subset(Linear_Nonlinear == 'Linear')
-
-# change vector names
-df = df%>%
-  mutate(type2 = ifelse(type == 'HVH', 'vectored', 'non-vectored'))
-
-# group effect sizes
-df = df%>%
-  mutate(es_cat = ifelse(abs(es) < 0.2, 'no effect (g < 0.2)', #if CI contains 0
-                         ifelse(abs(es) < 0.5, 'small (0.2 < g < 0.5)', # otherwise negative
-                                ifelse(abs(es) < 0.8, 'medium (0.5 < g < 0.8)',
-                                       'large (g > 0.8)'))) # or positive
-  )      
-df$es_cat = factor(df$es_cat, levels=c('no effect (g < 0.2)', 'small (0.2 < g < 0.5)', 'medium (0.5 < g < 0.8)', 'large (g > 0.8)'))
-xtextsize = 10
-wdth = 9
-
-# -------------------- Figure Parameters --------------------
-### Color Scheme
-#colors = as.vector(MetBrewer::met.brewer("Archambault"))
-colors = c( '#fee8c8', '#fdbb84', '#e34a33', '#7f0000')
-
-### Themes for plots
-topplot =   theme(
-  panel.background = element_blank(),
-  panel.grid = element_blank(),
-  axis.ticks.y = element_blank(),
-  axis.ticks.x = element_blank(),
-  axis.text.x = element_blank(),
-  axis.line.y = element_blank(),
-  axis.line.x = element_blank(),
-  legend.position = 'none',
-  strip.background = element_rect(fill="white"),
-  axis.text.y = ggtext::element_markdown()
-  #strip.text = element_text(size=12, hjust=0.4),
-  #axis.text.y = element_text(size = xtextsize),
-  #axis.title.y = element_text(size=11),
-  #legend.title = element_text(size=10)
-)
-
-midplot = theme(
-  strip.background = element_blank(),
-  panel.background = element_blank(),
-  panel.grid.major = element_blank(),
-  panel.grid.minor = element_blank(),
-  strip.text.x = element_blank(),
-  axis.ticks.y = element_blank(),
-  axis.text.y = element_text(margin = margin(b = -20)),
-  legend.position = "none",
-  axis.line.y = element_blank(),
-  axis.text.x = element_blank(),
-  axis.ticks.x = element_blank(),
-  axis.line.x = element_blank(),
-  axis.text.y = ggtext::element_markdown()
-)
-
-botplot =   theme(
-  strip.background = element_blank(),
-  panel.background = element_blank(),
-  panel.grid.major = element_blank(),
-  panel.grid.minor = element_blank(),
-  strip.text.x = element_blank(),
-  axis.ticks.y = element_blank(),
-  axis.text.y = element_text(margin = margin(b = -20)),
-  legend.position = "none",
-  axis.line.y = element_blank(),
-  axis.line.x = element_line(color = "black"),
-  axis.text.y = ggtext::element_markdown()
-)
-
-### Order for factors
-df$Environmental_condition = factor(df$Environmental_condition, 
-                                    levels=c('Temperature', 
-                                             'Precipitation', 
-                                             'Humidity'))
-
-### Groups to include
-dz = c('Hantaviral diseases', 'Arboviral diseases', 'Leptospirosis', 
-       'Rickettsioses', 'Brucellosis', 'Echinococoses')
-hosts = c('Rodents', 'Mammals (multispecies)', 'Livestock', 'Birds')
-parasites = c('Virus', 'Bacteria')
-df$parasite_group = stringr::str_to_title(df$parasite_group)
-vectors = c('Mosquito', 'Tick', 'Mite')
-method = c('GL(M)M', 'Correlation', '(S)ARIMA')
-
-
 # Create a function to add images to facet labels
 # create labeller for pictograms
 picture_labeller <- function(value, pic_first=TRUE) {
@@ -113,97 +19,185 @@ picture_labeller <- function(value, pic_first=TRUE) {
   return(label_with_image)
 }
 
-figtype = 'prop'
 
-# -------------------- FIGURE CODE: PROPORTIONS --------------------
+createFig2  = function(df, stats, colors){
+  # -------------------- Format data --------------------
+  # exclude non-eligible studies
+  df = df%>%
+    subset(Linear_Nonlinear == 'Linear')
+  
+  # stats dataframe
+  stats = stats%>%
+    mutate(significance = ifelse(p_val < 0.001, '***', ifelse(p_val < 0.01, '**',
+                                                              ifelse(p_val < 0.05, '*', ''))))
+  
+  ### Groups to include
+  hosts = c('Rodents', 'Mammals (multispecies)', 'Livestock')
+  parasites = c('Virus', 'Bacteria')
+  vectors = c('Mosquito', 'Tick', 'Mite')
+  
+  
+  ### Order for factors
+  df$Environmental_condition = factor(df$Environmental_condition, 
+                                      levels=c('Temperature', 
+                                               'Precipitation', 
+                                               'Humidity'))
+  
+  stats$Environmental_condition = factor(stats$Environmental_condition, 
+                                      levels=c('Temperature', 
+                                               'Precipitation', 
+                                               'Humidity'))
+  
+  # -------------------- Figure Parameters --------------------
+  ### Themes for plots
+  topplot =   theme(
+    panel.background = element_blank(),
+    panel.grid = element_blank(),
+    axis.ticks.y = element_blank(),
+    axis.ticks.x = element_blank(),
+    axis.text.x = element_blank(),
+    axis.line.y = element_blank(),
+    axis.line.x = element_blank(),
+    legend.position = 'none',
+    strip.background = element_rect(fill="white"),
+    axis.title.y = element_text(face="bold")
+  )
+  
+  midplot = theme(
+    strip.background = element_blank(),
+    panel.background = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    strip.text.x = element_blank(),
+    axis.ticks.y = element_blank(),
+    legend.position = "none",
+    axis.line.y = element_blank(),
+    axis.text.x = element_blank(),
+    axis.ticks.x = element_blank(),
+    axis.line.x = element_blank(),
+    axis.text.y = ggtext::element_markdown()
+  )
+  
+  botplot =   theme(
+    strip.background = element_blank(),
+    panel.background = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    strip.text.x = element_blank(),
+    axis.ticks.y = element_blank(),
+    legend.position = "none",
+    axis.line.y = element_blank(),
+    axis.line.x = element_line(color = "black"),
+    axis.text.y = ggtext::element_markdown()
+  )
 
-if(figtype == 'prop'){
-# 1. Disease groups
+  # -------------------- Figure Code  --------------------
+
+  # 1. All together
   p1 = df%>%
-    subset(Disease2 %in% dz)%>%
-    mutate(Disease2 = factor(Disease2, levels=rev(dz)))%>%
-    count(Disease2, Environmental_condition, es_cat)%>%
-    group_by(Disease2, Environmental_condition)%>%
+    count(Environmental_condition, es_cat)%>%
+    group_by(Environmental_condition)%>%
     mutate(prop = n /sum(n), tot = sum(n))%>%
-    ggplot(aes(x=prop, y=Disease2))+
+    ggplot(aes(x=prop, y="Full Dataset"))+
     geom_col(aes(fill=es_cat), position= position_fill(reverse=TRUE), width=0.75)+
-    geom_text(data = . %>% slice_head(n=1),
-              aes(x=1.02, label=paste0('n = ', tot)), size=3,
-              hjust=0
+    geom_label(data = . %>% slice_head(n=1),
+              aes(x=0.02, label=paste0('n = ', tot)), 
+              hjust=0,
+              size=3,
+              label.size=0,
+              alpha=0.5
     )+
     topplot+
-    facet_grid(.~Environmental_condition, labeller=labeller(Environmental_condition = custom_labeller))+
+    facet_grid(.~Environmental_condition)+
     scale_fill_manual(values=colors)+
-    scale_x_continuous(expand = expansion(mult = c(0, .15)))+
-    labs(y='Disease Group', x="")+
-    #theme(panel.spacing.x = unit(1, "lines"))+
-    theme(strip.text = ggtext::element_markdown(size=12, hjust=0.4, margin=margin(b=0)))
-    
+    scale_x_continuous(expand=c(0,0),limits=c(0,1), breaks=seq(0, 1, by=0.25), labels=c(0, 0.25, 0.5, 0.75, 1))+
+    labs(y="", x="")+
+    theme(strip.text = ggtext::element_markdown(size=14, hjust=0.5, margin=margin(b=0), face="bold"),
+          axis.text.y =  element_text(angle=0, size=12, vjust=0.5, hjust=0, face="bold"))
   
-  # 2. Reservoir hosts
+# Create horizontal line
+  data = data.frame(x = 1, y = 1)
+  hl = ggplot(data, aes(x, y)) +
+    geom_hline(yintercept = 1) +  # Add a horizontal line at y = 1
+    theme_void()
+  
+  
+# 2. Transmission type
+  pv = stats%>%
+   subset(Category == 'Transmission_type')%>%
+   rename(Transmission_type = Group)
+
   p2 = df%>%
-    subset(Principal_reservoir %in% hosts)%>%
-    mutate(Principal_reservoir = factor(Principal_reservoir, levels=rev(hosts)))%>%
-    count(Principal_reservoir, Environmental_condition, es_cat)%>%
-    group_by(Principal_reservoir, Environmental_condition)%>%
+    count(Transmission_type, Environmental_condition, es_cat)%>%
+    group_by(Transmission_type, Environmental_condition)%>%
     mutate(prop = n /sum(n), tot = sum(n))%>%
-    ggplot(aes(x=prop, y=Principal_reservoir))+
+    ggplot(aes(x=prop, y=Transmission_type))+
     geom_col(aes(fill=es_cat), position= position_fill(reverse=TRUE), width=0.75)+
-    geom_text(data = . %>% slice_head(n=1),
-              aes(x=1.02, label=paste0('n = ', tot)), size=3,
-              hjust=0
+    geom_label(data = . %>% slice_head(n=1),
+              aes(x=0.02, label=paste0('n = ', tot)), 
+              vjust=0.5,
+              hjust=0,
+              label.size=0,
+              alpha=0.5,
+              size=3
     )+
+    geom_text(data=pv, aes(x=.02, y=Transmission_type, label=significance),
+              fontface="bold",
+              vjust=0,
+              hjust=0,
+              size=4)+
     facet_grid(.~Environmental_condition)+
     midplot+
     scale_fill_manual(values=colors)+
-    theme(strip.background = element_blank())+
-    scale_x_continuous(expand = expansion(mult = c(0, .15)))+
-    labs(y = 'Principal \n reservoir', x="")+
-    theme(panel.spacing = unit(1, "lines"))
-  
-  # 3. Parasite type
-  p3 = df%>%
-    subset(parasite_group %in% parasites)%>%
-    count(parasite_group, Environmental_condition, es_cat)%>%
-    group_by(parasite_group, Environmental_condition)%>%
-    mutate(prop = n /sum(n), tot = sum(n))%>%
-    ggplot(aes(x=prop, y=parasite_group))+
-    geom_col(aes(fill=es_cat), position= position_fill(reverse=TRUE), width=0.75)+
-    geom_text(data = . %>% slice_head(n=1),
-              aes(x=1.02, label=paste0('n = ', tot)), size=3,
-              hjust=0
-    )+
-    facet_grid(.~Environmental_condition)+
-    midplot+
-    scale_fill_manual(name="Hedge's G Effect Size", values=colors)+
-    theme(legend.position = "right")+
-    scale_x_continuous(expand = expansion(mult = c(0, .15)))+
-    scale_y_discrete(labels=picture_labeller(rev(parasites)))+
-    theme(axis.text.y = ggtext::element_markdown())+
-    labs(y = "Parasite \n group", x="")+
-    theme(panel.spacing = unit(1, "lines"))
-  
-  # Transmission type
-  p4 = df%>%
-    count(type2, Environmental_condition, es_cat)%>%
-    group_by(type2, Environmental_condition)%>%
-    mutate(prop = n /sum(n), tot = sum(n))%>%
-    ggplot(aes(x=prop, y=type2))+
-    geom_col(aes(fill=es_cat), position= position_fill(reverse=TRUE), width=0.75)+
-    geom_text(data = . %>% slice_head(n=1),
-              aes(x=1.02, label=paste0('n = ', tot)), size=3, 
-              hjust=0
-    )+
-    facet_grid(.~Environmental_condition)+
-    midplot+
-    scale_fill_manual(values=colors)+
-    scale_x_continuous(expand = expansion(mult = c(0, .15)))+
+    scale_x_continuous(expand=c(0,0),limits=c(0,1), breaks=seq(0, 1, by=0.25), labels=c(0, 0.25, 0.5, 0.75, 1))+
     labs(y= "Transmission \n Type", x="")+
     theme(panel.spacing = unit(1, "lines"))
   
   
-  # 5. Vector group
-  out = df%>%
+  # 3. Parasite type
+  pv = stats%>%
+    subset(Category == 'Pathogen')%>%
+    rename(Pathogen = Group)
+  
+  p3 = df%>%
+    subset(Pathogen %in% parasites)%>%
+    count(Pathogen, Environmental_condition, es_cat)%>%
+    group_by(Pathogen, Environmental_condition)%>%
+    mutate(prop = n /sum(n), tot = sum(n))%>%
+    ggplot(aes(x=prop, y=Pathogen))+
+    geom_col(aes(fill=es_cat), position= position_fill(reverse=TRUE), width=0.75)+
+    geom_label(data = . %>% slice_head(n=1),
+              aes(x=0.02, label=paste0('n = ', tot)), 
+              vjust=0.5,
+              hjust=0,
+              label.size=0,
+              alpha=0.5,
+              size=3
+    )+
+    geom_text(data=pv, aes(x=0.02, y=Pathogen, label=significance),
+              fontface="bold",
+              vjust=0,
+              hjust=0,
+              size=4)+
+    facet_grid(.~Environmental_condition)+
+    midplot+
+    scale_fill_manual(name="Hedges *g* Effect Size", values=colors)+
+    theme(legend.position = "right")+
+    scale_x_continuous(expand=c(0,0),limits=c(0,1), breaks=seq(0, 1, by=0.25), labels=c(0, 0.25, 0.5, 0.75, 1))+
+    #scale_y_discrete(labels=picture_labeller(rev(parasites)))+
+    theme(axis.text.y = ggtext::element_markdown(),
+          legend.title = ggtext::element_markdown())+
+    labs(y = "Pathogen \n type", x="")+
+    theme(panel.spacing = unit(1, "lines"))
+  
+
+  # 4. Vector group
+  # get pvals
+  pv = stats%>%
+    subset(Category == 'vector')%>%
+    rename(vector = Group)
+  
+  p4 = df%>%
     subset(vector %in% vectors)%>%
     mutate(vector = factor(vector, levels=rev(vectors)))%>%
     count(vector, Environmental_condition, es_cat)%>%
@@ -211,27 +205,76 @@ if(figtype == 'prop'){
     mutate(prop = n /sum(n), tot = sum(n))%>%
     ggplot(aes(x=prop, y=vector))+
     geom_col(aes(fill=es_cat), position= position_fill(reverse=TRUE), width=0.75)+
-    geom_text(data = . %>% slice_head(n=1),
-              aes(x=1.02, label=paste0('n = ', tot)), size=3,
-              hjust=0
+    geom_label(data = . %>% slice_head(n=1),
+              aes(x=0.02, label=paste0('n = ', tot)), 
+              vjust=0.5,
+              hjust=0,
+              size=3,
+              alpha=0.5,
+              label.size=0
     )+
+    geom_text(data=pv, aes(x=0.02, y=vector, label=significance),
+              fontface="bold",
+              vjust=0,
+              hjust=0,
+              size=4)+
+    facet_grid(.~Environmental_condition)+
+    midplot+
+    scale_x_continuous(expand=c(0,0),limits=c(0,1), breaks=seq(0, 1, by=0.25), labels=c(0, 0.25, 0.5, 0.75, 1))+
+    scale_fill_manual(values=colors)+
+    #scale_y_discrete(labels=picture_labeller(rev(vectors)))+
+    labs(y= "Vector \n group", x="")+
+    theme(panel.spacing = unit(1, "lines"),
+          axis.text.y = ggtext::element_markdown())
+
+  # 2. Reservoir hosts
+  pv = stats%>%
+    subset(Category == 'Principal_reservoir')%>%
+    rename(Principal_reservoir = Group)
+  
+  p5 = df%>%
+    subset(Principal_reservoir %in% hosts)%>%
+    mutate(Principal_reservoir = factor(Principal_reservoir, levels=rev(hosts)))%>%
+    count(Principal_reservoir, Environmental_condition, es_cat)%>%
+    group_by(Principal_reservoir, Environmental_condition)%>%
+    mutate(prop = n /sum(n), tot = sum(n))%>%
+    ggplot(aes(x=prop, y=Principal_reservoir))+
+    geom_col(aes(fill=es_cat), position= position_fill(reverse=TRUE), width=0.75)+
+    geom_label( data = . %>% slice_head(n=1), 
+              aes(x=0.02, label=paste0('n = ', tot)), 
+              vjust=0.5,
+              hjust=0,
+              size=3,
+              alpha=0.5,
+              label.size=0
+    )+
+    geom_text(data=pv, aes(x=.02, y=Principal_reservoir, label=significance),
+              fontface="bold",
+              size=4,
+              hjust=0,
+              vjust=0)+
     facet_grid(.~Environmental_condition)+
     botplot+
-    scale_x_continuous(expand = expansion(mult = c(0.01, 0.15)), breaks=seq(0, 1, by=0.25), labels=c(0, 0.25, 0.5, 0.75, 1))+
     scale_fill_manual(values=colors)+
-    scale_y_discrete(labels=picture_labeller(rev(vectors)))+
-    labs(y= "Vector \n group", x="Proportion of studies")+
-    theme(panel.spacing = unit(1, "lines"),
-          axis.text.y = ggtext::element_markdown(size=8, valign=0.5, halign=0.5, align_heights = TRUE, align_widths=TRUE,
-                                                 padding=unit(c(10,0,0,0), 'pt')))
-
+    theme(strip.background = element_blank())+
+    scale_x_continuous(expand=c(0,0),limits=c(0,1), breaks=seq(0, 1, by=0.25), labels=c(0, 0.25, 0.5, 0.75, 1))+
+    #scale_x_continuous(expand = expansion(mult = c(0, .15)))+
+    labs(y = 'Principal \n reservoir', x="Proportion of measures")+
+    theme(panel.spacing = unit(1, "lines"))
   
-  fig = p1+p2+p3+p4+p5+plot_layout(ncol=1,
-                                   heights=c(5,4,2,2,4),
+  
+  fig = p1+hl+p2+p3+p4+p5+plot_layout(ncol=1,
+                                   heights=c(2,0.25, 2,2,3,3),
                                    guides="collect")
   
   
-  #ggsave(paste0('outputs/Figure3_prop.jpg'), fig, 
-  #              width=1400, height=800, units="px", dpi=72)
+  return(fig)
 }
+
+# -------------------- Create Figure  --------------------
+
+#colors = c( "#29A1AB" , '#fee8c8', '#AB3329')
+# arch palette"#88a0dc" "#381a61" "#7c4b73" "#ed968c" "#ab3329" "#e78429" "#f9d14a"
+
+#createFig2(df, results_df, colors)
 
