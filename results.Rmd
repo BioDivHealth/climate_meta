@@ -1,0 +1,287 @@
+---
+title: "Climate impacts on zoonotic disease meta-analysis results"
+output: html_document
+---
+
+```{r setup, include=FALSE, results='asis'}
+# deps
+library(tidyr)
+
+knitr::opts_chunk$set(echo = FALSE)
+
+# load dataset
+df = read.csv('data/dataset_final.csv')
+
+# change vector names
+df = df%>%
+  mutate(Transmission_type = ifelse(Transmission_type == 'HVH', 'Vectored', 'Non-vectored'))
+
+# add parasite group
+df = df%>%
+  mutate(Pathogen = ifelse(Pathogen == 'P', 'Parasite',
+                                ifelse(Pathogen == 'V', 'Virus',
+                                        'Bacteria')))
+
+cat(paste('Number of unique studies:', length(unique(df$Reference_ID))))
+cat(paste('Number of pathogens:', length(unique(df$Disease))))
+cat(paste('Number of countries:', length(unique(df$Country))))
+```
+
+## Results Section 1: Literature search results
+
+**Climate variables assessed**
+
+```{r climatevars}
+
+df%>%
+  select(Reference_ID, Environmental_condition)%>%
+  distinct()%>%
+  mutate(measured = Environmental_condition)%>%
+  mutate(measured = ifelse(measured == 'Temperature', 'T', ifelse(measured == 'Precipitation', 'P', 'H')))%>%
+  pivot_wider(names_from=Environmental_condition, values_from=measured ,values_fill='')%>%
+  relocate(any_of(c('Reference_ID', 'Temperature', 'Precipitation', 'Humidity')))%>%
+  mutate(ClimMeasured = paste0(Temperature, Precipitation, Humidity))%>%
+  group_by(ClimMeasured)%>%
+    summarise(N = n_distinct(Reference_ID)) %>%#
+  mutate(P = N/sum(N))%>%
+  arrange(desc(N)) 
+  
+```
+
+**Proportion of each disease group in dataset**
+
+```{r studycounts}
+
+df%>%
+  filter(General_Disease != "Multiple") %>%
+  group_by(General_Disease) %>%
+  summarise(N = n_distinct(Reference_ID)) %>%#
+  mutate(P = N/sum(N))%>%
+  arrange(desc(N))
+
+```
+
+**Proportion of specific diseases in dataset**
+
+```{r studycounts}
+
+df%>%
+  filter(General_Disease != "Multiple") %>%
+  group_by(Disease, General_Disease) %>%
+  summarise(N = n_distinct(Reference_ID)) %>%#
+  mutate(P = N/sum(N))%>%
+  arrange(desc(N))
+
+```
+
+**Response variables examined**
+
+```{r responsecounts}
+
+df%>%
+  group_by(General_response) %>%
+  summarise(N = n_distinct(Reference_ID)) %>%#
+  mutate(P = N/sum(N))%>%
+  arrange(desc(N)) 
+
+```
+
+**Host Taxonomic Groups**
+
+```{r taxgroups}
+df%>%
+  group_by(Principal_reservoir) %>%
+  summarise(N = n_distinct(Reference_ID)) %>%#
+  mutate(P = N/sum(N))%>%
+  arrange(desc(N)) 
+
+```
+
+**Type of Pathogen**
+
+```{r pathtype}
+
+df%>%
+  group_by(Pathogen) %>%
+  summarise(N = n_distinct(Reference_ID)) %>%#
+  mutate(P = N/sum(N))%>%
+  arrange(desc(N)) 
+```
+
+**Linear vs Non-linear**
+
+```{r lnl}
+df%>%
+  group_by(Linear_Nonlinear) %>%
+  summarise(N = n_distinct(Reference_ID)) %>%#
+  mutate(P = N/sum(N))%>%
+  arrange(desc(N)) 
+
+```
+
+**Statistical Method**
+
+```{r statsmeth2}
+df%>%
+  group_by(General_Stats_Method) %>%
+  summarise(N = n_distinct(Reference_ID)) %>%#
+  mutate(P = N/sum(N))%>%
+  arrange(desc(N)) 
+
+```
+
+**Statistical Method**
+
+```{r statsmeth}
+df%>%
+  group_by(Statistical_method) %>%
+  summarise(N = n_distinct(Reference_ID)) %>%#
+  mutate(P = N/sum(N))%>%
+  arrange(desc(N)) 
+
+```
+
+## Results Section 2: Reported significance of climate measures in studies
+
+## Results Section 3: Publication bias
+
+## Results Section 4: Strength of climate effects of zoonotic diseases
+
+**Effect Size Category Grouping**
+
+```{r numpergroup}
+
+# group effect sizes
+df = df%>%
+  mutate(es_cat = ifelse(es < -0.2, 'Negative effect (g < -0.2)', #if CI contains 0
+                         ifelse(abs(es) < 0.2, 'No effect', # otherwise negative
+                                'Positive effect (g > 0.2)')) # or positive
+  )
+
+df%>%#
+  subset(Linear_Nonlinear == 'Linear')%>%
+  count(es_cat, Environmental_condition)%>%
+  group_by(Environmental_condition)%>%
+  mutate(prop = n /sum(n), tot = sum(n))
+```
+
+### Determining how category distributions differ from full dataset
+
+Defining categories and parameters to use in procedure.
+
+```{r catdefine}
+categories = list(Transmission_type = c('Vectored', 'Non-vectored'), 
+                  Principal_reservoir = c('Rodents', 'Mammals (multispecies)', 'Livestock'), 
+                  Pathogen = c('Virus', 'Bacteria'), 
+                  vector = c('Mosquito', 'Tick', 'Mite')
+                  )
+
+# 10,000 bootstraps
+num_samples = 10000
+
+# random number seed
+set.seed(42)
+```
+
+**Anderson Darling Test: without subset removal**
+
+```{r ad1}
+
+# create named list for results
+pvals  = vector("list")
+test_stats = vector('list')
+
+for(condition in unique(df$Environmental_condition)){
+  # separate out climate factor
+  temp = df%>%
+    subset(Linear_Nonlinear == 'Linear')%>%
+    subset(Environmental_condition == condition)
+  
+  for(category in names(categories)){
+    for(group in categories[[category]]){
+      # separate out category  
+      group_df = temp%>%
+        filter(.data[[category]] == group)
+      
+      ad = ad_test(temp$es, group_df$es, nboots=10000)
+
+      pvals[[paste(condition, category, group, sep='.')]] = ad['P-Value']
+      test_stats[[paste(condition, category, group, sep='.')]] = ad['Test Stat']
+    }
+  }
+}
+```
+
+**Create Dataframe**
+
+```{r}
+results_df = data.frame(id = names(pvals),
+                        p_val = unlist(pvals),
+                        stat = unlist(test_stats))
+
+```
+
+**Anderson-Darling Test with subset removal**
+
+```{r ad2}
+
+# create named list for results
+pvals  = vector("list")
+test_stats = vector('list')
+
+for(condition in unique(df$Environmental_condition)){
+  # separate out climate factor
+  temp = df%>%
+    subset(Linear_Nonlinear == 'Linear')%>%
+    subset(Environmental_condition == condition)
+  
+  for(category in names(categories)){
+    for(group in categories[[category]]){
+      # separate out category  
+      group_df = temp%>%
+        filter(.data[[category]] == group)
+      
+      # filter out group for random sample
+      temp_filtered = temp%>%
+        filter(.data[[category]] != group)
+      
+      ad = ad_test(temp_filtered$es, group_df$es, nboots=10000)
+
+      pvals[[paste(condition, category, group, sep='.')]] = ad['P-Value']
+      test_stats[[paste(condition, category, group, sep='.')]] = ad['Test Stat']
+    }
+  }
+}
+```
+
+**Combine and save dataframes**
+
+```{r}
+results_df2 = data.frame(id = names(pvals),
+                        p_val_removed = unlist(pvals),
+                        stat_removed = test_stats)
+
+results_df = left_join(results_df, results_df2)
+
+results_df = results_df%>%
+  separate_wider_delim(cols = id, delim = ".", names = c("Environmental_condition", "Category", "Group"))
+
+rownames(results_df) = NULL
+
+results_df 
+
+write.csv(results_df, 'outputs/tables/anderson_darling_results.csv', row.names = F)
+```
+
+### Figure 2
+```{r fig2, include=FALSE}
+source('figure2.R')
+#colors = c("#053C5E" , '#fee8c8', '#A31621')
+#colors = c( "#29A1AB" , '#fee8c8', '#AB3329')
+colors = c( "#00A8A5" , '#fee8c8', '#A80003')
+
+f2 = createFig2(df, results_df, colors)
+
+ggsave(f2, file="outputs/Figure2.png", device="png", units="in", width=12, height=9, dpi=600, scale=0.92)
+```
+
