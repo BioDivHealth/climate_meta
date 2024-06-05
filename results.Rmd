@@ -32,9 +32,20 @@ cat(paste('Number of countries:', length(unique(df$Country))))
 
 ## Results Section 1: Literature search results
 
+**Climate variables assessed - 3 categories**
+
+```{r climatevars1}
+ df%>%
+  select(Reference_ID, Environmental_condition)%>%
+  distinct() %>% 
+  count(Environmental_condition) %>%  
+  group_by(Environmental_condition) %>% 
+  mutate(prop = n/length(unique(df$Reference_ID)))
+```
+
 **Climate variables assessed**
 
-```{r climatevars}
+```{r climatevars2}
 
 df%>%
   select(Reference_ID, Environmental_condition)%>%
@@ -53,7 +64,7 @@ df%>%
 
 **Proportion of each disease group in dataset**
 
-```{r studycounts}
+```{r studycounts1}
 
 df%>%
   filter(General_Disease != "Multiple") %>%
@@ -66,7 +77,7 @@ df%>%
 
 **Proportion of specific diseases in dataset**
 
-```{r studycounts}
+```{r studycounts2}
 
 df%>%
   filter(General_Disease != "Multiple") %>%
