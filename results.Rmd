@@ -705,7 +705,6 @@ p4 <- ggplot(data, aes(x = as.factor(round((Journal_5yr_Impact))), y = P.value_s
 ggarrange(p1, p2, p3, p4, ncol = 2, nrow = 2)
 
 ```
-## Results Section 3: Publication bias
 
 ## Results Section 4: Strength of climate effects of zoonotic diseases
 
