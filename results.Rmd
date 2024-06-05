@@ -6,6 +6,9 @@ output: html_document
 ```{r setup, include=FALSE, results='asis'}
 # deps
 library(tidyr)
+library(twosamples)
+library(magrittr)
+library(tidyverse)
 
 knitr::opts_chunk$set(echo = FALSE)
 
