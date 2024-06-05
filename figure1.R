@@ -8,7 +8,8 @@ PATH = dirname(rstudioapi::getSourceEditorContext()$path)
 setwd(PATH)
 
 # deps
-library(ggplot2); library(dplyr); library(magrittr); library(sf); library(patchwork)
+library(ggplot2); library(dplyr); library(magrittr); library(sf); library(patchwork);
+library(cowplot)
 
 # read Lewis' database of published estimates
 ll = read.csv("./data/lewis_dataset/lewis_data.csv")
@@ -32,7 +33,7 @@ meth_col = colors[5]
 # 1. disease group
 ll = ll %>%
   dplyr::left_join(
-    read.csv("dz_harm.csv")
+    read.csv("./data/rory_annotations/dz_harm.csv")
   )
 
 p0 = ll %>%
@@ -49,7 +50,11 @@ p0 = ll %>%
   geom_point(aes(N, Disease2), color=dz_col, size=3) + 
   theme_classic() +
   ylab("Disease or disease group") +
-  xlab("Number of studies")
+  labs(tag = "B")+
+  xlab("Number of studies")+
+  theme(plot.tag = element_text(face = "bold", size = 12),
+        plot.tag.position = c(0.021, 1))
+
 
 
 # 2. principal reservoir
@@ -68,14 +73,16 @@ p00 = ll %>%
   geom_point(aes(N, Principal_reservoir), color=host_col, size=3) + 
   theme_classic() +
   ylab("Principal reservoir") +
-  xlab("Number of studies")
+  labs(tag = "D")+
+  xlab("Number of studies")+
+  theme(plot.tag = element_text(face = "bold", size = 12))
 
 
 # 3. response variables (hazard metric)
 
 cats = ll %>%
   dplyr::left_join(
-    read.csv("./datatype_harm.csv")
+    read.csv("./data/rory_annotations/datatype_harm.csv")
   ) %>%
   dplyr::select(Reference_ID, Reponse2) %>%
   distinct()
@@ -98,7 +105,9 @@ p1 = table(cats$Reponse2) %>%
   geom_point(aes(N, Response), color=risk_col, size=3) + 
   theme_classic() +
   xlab("Number of studies") + ylab("Risk/hazard metric") +
-  theme(axis.title.x = element_blank())
+  labs(tag = "C")+
+  theme(axis.title.x = element_blank(),
+        plot.tag = element_text(face = "bold", size = 12))
 
 
 # 4. pathogen type
@@ -121,14 +130,17 @@ p3 = table(pvb$P_V_B) %>%
   geom_segment(aes(x = 0, xend=N, y=Type, yend=Type), color=host_col, show.legend = FALSE) + 
   geom_point(aes(N, Type), color=host_col, size=3) + 
   theme_classic() +
-  xlab("Number of studies") + ylab("Pathogen type") +
-  theme(axis.title.x = element_blank())
+  xlab("Number of studies") + ylab("Pathogen") +
+  labs(tag = "E")+
+  theme(axis.title.x = element_blank(),
+        plot.tag = element_text(face = "bold", size = 12),
+        plot.tag.position = c(-0.03, 0.95))
 
 # 5. modelling method
 
 ll = ll %>%
   left_join(
-    read.csv("method_harm.csv")
+    read.csv("./data/rory_annotations/method_harm.csv")
   )
 meth = ll %>%
   dplyr::select(Reference_ID, Method2) %>%
@@ -143,7 +155,10 @@ p4 = table(meth$Method2) %>%
   geom_segment(aes(x = 0, xend=N, y=Method2, yend=Method2), color=meth_col, show.legend = FALSE) + 
   geom_point(aes(N, Method2), color=meth_col, size=3) + 
   theme_classic() +
-  xlab("Number of studies") + ylab("Modelling method")
+  labs(tag = "G")+
+  xlab("Number of studies") + ylab("Modelling method")+
+  theme(plot.tag = element_text(face = "bold", size = 12),
+        plot.tag.position = c(-0.03, 0.95))
 
 # 6. linear/nonlinear function fitted
 
@@ -161,14 +176,15 @@ p5 = table(nl$Linear_Nonlinear) %>%
   geom_point(aes(N, LN), color=meth_col,size=3) + 
   theme_classic() +
   xlab("Number of studies") + ylab("Function") +
-  theme(axis.title.x = element_blank())
-
-
+  labs(tag = "F")+
+  theme(axis.title.x = element_blank(),
+        plot.tag = element_text(face = "bold", size = 12),
+        plot.tag.position = c(-0.03, 1.2))
 
 # ----------- map of locations ---------
 
 # map
-ne = sf::st_read("./world-administrative-boundaries.shp")
+ne = sf::st_read("./data/shapefiles/world-administrative-boundaries.shp")
 robinson = "+proj=robin +lon_0=0 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs"
 ne2 = sf::st_transform(ne, robinson)
 
@@ -177,7 +193,7 @@ ne2 = sf::st_transform(ne, robinson)
 ll2 = ll %>%
   dplyr::select(-Longitude, -Latitude_) %>%
   dplyr::left_join(
-    read.csv("./geoloc_harm.csv")
+    read.csv("./data/rory_annotations/geoloc_harm.csv")
   ) %>%
   dplyr::mutate(
     Longitude = as.numeric(Longitude), Latitude_ = as.numeric(Latitude_)
@@ -189,42 +205,73 @@ ll2 = ll %>%
     Var = factor(Environmental_condition, levels=c("Temperature", "Precipitation", "Humidity"), ordered=TRUE)
   )
 
-# map
-map = ggplot() + 
-  geom_sf(data=ne2, fill="grey90", color="grey70", size=0.4) +
-  theme_void() +
-  geom_sf(data=sf::st_jitter(ll2, .5), size=1.2, aes(color=Var), alpha=0.8) +
-  scale_color_manual(values=pals::parula(n=8)[c(1, 4, 7)], name="Climate metric type") + 
+# data for the bar plot
+climvars = ll %>%
+  select(Reference_ID, Environmental_condition)%>%
+  distinct() %>% 
+  count(Environmental_condition) %>%  
+  group_by(Environmental_condition) %>% 
+  mutate(prop = n/length(unique(df$Reference_ID)))
+
+# Create the bar plot
+bar_plot <- ggplot(climvars, aes(x = n, y = Environmental_condition, fill = Environmental_condition)) +
+  geom_col() +
+  scale_fill_manual(values = c("Humidity" = "#FCC237", "Precipitation" = "#0FAEB8", "Temperature" = "#352A87")) +  # Custom colors
+  labs(x = "Num. studies", y = NULL) +
+  theme_minimal() +
+  #labs(tag = "B")+
   theme(
-    legend.title = element_text(size=11),
-    legend.text = element_text(size=10, color="grey15"), 
-    legend.position=c(0.18, 0.2)
+    legend.position = "none",  # Remove legend
+    axis.text.y = element_text(size = 10),  # Bold y-axis text
+    #axis.text.x = element_text(size = 12),  # X-axis text size
+    axis.title.x = element_text(size = 11),  # Bold x-axis title
+    plot.tag.position = c(0.195, 1.2),
+    plot.tag = element_text(face = "bold", size = 12))
+
+# Create the map
+map <- ggplot() + 
+  geom_sf(data = ne2, fill = "grey90", color = "grey70", size = 0.4) + 
+  theme_void() + 
+  geom_sf(data = sf::st_jitter(ll2, 0.5), size = 1.2, aes(color = Var), alpha = 0.8) + 
+  scale_color_manual(values = pals::parula(n = 8)[c(1, 4, 7)], name = "Climate metric type") + 
+  labs(tag = "A")+
+  theme(
+    legend.title = element_text(size = 11),
+    legend.text = element_text(size = 10, color = "grey15"), 
+    legend.position = "none",  # Remove the legend to make space for the bar plot
+    plot.tag.position = c(0.05, 0.9),
+    plot.tag = element_text(face = "bold", size = 12)
   )
   
 
-# combine into multipanel using patchwork
+# Combine the map and bar plot using cowplot
+combined_plot <- ggdraw() +
+  draw_plot(map, 0, 0, 1, 1) +
+  draw_plot(bar_plot, x = 0.05, y = 0.05, width = 0.23, height = 0.25)
 
 # design for barplots
 design = "
-  124
-  125
-  136
+  12458
+  12468
+  13478
 "
-comb = p0 + p1 + p00 + p3 + p5 + p4  + plot_layout(guides = "collect", 
-                                                   nrow=3, ncol=3, 
-                                                   widths=c(1.2, 1, 1), 
-                                                   heights=c(0.25, 0.2, 0.55),
-                                                   design=design)
+comb = p0 + p1 + p00 + plot_spacer() + p3 + p5 + p4 + plot_spacer() + 
+  plot_layout(guides = "collect", 
+              nrow=3, ncol=5, 
+              widths=c(1.1, 0.9,0.07, 0.9, 0.19), 
+              heights=c(0.25, 0.2, 0.55),
+              design=design)
 
 # design for full plot
 design2 = "
   11
   #2
 "
-comb2 = map + (comb) + plot_layout(nrow=2, heights=c(1, 0.8), widths=c(0.1, 1), design=design2)
+Fig1 = combined_plot + (comb) + plot_layout(nrow=2, heights=c(1, 0.8), widths=c(0.05, 1), design=design2)
+print(Fig1)
 
 # save
-ggsave(comb2, file="Figure1.jpg", device="jpg", units="in", width=10, height=9, dpi=600, scale=0.92)
+ggsave(Fig1, file="Figure1.jpg", device="jpg", units="in", width=10.5, height=9.5, dpi=600, scale=0.93)
 
 
 
