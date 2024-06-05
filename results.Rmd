@@ -30,7 +30,7 @@ cat(paste('Number of pathogens:', length(unique(df$Disease))))
 cat(paste('Number of countries:', length(unique(df$Country))))
 ```
 
-## Results Section 1: Literature search results
+# Results Section 1: Literature search results
 
 **Climate variables assessed - 3 categories**
 
@@ -155,7 +155,7 @@ df%>%
 
 ```
 
-## Results Section 2: Reported significance of climate measures in studies and publication bias
+# Results Section 2: Reported significance of climate measures in studies and publication bias
 
 ```{r repsignificance}
 
@@ -706,7 +706,7 @@ ggarrange(p1, p2, p3, p4, ncol = 2, nrow = 2)
 
 ```
 
-## Results Section 4: Strength of climate effects of zoonotic diseases
+# Results Section 3: Strength of climate effects of zoonotic diseases
 
 **Effect Size Category Grouping**
 
@@ -834,7 +834,8 @@ results_df
 #write.csv(results_df, 'outputs/tables/anderson_darling_results.csv', row.names = F)
 ```
 
-### Figure 1
+# Main figures
+## Figure 1
 ```{r fig1, echo=TRUE, fig.height=9.5, fig.width=10.5}
 source('figure1.R')
 
@@ -843,7 +844,7 @@ plot(Fig1)
 #ggsave(Fig1, file="outputs/Figure1.jpg", device="jpg", units="in", width=10.5, height=9.5, dpi=600, scale=0.93)
 ```
 
-### Figure 2
+## Figure 2
 ```{r fig2, include=FALSE}
 source('figure2.R')
 #colors = c("#053C5E" , '#fee8c8', '#A31621')
