@@ -831,7 +831,16 @@ rownames(results_df) = NULL
 
 results_df 
 
-write.csv(results_df, 'outputs/tables/anderson_darling_results.csv', row.names = F)
+#write.csv(results_df, 'outputs/tables/anderson_darling_results.csv', row.names = F)
+```
+
+### Figure 1
+```{r fig1, echo=TRUE, fig.height=9.5, fig.width=10.5}
+source('figure1.R')
+
+plot(Fig1)
+
+#ggsave(Fig1, file="outputs/Figure1.jpg", device="jpg", units="in", width=10.5, height=9.5, dpi=600, scale=0.93)
 ```
 
 ### Figure 2
