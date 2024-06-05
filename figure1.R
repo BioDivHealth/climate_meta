@@ -268,10 +268,10 @@ design2 = "
   #2
 "
 Fig1 = combined_plot + (comb) + plot_layout(nrow=2, heights=c(1, 0.8), widths=c(0.05, 1), design=design2)
-print(Fig1)
+#print(Fig1)
 
 # save
-ggsave(Fig1, file="Figure1.jpg", device="jpg", units="in", width=10.5, height=9.5, dpi=600, scale=0.93)
+#ggsave(Fig1, file="Figure1.jpg", device="jpg", units="in", width=10.5, height=9.5, dpi=600, scale=0.93)
 
 
 
