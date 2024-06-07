@@ -394,6 +394,19 @@ df_prec <- rename_columns(df_prec)
 # Combine the data frames into a list
 list_of_dfs <- list(Overall = df_all, Humidity = df_hum, Temperature = df_temp, Precipitation = df_prec)
 print(list_of_dfs)
+
+# # Define the file name
+# file_name <- "chisq_results.xlsx"
+# library(openxlsx)
+# # Create a new workbook
+# wb <- createWorkbook()
+# # Loop through each dataframe in the list and add it to a new sheet
+# for (name in names(list_of_dfs)) {
+#   addWorksheet(wb, name)
+#   writeData(wb, name, list_of_dfs[[name]])
+# }
+# # Save the workbook
+# saveWorkbook(wb, file_name, overwrite = TRUE)
 ```
 
 
