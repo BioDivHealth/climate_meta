@@ -2,6 +2,6 @@
 .Rhistory
 .RData
 .Ruserdata
-.results_text_files
+.results_text_files/
 .results_text.md
 .chisq_results.xlsx
