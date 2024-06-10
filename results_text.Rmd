@@ -70,6 +70,7 @@ extracted_stats %<>%
   mutate(prop = n/length(extracted_stats$Environmental_condition))
 ```
 
+
 The search criteria isolated 13,468 article titles. After an initial triage of titles, 843 abstracts were assessed, leading to review of 447 full articles (Supp. Fig. S1). The final dataset contained information collated from `r length(unique(df$Reference_ID))` (\~1.4% of the long-list) independent studies, and described empirically observed trends between climate variables and disease risk for `r length(unique(df$Disease))` diseases from `r length(unique(df$Country))` countries. A total of `r length(df$Value[!is.na(df$Value)])` statistics was extracted from the studies, with `r paste0(round(extracted_stats$prop[extracted_stats$Environmental_condition=="Temperature"],2)*100,"%")` (n=`r extracted_stats$n[extracted_stats$Environmental_condition=="Temperature"]`) of data points describing the impacts of temperature, followed by precipitation (`r paste0(round(extracted_stats$prop[extracted_stats$Environmental_condition=="Precipitation"],2)*100,"%")`, n=`r extracted_stats$n[extracted_stats$Environmental_condition=="Precipitation"]`) and humidity (`r paste0(round(extracted_stats$prop[extracted_stats$Environmental_condition=="Humidity"],2)*100,"%")`, n=`r extracted_stats$n[extracted_stats$Environmental_condition=="Humidity"]`).
 
 ```{r climatevars1_text, include=FALSE}
@@ -167,7 +168,7 @@ pvals = as.data.frame(table(pvals$P.value_general)); names(pvals) = c("pval","fr
 #calculate proportions
 pvals %<>% mutate(P = freq/sum(freq))
 
-#Proportion of studies pvalsicant at different levels
+#Proportion of studies with P-values at different levels
 alfa_005_p = pvals %>% filter(pval!=">0.05") %>% summarise(total_sum = sum(P, na.rm = TRUE)) %>% pull(total_sum)
 
 alfa_001_p = pvals %>% filter(!pval %in% c("<0.05",">0.05")) %>% summarise(total_sum = sum(P, na.rm = TRUE)) %>% pull(total_sum)
@@ -587,8 +588,6 @@ create_funnel_plot <- function(tmp, point_color, title_plot) {
   return(funnel_plot)
 }
 
-# Example usage:
-# Assuming df is your data frame with columns 'se' (standard error) and 'es' (effect size)
 f1 <- df %>% filter(!is.na(se) & !is.na(es))
 funnel_plot_1 <- create_funnel_plot(f1, "forestgreen", "All env. measures")
 
