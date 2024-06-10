@@ -1,0 +1,606 @@
+---
+title: "Climate impacts on zoonotic disease meta-analysis: text"
+output:
+  html_document: 
+    keep_md: yes
+  html_notebook: 
+    theme: flatly
+    fig_caption: yes
+editor_options:
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE, results='asis'}
+# depss
+
+if (!require(tidyverse, quietly = TRUE)) {
+  install.packages("tidyverse")
+  library(tidyverse)
+}
+
+if (!require(twosamples, quietly = TRUE)) {
+  install.packages("twosamples")
+  library(twosamples)
+}
+
+if (!require(magrittr, quietly = TRUE)) {
+  install.packages("magrittr")
+  library(magrittr)
+}
+
+if (!require(knitr, quietly = TRUE)) {
+  install.packages("library(knitr)")
+  library(knitr)
+}
+
+if (!require(ggpubr, quietly = TRUE)) {
+  install.packages("library(ggpubr)")
+  library(ggpubr)
+}
+
+if (!require(metafor, quietly = TRUE)) {
+  install.packages("metafor")
+  library(metafor)
+}
+
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, include=FALSE)
+
+# load dataset
+df = read.csv('data/dataset_final.csv')
+
+# change vector names
+df = df%>%
+  mutate(Transmission_type = ifelse(Transmission_type == 'HVH', 'Vectored', 'Non-vectored'))
+
+# add parasite group
+df = df%>%
+  mutate(Pathogen = ifelse(Pathogen == 'P', 'Parasite',
+                                ifelse(Pathogen == 'V', 'Virus',
+                                        'Bacteria')))
+```
+
+## Results Section 1: Literature search results
+
+```{r}
+extracted_stats = df %>% filter(!is.na(Value))
+extracted_stats %<>% 
+  select(Environmental_condition) %>% 
+  count(Environmental_condition) %>% 
+  group_by(Environmental_condition) %>% 
+  mutate(prop = n/length(extracted_stats$Environmental_condition))
+```
+
+The search criteria isolated 13,468 article titles. After an initial triage of titles, 843 abstracts were assessed, leading to review of 447 full articles (Supp. Fig. S1). The final dataset contained information collated from `r length(unique(df$Reference_ID))` (\~1.4% of the long-list) independent studies, and described empirically observed trends between climate variables and disease risk for `r length(unique(df$Disease))` diseases from `r length(unique(df$Country))` countries. A total of `r length(df$Value[!is.na(df$Value)])` statistics was extracted from the studies, with `r paste0(round(extracted_stats$prop[extracted_stats$Environmental_condition=="Temperature"],2)*100,"%")` (n=`r extracted_stats$n[extracted_stats$Environmental_condition=="Temperature"]`) of data points describing the impacts of temperature, followed by precipitation (`r paste0(round(extracted_stats$prop[extracted_stats$Environmental_condition=="Precipitation"],2)*100,"%")`, n=`r extracted_stats$n[extracted_stats$Environmental_condition=="Precipitation"]`) and humidity (`r paste0(round(extracted_stats$prop[extracted_stats$Environmental_condition=="Humidity"],2)*100,"%")`, n=`r extracted_stats$n[extracted_stats$Environmental_condition=="Humidity"]`).
+
+```{r climatevars1_text, include=FALSE}
+vars = df%>%
+  select(Reference_ID, Environmental_condition)%>%
+  distinct() %>% 
+  count(Environmental_condition) %>%  
+  group_by(Environmental_condition) %>% 
+  mutate(prop = n/length(unique(df$Reference_ID)))
+```
+
+```{r climatevars2_text, include=FALSE}
+
+vars2 = df%>%
+  select(Reference_ID, Environmental_condition)%>%
+  distinct()%>%
+  mutate(measured = Environmental_condition)%>%
+  mutate(measured = ifelse(measured == 'Temperature', 'T', ifelse(measured == 'Precipitation', 'P', 'H')))%>%
+  pivot_wider(names_from=Environmental_condition, values_from=measured ,values_fill='')%>%
+  relocate(any_of(c('Reference_ID', 'Temperature', 'Precipitation', 'Humidity')))%>%
+  mutate(ClimMeasured = paste0(Temperature, Precipitation, Humidity))%>%
+  group_by(ClimMeasured)%>%
+    summarise(N = n_distinct(Reference_ID)) %>%#
+  mutate(P = N/sum(N))%>%
+  arrange(desc(N)) 
+  
+```
+
+```{r diseasecounts_text, include=FALSE}
+disease_txt = df%>%
+  filter(General_Disease != "Multiple") %>%
+  group_by(General_Disease) %>%
+  summarise(N = n_distinct(Reference_ID)) %>%#
+  mutate(P = N/sum(N))%>%
+  arrange(desc(N))
+```
+
+Our search process resulted in a broad global coverage of studies, with areas of high sampling in South and East Asia and Europe, and more limited sampling in Central and North Asia and Eastern Africa (Fig. 1A). The majority of studies assessed temperature, precipitation, or both, while humidity was examined in less than half of studies (n = `r vars$n[vars$Environmental_condition=="Humidity"]`; `r paste0(round(vars$prop[vars$Environmental_condition=="Humidity"],1)*100,"%")`). All three variables were examined in `r paste0(round(vars2$P[vars2$ClimMeasured=="TPH"],3)*100,"%")` of studies (n=`r vars2$N[vars2$ClimMeasured=="TPH"]`). Proportionally, the most represented set of pathogens were hantaviruses (e.g. Haantan and Seoul viruses) making up a quarter of the data (n=`r disease_txt$N[disease_txt$General_Disease=="Hantaviral diseases"]`; `r paste0(round(disease_txt$P[disease_txt$General_Disease=="Hantaviral diseases"],3)*100,"%")`), followed by arboviruses (e.g. Yellow fever; n=`r disease_txt$N[disease_txt$General_Disease=="Arboviral diseases"]`; `r paste0(round(disease_txt$P[disease_txt$General_Disease=="Arboviral diseases"],3)*100,"%")`) and leptospirosis (n=`r disease_txt$N[disease_txt$General_Disease=="Leptospirosis"]`; `r paste0(round(disease_txt$P[disease_txt$General_Disease=="Leptospirosis"],3)*100,"%")`; Fig. 1B). Twenty disease groups made up the remaining `r paste0(100-(round(disease_txt$P[disease_txt$General_Disease=="Leptospirosis"],3)*100+round(disease_txt$P[disease_txt$General_Disease=="Arboviral diseases"],3)*100+round(disease_txt$P[disease_txt$General_Disease=="Hantaviral diseases"],3)*100),"%")` of the dataset, with eight diseases only represented by one study (anaplasmosis, bartonellosis, Ebola, MERS, MPox, Q-fever, theileriosis, and toxoplasmosis).
+
+```{r responsecounts_text, include=FALSE}
+response_txt = df%>%
+  group_by(General_response) %>%
+  summarise(N = n_distinct(Reference_ID)) %>%#
+  mutate(P = N/sum(N))%>%
+  arrange(desc(N)) 
+```
+
+```{r taxgroups_text}
+taxgroups_txt = df %>%
+  group_by(Principal_reservoir) %>%
+  summarise(N = n_distinct(Reference_ID)) %>%#
+  mutate(P = N/sum(N))%>%
+  arrange(desc(N)) 
+
+```
+
+```{r pathogens_text}
+pathogen_txt = df%>%
+  group_by(Pathogen) %>%
+  summarise(N = n_distinct(Reference_ID)) %>%#
+  mutate(P = N/sum(N))%>%
+  arrange(desc(N)) 
+```
+
+```{r linear_nonlinear_text}
+linear_nonlinear = df%>%
+  group_by(Linear_Nonlinear) %>%
+  summarise(N = n_distinct(Reference_ID)) %>%#
+  mutate(P = N/sum(N))%>%
+  arrange(desc(N)) 
+```
+
+```{r statsmethod_text}
+stat_txt = df %>% 
+  group_by(General_Stats_Method) %>%
+  summarise(N = n_distinct(Reference_ID)) %>%#
+  mutate(P = N/sum(N))%>%
+  arrange(desc(N)) 
+
+```
+
+Most of the studies used human case incidence as the response variable (n=`r response_txt$N[response_txt$General_response=="Human disease incidence"]`; `r paste0(round(response_txt$P[response_txt$General_response=="Human disease incidence"],3)*100,"%")`) with host infection rates (n=`r response_txt$N[response_txt$General_response=="Host infection"]`; `r paste0(round(response_txt$P[response_txt$General_response=="Host infection"],3)*100,"%")`) as the next most examined (Fig. 1C). The high representation of hantaviruses and leptospirosis in the literature surveyed resulted in rodents as the most examined host taxonomic group (n=`r taxgroups_txt$N[taxgroups_txt$Principal_reservoir=="Rodents"]`; `r paste0(round(taxgroups_txt$P[taxgroups_txt$Principal_reservoir=="Rodents"],3)*100,"%")`), followed by multispecies studies examining mammal groups (n=`r taxgroups_txt$N[taxgroups_txt$Principal_reservoir=="Mammals (multispecies)"]`; `r paste0(round(taxgroups_txt$P[taxgroups_txt$Principal_reservoir=="Mammals (multispecies)"],3)*100,"%")`) (Fig. 1D). Seven studies (`r paste0(round(taxgroups_txt$P[taxgroups_txt$Principal_reservoir=="Bats"],3)*100,"%")`) examined disease with a bat reservoir. Viral pathogens were most commonly studied (n=`r pathogen_txt$N[pathogen_txt$Pathogen=="Virus"]`; `r paste0(round(pathogen_txt$P[pathogen_txt$Pathogen=="Virus"],3)*100,"%")`), followed by bacteria (n=`r pathogen_txt$N[pathogen_txt$Pathogen=="Bacteria"]`; `r paste0(round(pathogen_txt$P[pathogen_txt$Pathogen=="Bacteria"],3)*100,"%")`) and parasites (n=`r pathogen_txt$N[pathogen_txt$Pathogen=="Parasite"]`; `r paste0(round(100 - (round(pathogen_txt$P[pathogen_txt$Pathogen=="Bacteria"],3)*100+round(pathogen_txt$P[pathogen_txt$Pathogen=="Virus"],3)*100),2),"%")`; Fig. 1E). Only `r paste0(round(linear_nonlinear$P[linear_nonlinear$Linear_Nonlinear=="Non-linear"],3)*100,"%")` (n=`r linear_nonlinear$N[linear_nonlinear$Linear_Nonlinear=="Non-linear"]`) of studies examined non-linear relationships (Fig. 1F). Generalised linear statistical models were the most frequently used statistical tool (n=`r stat_txt$N[stat_txt$General_Stats_Method=="GL(M)M"]`; `r paste0(round(stat_txt$P[stat_txt$General_Stats_Method=="GL(M)M"],3)*100,"%")`), followed by correlation approaches (n=`r stat_txt$N[stat_txt$General_Stats_Method=="Correlation"]`; `r paste0(round(stat_txt$P[stat_txt$General_Stats_Method=="Correlation"],3)*100,"%")`; Fig. 1G).
+
+## Results Section 2: Reported significance of climate measures in studies and publication bias
+
+```{r reppvalsignificance_text, include=FALSE}
+#filter out records without P values --------------------------------------
+pvals = df %>% filter(P.value_general!="" & !is.na(P.value_general))
+
+#unify P-values
+pvals$P.value_general[pvals$P.value_general=="<.0.05" |
+                    pvals$P.value_general=="<0..05"] = "<0.05"
+pvals = as.data.frame(table(pvals$P.value_general)); names(pvals) = c("pval","freq")
+
+#calculate proportions
+pvals %<>% mutate(P = freq/sum(freq))
+
+#Proportion of studies pvalsicant at different levels
+alfa_005_p = pvals %>% filter(pval!=">0.05") %>% summarise(total_sum = sum(P, na.rm = TRUE)) %>% pull(total_sum)
+
+alfa_001_p = pvals %>% filter(!pval %in% c("<0.05",">0.05")) %>% summarise(total_sum = sum(P, na.rm = TRUE)) %>% pull(total_sum)
+
+alfa_0001_p = pvals %>% filter(!pval %in% c("<0.05",">0.05","<0.01")) %>% summarise(total_sum = sum(P, na.rm = TRUE)) %>% pull(total_sum)
+
+#Proportions of signif. increase to decrease --------------------------
+signif = df %>% filter(Direction!="") %>% filter(P.value_general!="") %>%  filter(P.value_general!=">0.05")
+
+
+```
+
+The majority of studies assessed reported a sigfnificant relationship between climate measures and some index of zoonotic disease risk (`r paste0(round(alfa_005_p,3)*100, "%")` significant at α=0.05, `r paste0(round(alfa_001_p,2)*100, "%")` at α=0.01, `r paste0(round(alfa_0001_p,2)*100, "%")` at α=0.001).
+
+```{r chisq_groups_removed_function}
+
+library(dplyr)
+
+# Function to perform chi-square tests on sampled data
+perform_chi_tests <- function(data, n_samples, percentage) {
+  results <- data.frame(i = 1:n_samples)
+
+  for (i in 1:n_samples) {
+    smp <- data[sample(1:nrow(data), size = round(nrow(data) * percentage), replace = TRUE),]
+    smp$Direction = as.factor(smp$Direction)
+    chi_test_all <- chisq.test(xtabs(data = smp, Dummy ~ Direction))
+    chi_test_hum <- chisq.test(xtabs(data = smp[smp$Environmental_condition == "Humidity",], Dummy ~ Direction))
+    chi_test_temp <- chisq.test(xtabs(data = smp[smp$Environmental_condition == "Temperature",], Dummy ~ Direction))
+    chi_test_prec <- chisq.test(xtabs(data = smp[smp$Environmental_condition == "Precipitation",], Dummy ~ Direction))
+    
+    results$chi_all[i] <- chi_test_all$statistic
+    results$p_all[i] <- chi_test_all$p.value
+    
+    results$hum_chi[i] <- chi_test_hum$statistic
+    results$hum_p[i] <- chi_test_hum$p.value
+    
+    results$temp_chi[i] <- chi_test_temp$statistic
+    results$temp_p[i] <- chi_test_temp$p.value
+    
+    results$prec_chi[i] <- chi_test_prec$statistic
+    results$prec_p[i] <- chi_test_prec$p.value
+  }
+  
+  return(results)
+}
+
+# Function to calculate summary statistics (P-values)
+calculate_means <- function(results) {
+  means <- c(
+    p_all = mean(results$p_all, na.rm = TRUE),
+    chi_all = mean(results$chi_all, na.rm = TRUE),
+    chi_ci_lower_all = t.test(results$chi_all, conf.level = 0.95)$conf.int[1], #Chi Ci Lower
+    chi_ci_upper_all = t.test(results$chi_all, conf.level = 0.95)$conf.int[2], #Chi Ci Upper
+    hum_p = mean(results$hum_p, na.rm = TRUE),
+    hum_chi = mean(results$hum_chi, na.rm = TRUE),
+    chi_ci_lower_hum = t.test(results$hum_chi, conf.level = 0.95)$conf.int[1], #Chi Ci Lower
+    chi_ci_upper_hum = t.test(results$hum_chi, conf.level = 0.95)$conf.int[2], #Chi Ci Upper
+    temp_p = mean(results$temp_p, na.rm = TRUE),
+    temp_chi = mean(results$temp_chi, na.rm = TRUE),
+    chi_ci_lower_temp = t.test(results$temp_chi, conf.level = 0.95)$conf.int[1], #Chi Ci Lower
+    chi_ci_upper_temp = t.test(results$temp_chi, conf.level = 0.95)$conf.int[2], #Chi Ci Upper
+    prec_p = mean(results$prec_p, na.rm = TRUE),
+    prec_chi = mean(results$prec_chi, na.rm = TRUE),
+    chi_ci_lower_prec = t.test(results$prec_chi, conf.level = 0.95)$conf.int[1], #Chi Ci Lower
+    chi_ci_upper_prec = t.test(results$prec_chi, conf.level = 0.95)$conf.int[2] #Chi Ci Upper
+  )
+  
+  return(means)
+}
+
+# Main analysis function (removing 1 group from the 3 biggest groups at a time)
+chisq_remove_groups <- function(df, grouping_factor, percentage = percentage, n_samples = 1000) {
+  
+  if(grouping_factor!="none_removed"){
+      group_summary <- df %>%
+        group_by(across(all_of(grouping_factor))) %>%
+        summarise(N = n_distinct(Reference_ID)) %>%
+        mutate(P = N / sum(N)) %>%
+        arrange(desc(N))
+      #identify top 3 groups per count
+        top_groups <- as.vector(unlist(group_summary[1:3, 1]))
+        top_groups = top_groups[!is.na(top_groups)]}
+  
+  means_df <- list()
+  
+  if(grouping_factor!="none_removed"){
+    for (group_rm in top_groups) {
+      tmp <- df %>%
+        filter(Direction != "") %>%
+        filter(P.value_general != "") %>%
+        filter(P.value_general != ">0.05") %>%
+        filter(across(all_of(grouping_factor)) != group_rm)
+      #check if all env. categories have mroe than 10 records
+      if (all(table(tmp$Environmental_condition) > 10)) {
+        results <- perform_chi_tests(tmp, n_samples, percentage)
+        means <- calculate_means(results)
+        means_df[[group_rm]] <- means
+        }
+      }
+} else {
+   tmp <- df %>%
+      filter(Direction != "") %>%
+      filter(P.value_general != "") %>%
+      filter(P.value_general != ">0.05")
+   
+   if (all(table(tmp$Environmental_condition) >= 10)) {
+      results <- perform_chi_tests(tmp, n_samples, percentage)
+      means <- calculate_means(results)
+      means_df[[grouping_factor]] <- means
+    }
+  }
+  
+  if(grouping_factor!="none_removed"){
+    means_chi = lapply(means_df, function(sublist) { sublist[grep("chi", names(sublist))]})
+    means_pval = lapply(means_df, function(sublist) { sublist[!grepl("chi", names(sublist))]})} 
+  else {
+    means_chi = list()
+    means_chi[[grouping_factor]] = means_df[[grouping_factor]][grep("chi",names(means_df[[grouping_factor]]))]
+    means_pval = list()
+    means_pval[[grouping_factor]] = means_df[[grouping_factor]][!grepl("chi",names(means_df[[grouping_factor]]))]
+  }
+  
+  #Transform P-values to simplified significance levels
+  levels_means_pval <- as.data.frame(lapply(means_pval, function(x) {
+    ifelse(x < 0.01, "**", ifelse(x < 0.05, "*", ">0.05"))
+  }))
+  means_pval = as.data.frame(means_pval)
+  rownames(levels_means_pval) <- rownames(means_pval)
+  means_chi = as.data.frame(means_chi)
+  
+  return(list(means_pval = means_pval, levels_means_pval = levels_means_pval,
+              means_chi = means_chi))
+  
+}
+```
+
+```{r chisq_groups_removed_function_results}
+percentage = 0.8
+none_removed = chisq_remove_groups(df, grouping_factor = "none_removed",percentage = percentage, n_samples = 1000)
+disease_removed = chisq_remove_groups(df, grouping_factor = "General_Disease", percentage = percentage, n_samples = 1000)
+country_removed = chisq_remove_groups(df, grouping_factor = "Country", percentage = percentage, n_samples = 1000)
+princ_reservoir_removed = chisq_remove_groups(df, grouping_factor = "Principal_reservoir", percentage = percentage, n_samples = 1000)
+stat_method_removed = chisq_remove_groups(df, grouping_factor = "Statistical_method", percentage = percentage, n_samples = 1000)
+pathogen_group_removed = chisq_remove_groups(df, grouping_factor = "Pathogen", percentage = percentage, n_samples = 1000)
+transmission_type_removed = chisq_remove_groups(df, grouping_factor = "Transmission_type", percentage = percentage, n_samples = 1000)
+
+combined_pvals = (cbind(none_removed$means_pval, disease_removed$means_pval,
+                        country_removed$means_pval, princ_reservoir_removed$means_pval, 
+                        pathogen_group_removed$means_pval,
+                        stat_method_removed$means_pval, transmission_type_removed$means_pval))
+
+combined_levels = (cbind(none_removed$levels_means_pval, disease_removed$levels_means_pval,
+                        country_removed$levels_means_pval, princ_reservoir_removed$levels_means_pval, 
+                        pathogen_group_removed$levels_means_pval,
+                        stat_method_removed$levels_means_pval, transmission_type_removed$levels_means_pval))
+
+combined_chi = (cbind(none_removed$means_chi, disease_removed$means_chi,
+                        country_removed$means_chi, princ_reservoir_removed$means_chi, 
+                      pathogen_group_removed$means_chi,
+                        stat_method_removed$means_chi, transmission_type_removed$means_chi))
+
+#Transform Chi values ----------------------
+chi_transformed <- combined_chi %>%
+  rownames_to_column(var = "Metric") %>%
+  pivot_longer(cols = -Metric, names_to = "Group", values_to = "Value")
+
+chi_wide <- chi_transformed %>% # Convert to wide format with diseases as rows and metrics as columns
+  pivot_wider(names_from = Metric, values_from = Value)
+
+#Transform P values ----------------------
+pval_transformed <- combined_pvals %>%
+  rownames_to_column(var = "Metric") %>%
+  pivot_longer(cols = -Metric, names_to = "Group", values_to = "Value")
+
+# Convert to wide format with diseases as rows and metrics as columns
+pvals_wide <- pval_transformed %>%
+  pivot_wider(names_from = Metric, values_from = Value)
+
+#Transform P levels ----------------------
+pval_levels_transformed <- combined_levels %>%
+  rownames_to_column(var = "Metric") %>%
+  pivot_longer(cols = -Metric, names_to = "Group", values_to = "Value")
+# Convert to wide format with diseases as rows and metrics as columns
+pvals_levels_wide <- pval_levels_transformed %>%
+  pivot_wider(names_from = Metric, values_from = Value)
+names(pvals_levels_wide) = c("Group","P_level_all", "P_level_hum", "P_level_temp", "P_level_prec")
+
+#Join dataframes
+full_results <- chi_wide %>%
+  left_join(pvals_wide, by = "Group") %>%
+  left_join(pvals_levels_wide, by = "Group")
+
+# Split the data frame into four separate data frames based on column names
+df_all <- full_results %>% select(Group, contains("all"))
+df_hum <- full_results %>% select(Group, contains("hum"))
+df_temp <- full_results %>% select(Group, contains("temp"))
+df_prec <- full_results %>% select(Group, contains("prec"))
+
+
+# Function to rename columns in each dataframe
+rename_columns <- function(df) {
+  df %>%
+    rename_with(~ str_replace(., "chi_all|prec_chi|temp_chi|hum_chi", "Chi_Square")) %>%
+    rename_with(~ str_replace(., "chi_ci_lower_.*", "Chi_Lower_CI")) %>%
+    rename_with(~ str_replace(., "chi_ci_upper_.*", "Chi_Upper_CI")) %>% 
+    rename_with(~ str_replace(., "p_all|temp_p|prec_p|hum_p", "P_value"))
+}
+
+# Apply the renaming function to each dataframe
+df_all <- rename_columns(df_all)
+df_hum <- rename_columns(df_hum)
+df_temp <- rename_columns(df_temp)
+df_prec <- rename_columns(df_prec)
+
+# Combine the data frames into a list
+list_of_dfs <- list(Overall = df_all, Humidity = df_hum, Temperature = df_temp, Precipitation = df_prec)
+
+#Convert the transposed matrix back to a dataframe
+transposed_combined_levels <- as.data.frame(t(combined_levels))
+colnames(transposed_combined_levels) <- rownames(combined_levels)
+list_of_dfs
+
+library(openxlsx)
+# Define the file name
+file_name <- "chisq_results.xlsx"
+
+# Create a new workbook
+wb <- createWorkbook()
+
+# Loop through each dataframe in the list and add it to a new sheet
+for (name in names(list_of_dfs)) {
+  addWorksheet(wb, name)
+  writeData(wb, name, list_of_dfs[[name]])
+}
+
+# Save the workbook
+saveWorkbook(wb, file_name, overwrite = TRUE)
+
+```
+
+There were significantly more increases in a measure of risk (`r round((table(signif$Direction))[["increase"]]/(table(signif$Direction))[["decrease"]],1)` times more) reported than decreases ($\overline{\chi^2}$ = `r round(none_removed$means_chi["chi_all", "none_removed"],2)`, df = 1, 95% CI = `r round(none_removed$means_chi["chi_ci_lower_all", "none_removed"],2)` -- `r round(none_removed$means_chi["chi_ci_upper_all", "none_removed"],2)`, p = `r round(none_removed$means_pval["p_all", "none_removed"],3)`), from 1000 bootstraps of 80% of the data). When subsetting the data to examine environmental categories separately, humidity and temperature did not follow the same pattern as for the overall dataset with even numbers of increases and decreases (Humidity: $\overline{\chi^2}$ = `r round(none_removed$means_chi["hum_chi", "none_removed"],2)`, df=1, p= `r round(none_removed$means_pval["hum_p", "none_removed"],3)`; Temperature: $\overline{\chi^2}$ = `r round(none_removed$means_chi["temp_chi", "none_removed"],2)`, df=1, p= `r round(none_removed$means_pval["temp_p", "none_removed"],3)`). The proportions seen within the overall dataset were robust to dropping major regions, disease groups, pathogen types, statistical methods and hosts from the calculations (Table S1). Notably, removal of Vectored diseases from the analysis resulted in insignificant difference between proportions of increases and decreases in risk reported. When dropping groups from the subsets of the datasets describing only one environmental category, levels of significance of some proportions within Temperature and Precipitation subsets also changed.
+
+###Publication bias
+
+```{r journals, echo=TRUE, message=TRUE, warning=TRUE}
+#-----ES.   ------------------------------------------------------------------
+library(patchwork)
+library(ggplot2)
+library(dplyr)
+
+# Data filtering and preparation
+pub1 = df %>% filter(!is.na(es) & !is.na(Journal_5yr_Impact))
+pub1 %<>% dplyr::select(es, Journal_5yr_Impact, Environmental_condition)
+dat_pub1 = pub1
+dat_pub1$es = abs(dat_pub1$es)
+
+# Scatter plot with regression line
+p1 <- ggplot(dat_pub1, aes(x = Journal_5yr_Impact, y = es)) +
+  geom_point(color = "forestgreen", alpha = 0.5) +
+  geom_smooth(method = "lm", color = "black", se = TRUE, alpha = 0.5) +
+  ggtitle("Effect Size vs Journal Impact Factor") +
+  xlab("Journal 5-year Impact Factor") +
+  ylab("Effect Size (Hedge's g)") +
+  theme_minimal()
+
+# Calculate Pearson correlation coefficient
+correlation1 <- cor.test(dat_pub1$es, dat_pub1$Journal_5yr_Impact)
+
+# Annotate the scatter plot with the correlation coefficient
+p1 <- p1 + annotate("text", x = max(dat_pub1$Journal_5yr_Impact) * 0.6, y = max(dat_pub1$es) * 0.8,
+                    label = paste("Pearson r:", round(correlation1$estimate, 2),
+                                  "\nP-value:", format(correlation1$p.value, digits = 3)),
+                    color = "black", size = 5, hjust = 0)
+#------------------------------------------------------------------------------
+
+# Data filtering and preparation for the second plot
+pub2 = df %>% filter(!is.na(P.value_specific) & !is.na(Journal_5yr_Impact))
+pub2 %<>% dplyr::select(P.value_specific, Journal_5yr_Impact, Environmental_condition)
+dat_pub2 = pub2
+dat_pub2$P.value_specific = abs(dat_pub2$P.value_specific)
+
+# Scatter plot with regression line
+p2 <- ggplot(dat_pub2, aes(x = Journal_5yr_Impact, y = P.value_specific)) +
+  geom_point(color = "cornflowerblue", alpha = 0.5) +
+  geom_smooth(method = "lm", color = "black", se = TRUE) +
+  ggtitle("Reported P-value vs Journal Impact Factor") +
+  xlab("Journal 5-year Impact Factor") +
+  ylab("P-value reported") +
+  theme_minimal()
+
+# Calculate Pearson correlation coefficient
+correlation2 <- cor.test(dat_pub2$Journal_5yr_Impact, dat_pub2$P.value_specific)
+
+# Annotate the scatter plot with the correlation coefficient
+p2 <- p2 + annotate("text", x = max(dat_pub2$Journal_5yr_Impact) * 0.6, y = max(dat_pub2$P.value_specific) * 0.8,
+                    label = paste("Pearson r:", round(correlation2$estimate, 2),
+                                  "\nP-value:", format(correlation2$p.value, digits = 3)),
+                    color = "black", size = 5, hjust = 0)
+```
+
+When comparing high and low impact factor journals, there was no significant correlation between journal impact factors and reported P-values (Fig. S2, PCC = `r round(correlation2$estimate, 2)[[1]]`, p = `r round(correlation2$p.value,3)`) or effect sizes (Fig S2., PCC = `r round(correlation1$estimate, 2)[[1]]`, p = `r round(correlation1$p.value,3)`).
+
+```{r eggers_tests}
+f1 <- df %>% filter(!is.na(se) & !is.na(es))
+f2 <- df %>% filter(!is.na(se) & !is.na(es)) %>% filter(Environmental_condition == "Temperature")
+f3 <- df %>% filter(!is.na(se) & !is.na(es)) %>% filter(Environmental_condition == "Precipitation")
+f4 <- df %>% filter(!is.na(se) & !is.na(es)) %>% filter(Environmental_condition == "Humidity")
+
+regtest_all = regtest(f1$es, sei=f1$se)
+regtest_temp = regtest(f2$es, sei=f2$se)
+regtest_prec = regtest(f3$es, sei=f3$se)
+regtest_hum = regtest(f4$es, sei=f4$se)
+
+list_regtest = list(All = regtest_all$pval, Temperature = regtest_temp$pval, Precipitation = regtest_prec$pval, Humidity = regtest_hum$pval)
+```
+
+```{r PCURVE}
+#Using <https://rdrr.io/github/MathiasHarrer/dmetar/man/pcurve.html>.
+if (!require(dmetar, quietly = TRUE)) {
+  install.packages("dmetar")
+  library(dmetar)
+}
+
+tmp = df %>% filter(!is.na(se) & !is.na(es) & !is.na(Reference_ID)) %>% filter(P.value_general!=">0.05" & !is.na(P.value_general))
+tmp %<>% dplyr::select(.,se, es, Reference_ID, es)
+
+names(tmp) = c("seTE", "TE","studlab")
+pcurve_results = pcurve(tmp, effect.estimation = FALSE)
+#pcurve_results$pcurveResults
+#Right skewness test for Full curve & Half curve has p = 0 (p<0.001)
+```
+
+There was limited evidence of publication bias inferred from funnel plots made by plotting standard errors against respective effect sizes (Fig. S3). Egger's regression tests for funnel plot asymmetry showed significant asymmetry of funnel plots for the overall dataset (P-value = `r round(list_regtest$All,3)`) and precipitation data (P-value = `r round(list_regtest$Precipitation,3)`), but no significant asymmetry was identified within humidity and temperature data (Fig. S3/Table SX). Furthermore, P-values extracted from the studies were examined to check for potential evidence of "p-hacking". Visual inspection of the distribution of P-values surrounding p = 0.05 did not find evidence of p-hacking. This was further supported by P-curve analysis and a significant result of a right-skewness test for the distribution of P-values (p < 0.001).
+
+## Results Section 3: Direction of climate effects on measures of disease risk
+
+```{r}
+sum(!is.na(df$es))
+#View(df %>% filter(!is.na(ci.lo) & !is.na(ci.hi)))
+df %>% filter(!is.na(ci.lo) & !is.na(ci.hi)) %>% count() 
+```
+
+```{r}
+# group effect sizes
+df = df%>%
+  mutate(es_cat = ifelse(es < -0.2, 'Negative effect (g < -0.2)', #if CI contains 0
+                         ifelse(abs(es) < 0.2, 'No effect', # otherwise negative
+                                'Positive effect (g > 0.2)')) # or positive
+  )
+
+es_categories = df%>%
+  subset(Linear_Nonlinear == 'Linear')%>%
+  count(es_cat, Environmental_condition)%>%
+  group_by(Environmental_condition)%>%
+  mutate(prop = n /sum(n), tot = sum(n))
+
+paste0(round(es_categories$prop[es_categories$es_cat=="Positive effect (g > 0.2)" & 
+                   es_categories$Environmental_condition=="Temperature"],2)*100,"%")
+
+round(es_categories$n[es_categories$es_cat=="Positive effect (g > 0.2)" & 
+                   es_categories$Environmental_condition=="Temperature"],2)
+paste0(round(es_categories$prop[es_categories$es_cat=="No effect" & 
+                   es_categories$Environmental_condition=="Precipitation"],3)*100,"%")
+
+es_categories$n[es_categories$es_cat=="No effect" & es_categories$Environmental_condition=="Precipitation"]
+```
+
+To compare measured climate effects between studies and disease groups, Hedges g effect size was calculated for each extracted statistic from the studies. There were a total of `r sum(!is.na(df$es))` effects able to be calculated from the dataset. Confidence intervals around Hedges g were able to be calculated for `r df %>% filter(!is.na(ci.lo) & !is.na(ci.hi)) %>% count() %>% pull()` effect sizes. Temperature showed the highest proportion of positive effects on measures of disease risk, as `r paste0(round(es_categories$prop[es_categories$es_cat=="Positive effect (g > 0.2)" & es_categories$Environmental_condition=="Temperature"],2)*100,"%")` of studies (n=`r round(es_categories$n[es_categories$es_cat=="Positive effect (g > 0.2)" & es_categories$Environmental_condition=="Temperature"],2)`) had a value of Hedges g greater than 0.2 (Fig. 2). Nearly half the studies showed no effect of precipitation (`r paste0(round(es_categories$prop[es_categories$es_cat=="No effect" & es_categories$Environmental_condition=="Precipitation"],3)*100,"%")`; n=`r es_categories$n[es_categories$es_cat=="No effect" & es_categories$Environmental_condition=="Precipitation"]`) or humidity (`r paste0(round(es_categories$prop[es_categories$es_cat=="No effect" & es_categories$Environmental_condition=="Humidity"],3)*100,"%")`; n=`r es_categories$n[es_categories$es_cat=="No effect" & es_categories$Environmental_condition=="Humidity"]`) on disease risk. Most subcategories of the data followed the same effect distribution of the full dataset for the measured climate factors, with similar numbers of negative and positive effects.
+
+However, the effect size distributions for vector-borne diseases and diseases vectored by mosquitoes significantly differed from the overall effect size distribution for temperature ***(Anderson-Darling Test: vector borne disease: AD = 2.53; p=0.045; mosquito vectored disease: AD = 5.15; p=0.011).*** Additionally, the effect size distribution for diseases with a livestock principal reservoir differed from the overall humidity effect size distribution ***(Anderson-Darling Test: AD = 2.74; p=0.04).*** When the subsets were compared to the full distributions with the subset removed, ***a few more categories were significantly different:*** non-vectored diseases and diseases with a rodent reservoir significantly differed from the overall temperature distribution, and diseases with a livestock principal reservoir differed from the overall precipitation distribution (Supp. Table SX).
+
+Vector-mediated zoonotic diseases had significantly more positive effects ***(mean=0.35; sd=1.00; n=94)*** reported for temperature when compared to solely animal-hosted diseases ***(mean=-0.02; sd=1.01; n=138) (Two-sample Kolmogorov-Smirnov test; D=0.27; p = 0.0004; Figure 3).*** The distribution of effect sizes for precipitation centred around 0 for both vectored ***(mean=0.06; sd=0.55; n=83)*** and non-vectored ***(mean=0.10; sd=0.74; n=132)*** diseases. There was no significant difference between these distributions ***(D=0.09; p=0.43)***, but the distribution of effect sizes for precipitation had qualitatively larger tails for host only diseases compared to host-vector diseases (Fig. 3B). Humidity for non-vectored diseases had effects mainly clustered around zero ***(mean=0.05; sd=0.64; n=55)***, while vectored diseases tended towards more positive effects ***(mean=0.12; sd=0.70; n=37)***, but this difference was not significant ***(D=0.23; p=0.08).***
+
+------------------------------------------------------------------------
+
+# Supplementary Figures/Tables
+
+`r kable(pvals_levels_wide, caption = "Table S1. Results of chi-square tests conducted on subsets of the datasets.")`
+
+------------------------------------------------------------------------
+
+```{r fig.show='hold', include=TRUE, fig.width = 10, fig.height = 4, echo=FALSE, fig.cap='Fig. S2: Distribution of reported P-values and effect sizes against Journal Impact Factors'}
+ggarrange(p1, p2, ncol = 2, nrow = 1)
+```
+
+------------------------------------------------------------------------
+
+```{r echo=FALSE, fig.height=5, fig.show='hold', fig.width=8.5, include=TRUE, fig.cap='Fig. S3: Funnel plots of standard errors against effect sizes'}
+# Define the function to create the funnel plot
+create_funnel_plot <- function(tmp, point_color, title_plot) {
+  
+  # Calculate the mean effect size
+  mean_es <- mean(tmp$es, na.rm = TRUE)
+  
+  # Calculate the limits for the funnel regions
+  max_se <- max(tmp$se, na.rm = TRUE)
+  
+  # Calculate the x-axis limits based on the maximum absolute value of effect size
+  max_abs_es <- max(abs(tmp$es), na.rm = TRUE)
+  xlim_range <- c(-max_abs_es, max_abs_es)
+  
+  # Create the funnel plot 
+  funnel_plot <- ggplot(tmp, aes(x = es, y = se)) +
+    geom_polygon(data = data.frame(
+      x = c(mean_es - 1.96 * max_se, mean_es + 1.96 * max_se, mean_es),
+      y = c(max_se, max_se, 0)
+    ), aes(x = x, y = y), fill = point_color, alpha = 0.1) +  # Add 95% confidence region
+    geom_point(shape = 1, color = point_color) +  # Scatter plot of effect sizes vs. standard errors
+    geom_vline(xintercept = mean_es, linetype = "dashed") +  # Vertical line at overall effect size
+    scale_x_continuous(limits = xlim_range) +  # Set x-axis limits to ensure zero is centered
+    scale_y_reverse() +  # Reverse the y-axis to have standard errors decreasing upwards
+    xlab("Effect Size (Hedge's g)") +
+    ylab("Standard Error") +
+    ggtitle(title_plot) +
+    theme_minimal()
+
+  return(funnel_plot)
+}
+
+# Example usage:
+# Assuming df is your data frame with columns 'se' (standard error) and 'es' (effect size)
+f1 <- df %>% filter(!is.na(se) & !is.na(es))
+funnel_plot_1 <- create_funnel_plot(f1, "forestgreen", "All env. measures")
+
+f2 <- df %>% filter(!is.na(se) & !is.na(es)) %>% filter(Environmental_condition == "Temperature")
+funnel_plot_2 <- create_funnel_plot(f2, "cyan4", "Temperature")
+
+f3 <- df %>% filter(!is.na(se) & !is.na(es)) %>% filter(Environmental_condition == "Precipitation")
+funnel_plot_3 <- create_funnel_plot(f3, "cyan4", "Precipitation")
+
+f4 <- df %>% filter(!is.na(se) & !is.na(es)) %>% filter(Environmental_condition == "Humidity")
+funnel_plot_4 <- create_funnel_plot(f4, "cyan4", "Humidity")
+
+abc = ggarrange(funnel_plot_1, funnel_plot_2, funnel_plot_3, funnel_plot_4, nrow = 2, ncol = 2)
+print(abc)
+```
