@@ -532,6 +532,34 @@ list_regtest = list(All = regtest_all$pval, Temperature = regtest_temp$pval, Pre
 
 print("P-values of regtests:")
 print(list_regtest)
+
+#--------------------------------------
+# Extract the p-values and z-values
+pval_all <- regtest_all$pval
+zval_all <- regtest_all$zval
+est_all <- regtest_all$est
+
+pval_temp <- regtest_temp$pval
+zval_temp <- regtest_temp$zval
+est_temp <- regtest_temp$est
+
+pval_prec <- regtest_prec$pval
+zval_prec <- regtest_prec$zval
+est_prec <- regtest_prec$est
+
+pval_hum <- regtest_hum$pval
+zval_hum <- regtest_hum$zval
+est_hum <- regtest_hum$est
+
+# Create a data frame
+results_regtests <- data.frame(
+  Data = c("Overall_dataset", "Temperature", "Precipitation", "Humidity"),
+  Intercept = c(est_all, est_temp, est_prec, est_hum),
+  Z_value = c(zval_all, zval_temp, zval_prec, zval_hum),
+  P_value = c(pval_all, pval_temp, pval_prec, pval_hum)
+)
+
+write.csv(results_regtests, 'outputs/tables/eggers_funnel_tests.csv', row.names = F)
 ```
 
 ### P-value distribution
