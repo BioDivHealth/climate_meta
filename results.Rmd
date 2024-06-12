@@ -409,7 +409,6 @@ print(list_of_dfs)
 # saveWorkbook(wb, file_name, overwrite = TRUE)
 ```
 
-
 ### Journals IF vs Effect Sizes/Pvals
 
 ```{r journals, echo=TRUE, message=TRUE, warning=TRUE, fig.show='hold',fig.width = 10, fig.height = 4}
@@ -471,6 +470,7 @@ ggarrange(p1, p2, ncol = 2, nrow = 1)
 ```
 
 ### Funnel plots of SE vs ES
+
 ```{r funnelplots, echo=FALSE, fig.height=5, fig.show='hold', fig.width=8.5, include=TRUE, fig.cap='Fig. S3: Funnel plots of standard errors against effect sizes'}
 # Define the function to create the funnel plot
 create_funnel_plot <- function(tmp, point_color, title_plot) {
@@ -518,7 +518,6 @@ funnel_plot_4 <- create_funnel_plot(f4, "cyan4", "Humidity")
 comb = ggarrange(funnel_plot_1, funnel_plot_2, funnel_plot_3, funnel_plot_4, nrow = 2, ncol = 2)
 print(comb)
 ```
-
 
 ### Eggers test
 
@@ -847,8 +846,22 @@ results_df
 #write.csv(results_df, 'outputs/tables/anderson_darling_results.csv', row.names = F)
 ```
 
+# 3.2 Reported direction vs calculated
+
+```{r rep_vs_calc}
+# Filter only P-val <0.05 & no missing directions/es_cats
+tmp = df  %>% 
+       filter(!is.na(Direction) & !is.na(es_cat) & Direction!="") %>% 
+       filter(P.value_general != "" & P.value_general != ">0.05") %>%
+       select(Direction, es, es_cat, P.value_general)
+
+
+```
+
 # Main figures
+
 ## Figure 1
+
 ```{r fig1, echo=TRUE, fig.height=9.5, fig.width=10.5}
 source('figure1.R')
 
@@ -858,6 +871,7 @@ plot(Fig1)
 ```
 
 ## Figure 2
+
 ```{r fig2, include=FALSE}
 source('figure2.R')
 #colors = c("#053C5E" , '#fee8c8', '#A31621')
@@ -868,4 +882,3 @@ f2 = createFig2(df, results_df, colors)
 
 ggsave(f2, file="outputs/Figure2.png", device="png", units="in", width=12, height=9, dpi=600, scale=0.92)
 ```
-
