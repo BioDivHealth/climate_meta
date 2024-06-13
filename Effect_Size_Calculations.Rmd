@@ -67,11 +67,11 @@ zooALL3$Upper_new<-mapply(convert_calculation_value,zooALL3$Factorial,zooALL3$Up
 zooALL3$Lower_new<-mapply(convert_calculation_value,zooALL3$Factorial,zooALL3$Lower)
 
 #check
-zooALL3$Factorial[528]
-zooALL3$value_new[528]==zooALL3$Value[528]/1.8
-
-zooALL3$Factorial[645]
-zooALL3$value_new[645]==zooALL3$Value[645]/100
+#zooALL3$Factorial[528]
+#zooALL3$value_new[528]==zooALL3$Value[528]/1.8
+#
+#zooALL3$Factorial[645]
+#zooALL3$value_new[645]==zooALL3$Value[645]/100
 
 
 length(mapply(convert_calculation_value, zooALL3$Factorial,zooALL3$Value)) 
