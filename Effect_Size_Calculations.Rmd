@@ -31,9 +31,6 @@ library(summarytools)
 
 
 ```{r setting directory, include=FALSE}
-#set work directory
-#setwd("D://ZSL - effect of climate change on global zoonotic risk/3. Statistics/Zoonotic Disease and Climate Change")
-
 # read-in data
 zooALL<-read.csv("./data/dataset_final.csv",header=T, stringsAsFactors=FALSE, fileEncoding="latin1")
 
