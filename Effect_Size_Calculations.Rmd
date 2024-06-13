@@ -1,0 +1,1865 @@
+---
+title: "Quicker coding"
+author: "Lewis Gourlay"
+date: "2023-04-03"
+output: html_document
+---
+
+#### Set-up of packages & Data
+
+```{r Loading libraries, include=FALSE}
+#set work directory
+library(plyr)
+library(dplyr)
+library(ggplot2)
+library(esc)
+library(extrafont)
+library(cowplot)
+library(tinytest)
+library(testthat)
+library(patchwork)
+library(ggdist)
+library(ggthemes)
+library(tidyquant)
+library(tidyr)
+library(metafor)
+library(maps)
+library(maptools)
+library(ggstance)
+library(summarytools)
+```
+
+
+```{r setting directory, include=FALSE}
+#set work directory
+#setwd("D://ZSL - effect of climate change on global zoonotic risk/3. Statistics/Zoonotic Disease and Climate Change")
+
+# read-in data
+zooALL<-read.csv("./data/dataset_final.csv",header=T, stringsAsFactors=FALSE, fileEncoding="latin1")
+
+# remove datapoints
+zooALL<-zooALL[!is.na(zooALL$Value), ] # remove missing data
+#zooALL<-zooALL[zooALL$Value<25 & zooALL$Value>(-25), ]
+
+#names(zooALL)[names(zooALL)=="Data_ID"]<-"study" #rename Data_ID to Study for merging datasets
+```
+
+```{r Convert environmental variables to the same scale, include=FALSE}
+
+zooALL2<-zooALL #create copy dataset
+zooALL2$Specific_scale[zooALL2$Specific_scale==""]<-1
+
+zooALL2$Specific_scale <- as.factor(zooALL2$Specific_scale) #convert type to factor variables
+zooALL2 <- subset(zooALL2,! zooALL2$Specific_scale  %in% c("ln(mm)","Log(degrees)","Log(mm)","mm^3/yr")) #remove non-numerical values
+summary(zooALL2$Specific_scale)
+
+zooALL3<-data.frame(Factorial = zooALL2$Specific_scale , Value = zooALL2$Value,Lower = zooALL2$Lower, Upper = zooALL2$Upper)
+zooALL3$Upper<-as.numeric(zooALL3$Upper)
+zooALL3$Lower<-as.numeric(zooALL3$Lower)
+
+# write function for Value
+convert_calculation_value <- function(factorial,value) {
+  
+  if(!is.na(factorial)) {
+    return(value/as.numeric(as.character(factorial)))} else {value}
+}
+
+# Apply conversions
+zooALL3$value_new<-(mapply(convert_calculation_value, zooALL3$Factorial,zooALL3$Value))
+zooALL3$Upper_new<-mapply(convert_calculation_value,zooALL3$Factorial,zooALL3$Upper)
+zooALL3$Lower_new<-mapply(convert_calculation_value,zooALL3$Factorial,zooALL3$Lower)
+
+#check
+zooALL3$Factorial[528]
+zooALL3$value_new[528]==zooALL3$Value[528]/1.8
+
+zooALL3$Factorial[645]
+zooALL3$value_new[645]==zooALL3$Value[645]/100
+
+
+length(mapply(convert_calculation_value, zooALL3$Factorial,zooALL3$Value)) 
+length(mapply(convert_calculation_value,zooALL3$Factorial,zooALL3$Upper)) 
+length(mapply(convert_calculation_value,zooALL3$Factorial,zooALL3$Lower)) 
+
+length(zooALL3$value_new) 
+length(zooALL3$Upper_new) 
+length(zooALL3$Lower_new) 
+
+##unlist and add on
+### unlist 2 to deal with NULL
+unlist2<-function(a.list) {
+  
+  return(do.call(c, lapply(a.list, (function(x) {
+  if (is.null(x) | length(x) == 0) {NA} else { x } 
+}))))
+  
+}
+  
+zooALL2$Value<-unlist2(zooALL3$value_new)
+zooALL2$Upper<-unlist2(zooALL3$Upper_new)
+zooALL2$Lower<-unlist2(zooALL3$Lower_new)
+
+zooALL<-zooALL2 #use dataset which contains data using scales stated numerically
+```
+
+```{r composition of final dataset}
+
+# Count the number of independent studies
+num_studies <- zooALL %>%
+  filter(!is.na(Reference_ID)) %>%
+  summarise(num_studies = n_distinct(Reference_ID))
+
+# Print the result
+cat("Number of independent studies:",num_studies$num_studies, "\n")
+
+
+```
+
+```{r Function to convert standard error to standard deviation, include = TRUE}
+# define the function to test
+se_to_sd <- function(se, n) {
+  se * sqrt(n)
+}
+```
+
+```{r Function to convert 95% Confidence interval to Standard deviation, include = TRUE}
+# define the function to test
+ci_to_sd<-function(ci_lower, ci_upper, n, conf_level = 0.95) {
+  crit_val <- qnorm((1 + conf_level) / 2)
+  sqrt(n) * (ci_upper - ci_lower) / (2 * crit_val)
+}
+```
+
+#### Effect sizes
+
+```{r Effect sizes for Odds Ratio, include = TRUE}
+#Subset data
+OR.1<-subset(zooALL, zooALL$Type %in% c("Odds ratio"))
+OR<-subset(OR.1, OR.1$Error %in% c("95% Confidence"))
+
+#Change character columns to numeric
+OR$Std._error<-as.numeric(OR$Std._error)
+OR$Value<-as.numeric(OR$Value) 
+OR$N.value<-as.numeric(OR$N.value) 
+OR$Upper<-as.numeric(OR$Upper)
+OR$Lower<-as.numeric(OR$Lower) 
+
+#Conversion from  95% Confidence interval to Standard error
+OR$Std._error<-(OR$Upper - OR$Lower) / (2 * 1.96)
+
+#Calculate effect sizes
+OR$N.value[is.na(OR$N.value)]<-median(OR$N.value,na.rm=TRUE) #assign median N.value to missing datapoints
+
+Hedge_OR<-as.data.frame(convert_or2d(or = OR$Value, se=OR$Std._error, totaln = OR$N.value, es.type = c("g"),study = OR$study))
+Hedge_OR<-Hedge_OR[!is.na(Hedge_OR$se),]#Hedge's g for logistic regression models
+
+OR_comp<-merge(OR,Hedge_OR, by = "study")
+
+### Attempt to convert Odds ratio with no error to Hedge's G effect size
+OR_t <- subset(OR.1, OR.1$Country %in% c("Australia"))
+
+# calculating effect size using Chat GPT formula
+Hedge_OR_t <-as.data.frame(log(OR_t$Value) * sqrt(3) / pi)
+
+
+Hedge_OR_t <-cbind(OR_t$study, Hedge_OR_t)
+names(Hedge_OR_t)[names(Hedge_OR_t)=="log(OR_t$Value) * sqrt(3)/pi"]<-"es"
+names(Hedge_OR_t)[names(Hedge_OR_t)=="OR_t$study"]<-"study"
+
+# Plotting graph
+
+OR_comp_scatter<-ggplot(data = OR_comp, aes(x=Value, y=es))+geom_point()+
+  xlab("Odds Ratio")+ylab("Effect size (g)")+theme_classic()+geom_line() +geom_text(aes(label = study),vjust = 1)+
+  geom_smooth(method = "lm", se = FALSE) #scatter showing linear relationship between correlation coefficient and effect size
+
+# Assess outlier using residuals
+model <- lm(es~ Value, data = OR_comp)
+residuals <- model$residuals
+outliers <- OR_comp[abs(residuals) > 2*sd(residuals), ]
+
+OR_comp_scatter<-OR_comp_scatter+ geom_point(data = outliers, aes(x=outliers$Value, y=outliers$es,color="red",size =3)) #scatter showing linear relationship between correlation coefficient and effect size
+
+OR_comp_scatter
+```
+
+
+
+```{r Effect sizes for Beta coefficient, include=TRUE, error=TRUE}
+Beta<-subset(zooALL,zooALL$Type %in% c("Beta coefficient")) #subset data
+
+#Convert 95% Confidence interval to Standard deviation
+Beta_95<-subset(Beta, Beta$Error %in% c("95% Confidence","95% Credible"))
+
+Beta$Value<-as.numeric(Beta$Value) #converting type to numeric
+Beta_95$Upper<-as.numeric(Beta_95$Upper) #converting type to numeric
+Beta_95$Lower<-as.numeric(Beta_95$Lower) #converting type to numeric
+Beta_95$N.value<-as.numeric(Beta_95$N.value) #converting type to numeric
+Beta$Std._error<-as.numeric(Beta$Std._error) #converting type to numeric
+Beta_95_sd<-as.data.frame((sqrt(Beta_95$N.value) * (Beta_95$Upper - Beta_95$Lower))/3.92) #Std. deviation from 95% CI
+Beta_95<-cbind(Beta_95,Beta_95_sd)
+names(Beta_95)[names(Beta_95)=="(sqrt(Beta_95$N.value) * (Beta_95$Upper - Beta_95$Lower))/3.92"]<-"Std_dev"
+
+#Convert Standard error to Standard Deviation
+Beta_SE<-(subset(Beta,Beta$Error %in% ("Std. error")))
+
+Beta_SE$Upper<-as.numeric(Beta_SE$Upper) #change character to numeric
+Beta_SE$Lower<-as.numeric(Beta_SE$Lower)#change character to numeric
+Beta_SE$N.value<-as.numeric(Beta_SE$N.value) #change character to numeric
+Beta_SE$Std._error<-as.numeric(Beta_SE$Std._error)
+Beta_SE.1<-as.data.frame(Beta_SE$Std._error * sqrt(Beta_SE$N.value)) #Std. deviation from Std. error
+Beta_SE<-cbind(Beta_SE,Beta_SE.1)
+names(Beta_SE)[names(Beta_SE)=="Beta_SE$Std._error * sqrt(Beta_SE$N.value)"]<-"Std_dev"
+
+#Calculate Hedge's G effect size
+Beta_Stdev <-rbind(Beta_95, Beta_SE)
+Hedge_Beta<-data.frame(esc_beta(beta = Beta_Stdev$Value, sdy = Beta_Stdev$Std_dev, grp1n = Beta_Stdev$N.value/2, grp2n = Beta_Stdev$N.value/2, es.type = ("g"),study = Beta_Stdev$study)) 
+Hedge_Beta<-Hedge_Beta[!is.na(Hedge_Beta$se),]
+
+#Calculating the Hedge's G of beta coefficients without error to see if they are outliers or can be used
+Beta_t<-subset(Beta, !Beta$Error %in% c("95% Confidence", "Std. error", "95% Credible"))
+
+Beta_d<-as.data.frame(cohens_d(Beta_t$Value)) #calculate cohen's effect size
+
+
+Beta_t1<-cbind(Beta_t, Beta_d) #Bind Dataframe and Cohen's D effect size calculation
+summary(Beta_t1)
+names(Beta_t1)[names(Beta_t1)=="cohens_d(Beta_t$Value)"]<-"d"
+
+Hedge_Beta_t<-as.data.frame(hedges_g(d=Beta_t1$d, totaln =Beta_t1$N.value)) #Calculate hedge G from Cohen's D
+
+summary(Hedge_Beta_t)
+names(Hedge_Beta_t)[names(Hedge_Beta_t)=="hedges_g(d = Beta_t1$d, totaln = Beta_t1$N.value)"]<-"es" #change name to 'es'
+Beta_t2<-cbind(Beta_t$study, Hedge_Beta_t)
+names(Beta_t2)[names(Beta_t2)=="Beta_t$study"]<-"study" #change name to 'es'
+
+Hedge_Beta_t<-Beta_t2
+
+#Unit scaling and Sanity checks
+Beta_comp<-merge(Beta_Stdev, Hedge_Beta, by="study")
+names(Beta_comp)[names(Beta_SE)=="Value"]<-"Correlation"
+Beta_comp_scatter<-ggplot(data = Beta_comp, aes(x=Value, y=es,label=study))+geom_point()+
+  xlab("Correlation coefficient (β)")+ylab("Effect size (g)")+theme_classic()+geom_line()+geom_text(aes(label = study),vjust = 1)+
+  geom_smooth(method = "lm", se = FALSE)
+
+# Assess outlier using residuals
+model <- lm(es~ Value, data = Beta_comp)
+residuals <- model$residuals
+outliers <- Beta_comp[abs(residuals) > 2*sd(residuals), ]
+
+Beta_comp_scatter<-Beta_comp_scatter+ geom_point(data = outliers, aes(x=outliers$Value, y=outliers$es,color="red",size =3)) #scatter showing linear relationship between correlation coefficient and effect size
+
+
+Beta_comp_scatter
+
+#graphing Beta coefficients which don't have errors
+Beta_t_comp<-merge(Beta_t, Beta_t2, by="study")
+Beta_t_comp_scatter<-ggplot(data = Beta_t_comp, aes(x=Value, y=es,label=study))+geom_point()+
+  xlab("Correlation coefficient (β)")+ylab("Effect size (g)")+theme_classic()+geom_line()+geom_text(aes(label = study),vjust = 1)+
+  geom_smooth(method = "lm", se = FALSE)
+
+Beta_t_comp_scatter
+
+### Test for Standard error
+Beta_test_se<-subset(Beta_comp,Beta_comp$Error %in% c("Std. error"))
+Beta_test_se <- sample_n(Beta_test_se, 5)
+
+Beta_test_se$Std._error<-as.numeric(Beta_test_se$Std._error)
+Beta_test_se$N.value<-as.numeric(Beta_test_se$N.value)
+Beta_test_se$Std_dev<-as.numeric(Beta_test_se$Std_dev)
+
+test_that("se_to_sd returns correct standard deviation for all rows in a dataframe", {
+  
+  Beta_test_se<-data.frame(se=Beta_test_se$Std._error,
+                           n=Beta_test_se$N.value,
+                           sd = Beta_test_se$Std_dev)
+  
+  expected_sds <- Beta_test_se$sd
+  actual_sds <- apply(Beta_test_se, 1, function(x) se_to_sd(x[1], x[2]))
+  expect_equal(round(actual_sds,3), round(expected_sds,3))
+})
+
+### Test for 95% CI
+Beta_test_ci <- subset(Beta_comp, Error %in% c("95% Confidence"))
+Beta_test_ci <- sample_n(Beta_test_ci, 5)
+
+# Test the function
+test_that("ci_to_sd returns correct standard deviation for all rows", {
+  # Create the data frame
+  data <- data.frame(
+    ci_lower = Beta_test_ci$Lower,
+    ci_upper = Beta_test_ci$Upper,
+    sd = Beta_test_ci$Std_dev,
+    n = Beta_test_ci$N.value
+  )
+  
+  # Calculate the expected and actual standard deviations
+  expected_sds <- data$sd
+  actual_sds <- apply(data, 1, function(x) ci_to_sd(x[1], x[2], x[4]))
+  
+  # Compare the expected and actual standard deviations
+  expect_equal(actual_sds, expected_sds)
+})
+```
+
+
+```{r Effect sizes for Unstandardised coefficients, include=TRUE}
+B<-(subset(zooALL, zooALL$Type %in% c("Correlation coefficient"))) #subset
+B<-(subset(B,!B$Statistical_method %in% c("Spearman rank correlation", "Pearson correlation"))) #remove rank correlations
+
+#95% Confidence interval conversion
+B_95<-(subset(B,B$Error %in% c("95% Confidence", "95% Credible")))
+B_95$Upper<-as.numeric(B_95$Upper) #converting type to numeric
+B_95$Lower<-as.numeric(B_95$Lower) #converting type to numeric
+B_95$N.value<-as.numeric(B_95$N.value) #converting type to numeric
+B$Std._error<-as.numeric(B$Std._error) #converting type to numeric
+B_95_sd<-as.data.frame((sqrt(B_95$N.value) * (B_95$Upper - B_95$Lower))/3.92) #Std. deviation from 95% CI
+B_95<-cbind(B_95,B_95_sd)
+names(B_95)[names(B_95)=="(sqrt(B_95$N.value) * (B_95$Upper - B_95$Lower))/3.92"]<-"Std_dev"
+
+#Standard error conversion
+B_SE<-(subset(B,B$Error %in% ("Std. error"))) #subset data to those with a SE
+B_SE$Upper<-as.numeric(B_SE$Upper) #change character to numeric
+B_SE$Lower<-as.numeric(B_SE$Lower)#change character to numeric
+B_SE$N.value<-as.numeric(B_SE$N.value) #change character to numeric
+B_SE$Std._error<-as.numeric(B_SE$Std._error)
+B_SE.1<-as.data.frame(B_SE$Std._error * sqrt(B_SE$N.value)) #Std. deviation from Std. error
+B_SE<-cbind(B_SE,B_SE.1)
+names(B_SE)[names(B_SE)=="B_SE$Std._error * sqrt(B_SE$N.value)"]<-"Std_dev"
+
+
+
+#Calculate hedge's G effect size
+B_Stdev<-rbind(B_95, B_SE)
+B_Stdev$N.value[is.na(B_Stdev$N.value)]<-mean(B_Stdev$N.value,na.rm=TRUE)
+Hedge_B<-as.data.frame(esc_B(b = B_Stdev$Value, sdy = B_Stdev$Std_dev, grp1n = B_Stdev$N.value/2, grp2n = B_Stdev$N.value/2, es.type =c("g"),study = B_Stdev$study)) #calculate hedge g
+
+#Unit scaling and Sanity checks
+B_comp<-as.data.frame(merge(B_Stdev, Hedge_B, by="study"))
+names(B_comp)[names(B_SE)=="Value"]<-"Correlation"
+B_comp_scatter<-ggplot(data = B_comp, aes(x=Value, y=es,label=as.character(N.value)))+geom_point()+xlab("Correlation coefficient")+ylab("Effect size (g)")+
+theme_classic()+geom_line()+geom_text(aes(label = study),vjust = 1)+
+geom_smooth(method = "lm", se = FALSE) #scatter showing linear relationship between correlation coefficient and effect size
+
+# Assess outlier using residuals
+model <- lm(es~ Value, data = B_comp)
+residuals <- model$residuals
+outliers <- B_comp[abs(residuals) > 2*sd(residuals), ]
+
+B_comp_scatter<-B_comp_scatter+ geom_point(data = outliers, aes(x=outliers$Value, y=outliers$es,color="red",size =3)) #scatter showing linear relationship between correlation coefficient and effect size
+
+B_comp_scatter
+
+### Test for Standard error
+B_test_se<-subset(B_comp,B_comp$Error %in% c("Std. error"))
+B_test_se <- sample_n(B_test_se, 5)
+
+B_test_se$Std._error<-as.numeric(B_test_se$Std._error)
+B_test_se$N.value<-as.numeric(B_test_se$N.value)
+B_test_se$Std_dev<-as.numeric(B_test_se$Std_dev)
+
+
+test_that("se_to_sd returns correct standard deviation for all rows in a dataframe", {
+  
+  B_test_se<-data.frame(se=B_test_se$Std._error,
+                           n=B_test_se$N.value,
+                           sd = B_test_se$Std_dev)
+  
+  expected_sds <- B_test_se$sd
+  actual_sds <- apply(B_test_se, 1, function(x) se_to_sd(x[1], x[2]))
+expect_equal(round(actual_sds,3), round(expected_sds,3))
+})
+
+
+### Test for 95% CI
+B_test_ci <- subset(B_comp, Error %in% c("95% Confidence"))
+
+# Test the function
+test_that("ci_to_sd returns correct standard deviation for all rows", {
+  # Create the data frame
+  data <- data.frame(
+    ci_lower = B_test_ci$Lower,
+    ci_upper = B_test_ci$Upper,
+    sd = B_test_ci$Std_dev,
+    n = B_test_ci$N.value
+  )
+  
+  # Calculate the expected and actual standard deviations
+  expected_sds <- data$sd
+  actual_sds <- apply(data, 1, function(x) ci_to_sd(x[1], x[2], x[4]))
+  
+  # Compare the expected and actual standard deviations
+expect_equal(round(actual_sds,2), round(expected_sds,2))
+})
+```
+
+
+```{r Effect sizes for Spearman & Pearson correlaiton, include=TRUE}
+R<- subset(zooALL, zooALL$Statistical_method %in% c("Spearman rank correlation", "Pearson correlation")) #pearson and spearmans
+B.1<-subset(B,!B$Error %in% c("95% Confidence", "Std. error")) #correlation coefficients without error values
+R.1<-rbind(R, B.1)
+R_d<-cohens_d(R.1$Value) #calculate cohen's effect size
+
+R.1$N.value<-as.numeric(R.1$N.value) 
+R.2<-cbind(R.1,R_d) #Bind Dataframe and Cohen's D effect size calculation
+
+Hedge_R<-as.data.frame(hedges_g(d=R.2$R_d, totaln = R.2$N.value)) #Calculate hedge G from Cohen's D
+
+names(Hedge_R)[names(Hedge_R)=="hedges_g(d = R.2$R_d, totaln = R.2$N.value)"]<-"es" #change name to 'es'
+R_comp<-cbind(R.2, Hedge_R)
+names(Hedge_R)[names(Hedge_R)=="R$study"]<-"study" #change name to 'study' to allow datasets to be combined later 
+
+Hedge_R<-cbind(R.2$study, Hedge_R)
+names(Hedge_R)[names(Hedge_R)=="R.2$study"]<-"study"
+
+#Unit scaling and Sanity checks
+
+names(R_comp)[names(R_comp)=="Value"]<-"Correlation"
+R_comp_scatter<-ggplot(data = R_comp,aes(x=R_comp$Correlation, y=es))+geom_point()+xlab("Correlation coefficient (r)")+ylab("Effect size (g)")+
+  geom_line()+theme_classic()+
+geom_smooth(method = "lm", se = FALSE)
+R_comp_scatter #scatter showing linear relationship between correlation coefficient and effect size 
+
+
+# Assess outlier using residuals
+model <- lm(es~ Correlation, data = R_comp)
+residuals <- model$residuals
+outliers <- R_comp[abs(residuals) > 2*sd(residuals), ]
+
+R_comp_scatter<-R_comp_scatter+ geom_point(data = outliers, aes(x=outliers$Correlation, y=outliers$es,color="red",size =3)) #scatter showing linear relationship between correlation coefficient and effect size
+
+R_comp_scatter
+```
+```{r Effect sizes for Ratios, include=TRUE}
+
+Ratios<-subset(zooALL,zooALL$Type %in% c("Relative risk", "Risk ratio","Incidence rate ratio","Prevelance ratio","Hospitilisation rate ratio")) #subset
+
+#convert 95% confidence intervals to Standard error
+Ratios<-(subset(Ratios, Ratios$Error %in% c("95% Confidence","95% Credible")))
+
+Ratios$Value<-as.numeric(Ratios$Value) #convert to numeric
+Ratios$N.value<-as.numeric(Ratios$N.value) #convert to numeric
+Ratios$Upper<-as.numeric(Ratios$Upper) #convert to numeric
+Ratios$Lower<-as.numeric(Ratios$Lower) #convert to numeric
+
+Ratios$Std._error<-(Ratios$Upper - Ratios$Value)/3.92 #finding SE
+names(Ratios)[names(Ratios)=="Ratios_SE"]<-"SE"
+Ratios<-Ratios[complete.cases(Ratios$Upper), ]
+
+##reasonable?
+Ratios$N.value[is.na(Ratios$N.value)]<-median(Ratios$N.value,na.rm=TRUE)
+
+Hedge_Ratios<-as.data.frame(convert_or2d(or =Ratios$Value, se = Ratios$Std._error, totaln = Ratios$N.value, es.type = c("g"), study = Ratios$study))
+
+##remove errors
+Hedge_Ratios<-Hedge_Ratios[Hedge_Ratios$se!=0,]
+
+#Unit scaling and Sanity checks
+Ratios_comp<-merge(Ratios,Hedge_Ratios, by = "study")
+Ratios_comp_scatter<-ggplot(data = Ratios_comp, aes(x=Value, y=es))+geom_point()+
+  xlab("Ratios")+ylab("Effect size (g)")+theme_classic()+geom_line()+geom_smooth(method = "lm", se = FALSE)
+Ratios_comp_scatter #scatter showing linear relationship between correlation coefficient and effect size  
+
+# Assess outlier using residuals
+model <- lm(es~ Value, data = Ratios_comp)
+residuals <- model$residuals
+outliers <- Ratios_comp[abs(residuals) > 2*sd(residuals), ]
+
+Ratios_comp_scatter<-Ratios_comp_scatter +geom_point(data = outliers, aes(x=outliers$Value, y=outliers$es,color="red",size =3)) #scatter showing linear relationship between correlation coefficient and effect size
+
+Ratios_comp_scatter
+```
+
+
+```{r Effect sizes for Z-scores, include=TRUE}
+z<-(subset(zooALL, zooALL$Type %in% c("Z-score")))
+z$N.value<-as.numeric(z$N.value)
+
+##reasonable?
+z$N.value[is.na(z$N.value)]<-median(z$N.value,na.rm=TRUE)
+
+
+Hedge_z<-convert_z2r(z$Value)
+Hedge_z<-cohens_d(Hedge_z)
+Hedge_z<-as.data.frame(hedges_g(d=Hedge_z, totaln = z$N.value))
+
+Hedge_z<-cbind(z$study, Hedge_z)
+names(Hedge_z)[names(Hedge_z)=="z$study"]<-"study"
+names(Hedge_z)[names(Hedge_z)=="hedges_g(d = Hedge_z, totaln = z$N.value)"]<-"es"
+
+#Unit scaling and Sanity checks
+z_comp<-merge(z,Hedge_z, by = "study")
+z_comp_scatter<-ggplot(data = z_comp, aes(x=Value, y=es))+geom_point()+
+  xlab("Z-score")+ylab("Effect size (g)")+theme_classic()+geom_line()+geom_smooth(method = "lm", se = FALSE) #scatter showing linear relationship between correlation coefficient and effect size
+
+# Assess outlier using residuals
+model <- lm(es~ Value, data = z_comp)
+residuals <- model$residuals
+outliers <- z_comp[abs(residuals) > 2*sd(residuals), ]
+
+z_comp_scatter<-z_comp_scatter +geom_point(data = outliers, aes(x=outliers$Value, y=outliers$es,color="red",size =3)) #scatter showing linear relationship between correlation coefficient and effect size
+
+z_comp_scatter
+```
+```{r Effect sizes for T-test, include=TRUE}
+t<-(subset(zooALL, zooALL$Type %in% c("T-value")))
+Hedge_t<-as.data.frame(esc_t(t=2.24, p=0.05, totaln = 8917, es.type = c("g"), study = t$study))
+```
+
+```{r Effect sizes for Chi-square, include=TRUE}
+Chi<-subset(zooALL, zooALL$Type %in% ("Chi-square")) #Subset
+Hedge_chi<-as.data.frame(esc_chisq(chisq = 4.75, p = 0.03, totaln = 3006, es.type = c("g"), study = Chi$study)) # Effect size Hedge's g
+```
+
+
+```{r Effect sizes for  F-statistic, include=TRUE}
+FS<-subset(zooALL, zooALL$Type %in% ("F-statistic")) #subset f-statistics
+
+FS$Value<-as.numeric(FS$Value)
+FS$N.value<-as.numeric(FS$N.value)
+Hedge_F<-as.data.frame(esc_f(f = FS$Value, totaln = FS$N.value, es.type = c("g"),study = FS$study)) # Effect size Hedge's g
+
+#Unit scaling and Sanity checks
+F_comp<-merge(FS,Hedge_F, by = "study")
+F_comp_scatter<-ggplot(data = F_comp, aes(x=Value, y=es))+geom_point()+
+  xlab("F-statistic")+ylab("Effect size (g)")+theme_classic()+geom_line()+geom_smooth(method = "lm", se = FALSE) #scatter showing linear relationship between correlation coefficient and effect size
+
+# Assess outlier using residuals
+model <- lm(es~ Value, data = F_comp)
+residuals <- model$residuals
+outliers <- F_comp[abs(residuals) > 2*sd(residuals), ]
+
+F_comp_scatter<-F_comp_scatter+geom_point(data = outliers, aes(x=outliers$Value, y=outliers$es,color="red",size =3)) #scatter showing linear relationship between correlation coefficient and effect size
+
+F_comp_scatter
+```
+```{r Effect sizes for Percentage change, include=TRUE, error=TRUE}
+p<-subset(zooALL,zooALL$Type %in% "Percent change") #subset
+
+p$B<-(p$Value/100)#convert % change to a rough b coefficient
+p$L<-(p$Lower/100) #convert % change error to a rough L limit
+p$U<-(p$Upper/100) #convert % change error to a rough U limit
+
+#Convert 95% Confidence interval to Standard deviation
+p_95<-subset(p, p$Error %in% c("95% Confidence"))
+
+p$B<-as.numeric(p$B) #converting type to numeric
+p_95$U<-as.numeric(p_95$U) #converting type to numeric
+p_95$L<-as.numeric(p_95$L) #converting type to numeric
+p_95$N.value<-as.numeric(p_95$N.value) #converting type to numeric
+p$Std._error<-as.numeric(p$Std._error) #converting type to numeric
+p_95_sd<-as.data.frame((sqrt(p_95$N.value) * (p_95$U - p_95$L))/3.92) #Std. deviation from 95% CI
+p_95<-cbind(p_95,p_95_sd)
+summary(p_95)
+names(p_95)[names(p_95)=="(sqrt(p_95$N.value) * (p_95$U - p_95$L))/3.92"]<-"Std_dev"
+
+#Convert Standard error to Standard Deviation
+p_SE<-(subset(p,p$Error %in% ("Std. error")))
+
+p_SE$U<-as.numeric(p_SE$U) #change character to numeric
+p_SE$L<-as.numeric(p_SE$L)#change character to numeric
+p_SE$N.value<-as.numeric(p_SE$N.value)
+p_SE$Std._error<-as.numeric(p_SE$Std._error)
+
+p_SE.1<-as.data.frame(p_SE$Std._error * sqrt(p_SE$N.value)) #Std. deviation from Std. error
+p_SE<-cbind(p_SE,p_SE.1)
+summary(p_SE)
+names(p_SE)[names(p_SE)=="p_SE$Std._error * sqrt(p_SE$N.value)"]<-"Std_dev"
+
+#Calculate Hedge's G effect size
+p_Stdev <-rbind(p_95, p_SE)
+
+Hedge_p<-as.data.frame(esc_beta(beta = p_Stdev$B, sdy = p_Stdev$Std_dev, grp1n = p_Stdev$N.value/2, grp2n = p_Stdev$N.value/2, es.type = "g",study = p_Stdev$study))
+
+Hedge_p<-Hedge_p[!is.na(Hedge_p$se),]
+
+#Unit scaling and Sanity checks
+p_comp<-merge(p_Stdev, Hedge_p, by="study")
+names(p_comp)[names(p_SE)=="B"]<-"Correlation"
+p_comp_scatter<-ggplot(data = p_comp, aes(x=Correlation, y=es,label=study))+geom_point()+
+  xlab("Correlation coefficient")+ylab("Effect size (g)")+theme_classic()+geom_line()+geom_text(aes(label = study),vjust = 1)+
+  geom_smooth(method = "lm", se = FALSE)
+
+
+# Assess outlier using residuals
+model <- lm(es~ p_comp$Correlation, data = p_comp)
+residuals <- model$residuals
+outliers <- p_comp[abs(residuals) > 2*sd(residuals), ]
+
+p_comp_scatter<-p_comp_scatter+ geom_point(data = outliers, aes(x=outliers$Correlation, y=outliers$es,color="red",size =3)) #scatter showing linear relationship between correlation coefficient and effect size
+
+p_comp_scatter
+
+### Test for Standard error
+p_test_se<-subset(p_comp,p_comp$Error %in% c("Std. error"))
+p_test_se <- sample_n(p_test_se,size = 3)
+
+p_test_se$Std._error<-as.numeric(p_test_se$Std._error)
+p_test_se$N.value<-as.numeric(p_test_se$N.value)
+p_test_se$N.value
+p_test_se$Std_dev<-as.numeric(p_test_se$Std_dev)
+
+test_that("se_to_sd returns correct standard deviation for all rows in a dataframe", {
+  
+  p_test_se<-data.frame(se=p_test_se$Std._error,
+                           n=p_test_se$N.value,
+                           sd = p_test_se$Std_dev)
+  
+  expected_sds <- p_test_se$sd
+  actual_sds <- apply(p_test_se, 1, function(x) se_to_sd(x[1], x[2]))
+  expect_equal(round(actual_sds,3), round(expected_sds,3))
+})
+
+### Test for 95% CI
+p_test_ci <- subset(p_comp, Error %in% c("95% Confidence"))
+p_test_ci <- sample_n(p_test_ci, 5)
+
+# Test the function
+test_that("ci_to_sd returns correct standard deviation for all rows", {
+  # Create the data frame
+  data <- data.frame(
+    ci_L = p_test_ci$L,
+    ci_U = p_test_ci$U,
+    sd = p_test_ci$Std_dev,
+    n = p_test_ci$N.value
+  )
+  
+  # Calculate the expected and actual standard deviations
+  expected_sds <- data$sd
+  actual_sds <- apply(data, 1, function(x) ci_to_sd(x[1], x[2], x[4]))
+  
+  # Compare the expected and actual standard deviations
+  expect_equal(actual_sds, expected_sds)
+})
+```
+
+
+```{r Effect sizes for R-squared, include=TRUE, error=TRUE}
+R_square<-subset(zooALL, zooALL$Type %in% "R square")
+
+# Convert R-squared to Cohen's f^2 effect size
+f2 <- R_square$R.squared / (1 - R_square$R.squared)
+
+# Convert Cohen's f^2 to Hedge's g effect size
+g<-as.data.frame(sqrt(f2) * 1.5)
+
+
+Hedge_R_square<-cbind(R_square$study, g, R_square$Direction) 
+
+names(Hedge_R_square)[names(Hedge_R_square)=="sqrt(f2) * 1.5"]<-"es"
+names(Hedge_R_square)[names(Hedge_R_square)=="R_square$study"]<-"study"
+names(Hedge_R_square)[names(Hedge_R_square)=="R_square$Direction"]<-"Direction"
+
+Hedge_R_square$es[Hedge_R_square$Direction =="decrease"] <- -Hedge_R_square$es[Hedge_R_square$Direction == "decrease"] #change sign of effect size based on the direction of relationship
+
+Hedge_R_square<-Hedge_R_square[,-3]
+
+#Unit scaling and Sanity checks
+Rsquare_comp<-merge(Hedge_R_square, R_square, by="study")
+
+Rsquare_comp_scatter<-ggplot(data = Rsquare_comp, aes(x=Value, y=es,label=study))+geom_point()+
+  xlab("R-squared")+ylab("Effect size (g)")+theme_classic()+geom_line()+geom_text(aes(label = study),vjust = 1)+
+  geom_smooth(method = "lm", se = FALSE)
+
+# Assess outlier using residuals
+model <- lm(es~ Rsquare_comp$Value, data = Rsquare_comp)
+residuals <- model$residuals
+outliers <- Rsquare_comp[abs(residuals) > 2*sd(residuals), ]
+
+Rsquare_comp_scatter
+```
+
+```{r Effect sizes for Bivariate regression analysis estimate, include=TRUE, error=TRUE}
+Est<-subset(zooALL, zooALL$Type %in% "Estimate")
+
+Hedge_est<-as.data.frame(hedges_g(d=Est$Value, totaln=Est$N.value))
+
+Hedge_est<-cbind(Est$study, Hedge_est)
+
+summary(Hedge_est)
+names(Hedge_est)[names(Hedge_est)=="hedges_g(d = Est$Value, totaln = Est$N.value)"]<-"es"
+names(Hedge_est)[names(Hedge_est)=="Est$study"]<-"study"
+
+Est_comp<-merge(Est, Hedge_est, by="study")
+summary(Est_comp)
+
+
+Est_comp_scatter<-ggplot(data = Est_comp, aes(x=Value, y=es,label=study))+geom_point()+
+  xlab("Estimate")+ylab("Effect size (g)")+theme_classic()+geom_line()+geom_text(aes(label = study),vjust = 1)+
+  geom_smooth(method = "lm", se = FALSE)
+
+Est_comp_scatter
+```
+#### Graphing effect sizes
+```{r Plotting the general effect size trends, include=TRUE}
+Hedge_all<-rbind(Hedge_Beta, Hedge_B, Hedge_F, Hedge_chi, Hedge_OR, Hedge_t, Hedge_p,Hedge_Ratios)
+Hedge_all<-rbind.fill(Hedge_all, Hedge_z, Hedge_R, Hedge_R_square, Hedge_est, Hedge_Beta_t,Hedge_OR_t)
+Hedge_all$n_method<-c(rep(nrow(Hedge_chi),nrow(Hedge_chi)),rep(nrow(Hedge_B),nrow(Hedge_B)),rep(nrow(Hedge_Beta),nrow(Hedge_Beta)),rep(nrow(Hedge_F),nrow(Hedge_F)),rep(nrow(Hedge_t),nrow(Hedge_t)),rep(nrow(Hedge_OR),nrow(Hedge_OR)),rep(nrow(Hedge_z),nrow(Hedge_z)),rep(nrow(Hedge_R),nrow(Hedge_R)),rep(nrow(Hedge_p),nrow(Hedge_p)),rep(nrow(Hedge_R_square),nrow(Hedge_R_square)),rep(nrow(Hedge_est),nrow(Hedge_est)),rep(nrow(Hedge_Beta_t),nrow(Hedge_Beta_t)),rep(nrow(Hedge_OR_t),nrow(Hedge_OR_t)),rep(nrow(Hedge_Ratios),nrow(Hedge_Ratios)))
+
+#merge together
+zooALL_effect_size <- merge(zooALL,Hedge_all, by="study")
+zooALL_effect_size<-zooALL_effect_size[!is.na(zooALL_effect_size$es),]
+
+#zooALL_effect_size<-zooALL_effect_size[zooALL_effect_size$n_method>1,]
+
+
+zooALL_effect_size$Environmental_condition<-as.factor(zooALL_effect_size$Environmental_condition) #convert type to factor
+
+zooALL_es_temp<-subset(zooALL_effect_size,zooALL_effect_size$Environmental_condition %in% ("Temperature")) #subset temperature
+zooALL_es_prec<-subset(zooALL_effect_size,zooALL_effect_size$Environmental_condition %in% ("Precipitation"))#subset precipitation
+zooALL_es_hum<-subset(zooALL_effect_size,zooALL_effect_size$Environmental_condition %in% ("Humidity")) #subset humidity
+
+summary(zooALL_es_temp) #summarise
+summary(zooALL_es_prec) #summarise
+summary(zooALL_es_hum) #summarise
+
+
+#zooALL_effect_size$vector[zooALL_effect_size$vector==""]<-""
+
+##create groupings
+zooALL_effect_size$group1<-zooALL_effect_size$Environmental_condition
+zooALL_effect_size$group2<-paste(zooALL_effect_size$Environmental_condition,zooALL_effect_size$Type,sep="_")
+zooALL_effect_size$group3<-paste(zooALL_effect_size$Environmental_condition,zooALL_effect_size$type,sep="_")
+zooALL_effect_size$group4<-paste(zooALL_effect_size$Environmental_condition,zooALL_effect_size$type,zooALL_effect_size$vector, sep="_")
+zooALL_effect_size$group5<-paste(zooALL_effect_size$Environmental_condition,zooALL_effect_size$P_V_B,sep="_")
+zooALL_effect_size$group6<-paste(zooALL_effect_size$Environmental_condition,zooALL_effect_size$type,zooALL_effect_size$P_V_B, sep="_")
+
+
+###chose one
+#zooALL_effect_size$Grouping<-zooALL_effect_size$group1
+#zooALL_effect_size$Grouping<-zooALL_effect_size$group2
+#zooALL_effect_size$Grouping<-zooALL_effect_size$Type
+zooALL_effect_size$Grouping<-zooALL_effect_size$group1
+
+summary(zooALL_effect_size)
+
+#View(zooALL_effect_size)
+
+#Observing the distribution of effect sizes
+range_effect_size <- 4*sd(zooALL_effect_size$es) #standard deviation of effect sizes
+
+cat("Expected minimum effect size:", -range_effect_size, "\n") #estimate
+cat("Expected maximum effect size:", range_effect_size, "\n") #estimate
+
+n_distinct(zooALL_effect_size$study)
+
+# Set the number of studies and observations
+k <- 173
+n <- 556
+
+# Calculate the sampling variance
+v <- (n - 1) / (n - k)
+
+# Calculate the expected range of effect sizes
+lower <- qnorm(0.025, lower.tail = FALSE) * sqrt(v)
+upper <- qnorm(0.975, lower.tail = FALSE) * sqrt(v)
+
+# Print the results
+cat("Expected range of effect sizes:", round(lower, 3), "to", round(upper, 3))
+
+
+ggplot(zooALL_effect_size, aes(x=es))+
+  geom_histogram(binwidth = 0.2)+geom_vline(xintercept = -3.3,linetype=2)+geom_vline(xintercept = 3.3, linetype=2)+
+  geom_vline(xintercept = 1,linetype=2, colour="red")+geom_vline(xintercept = -1,linetype=2, colour="red")+
+  geom_vline(xintercept = 2.359,linetype=2, colour="blue")+geom_vline(xintercept = -2.359,linetype=2, colour="blue")# histogram showing where the estimates lie
+
+
+#zooALL_effect_size$Type!="Z-score"
+ggplot(zooALL_effect_size[,], aes(x=es,y=Grouping, col=factor(Grouping), fill=factor(Grouping)))+
+  stat_halfeye(
+  # adjust bandwidth
+    adjust = 1,
+   #move to the right
+    justification = -0.1,
+  # remove the slub interval
+    .width = 0,
+    point_colour = NA) +
+  stat_summary(fun =  mean, geom = "point",size=2,col="black") + 
+  stat_summary(fun.data = mean_cl_normal, geom = "errorbar",width=0.1,col="black")+
+  #stat_dots(
+  # ploting on left side
+  #  side = "left",
+  # adjusting position
+  #  justification = 1.1,
+  # adjust grouping (binning) of observations
+  #  binwidth = 0.25
+  #) +
+  # Themes and Labels
+  scale_fill_tq() +
+  xlim(-3.3,3.3)+
+  theme_tq() +
+  xlab("Hedge's (g) effect size")+
+  theme(axis.title.y = element_blank())+
+  geom_vline(xintercept = 0, linetype=2,size = 0.75)+
+  theme(legend.position = "none")
+#+
+# scale_y_discrete(labels=c("Humidity 
+# (n=53 , k=79)", "Precipitation 
+#(n=100, k=164)","Temperature 
+#(n=117, k=185)"))
+
+ggplot(zooALL_effect_size[,], aes(x=es,y=Grouping, col=factor(Grouping), fill=factor(Grouping)))+
+  stat_halfeye(
+  # adjust bandwidth
+    adjust = 1,
+   #move to the right
+    justification = -0.1,
+  # remove the slub interval
+    .width = 0,
+    point_colour = NA) +
+  stat_summary(fun =  mean, geom = "point",size=2,col="black") + 
+  stat_summary(fun.data = mean_cl_normal, geom = "errorbar",width=0.1,col="black")+
+  #stat_dots(
+  # ploting on left side
+  #  side = "left",
+  # adjusting position
+  #  justification = 1.1,
+  # adjust grouping (binning) of observations
+  #  binwidth = 0.25
+  #) +
+  # Themes and Labels
+  scale_fill_tq() +
+  xlim(-1,1)+
+  theme_tq() +
+  xlab("Hedge's (g) effect size")+
+  theme(axis.title.y = element_blank())+
+  geom_vline(xintercept = 0, linetype=2,size = 0.75)+
+  theme(legend.position = "none")
+#+
+# scale_y_discrete(labels=c("Humidity 
+# (n=53 , k=79)", "Precipitation 
+#(n=100, k=164)","Temperature 
+#(n=117, k=185)"))
+
+
+
+dist<-ggplot(zooALL_effect_size[,], aes(x=es,y=Grouping, col=factor(Grouping), fill=factor(Grouping)))+
+  stat_halfeye(
+  # adjust bandwidth
+    adjust = 1,
+   #move to the right
+    justification = -0.1,
+  # remove the slub interval
+    .width = 0,
+    point_colour = NA) +
+  stat_summary(fun =  mean, geom = "point",size=2,col="black") + 
+  stat_summary(fun.data = mean_cl_normal, geom = "errorbar",width=0.1,col="black")+
+  #stat_dots(
+  # ploting on left side
+  #  side = "left",
+  # adjusting position
+  #  justification = 1.1,
+  # adjust grouping (binning) of observations
+  #  binwidth = 0.25
+  #) +
+  # Themes and Labels
+  scale_fill_tq() +
+  xlim(-2.359,2.359)+
+  theme_tq() +
+  xlab("Hedge's (g) effect size")+
+  theme(axis.title.y = element_blank())+
+  geom_vline(xintercept = 0, linetype=2,size = 0.75)+
+  theme(legend.position = "none")
+#+
+# scale_y_discrete(labels=c("Humidity 
+# (n=53 , k=79)", "Precipitation 
+#(n=100, k=164)","Temperature 
+#(n=117, k=185)"))
+```
+
+```{r Effect sizes when removing outliers, include = TRUE}
+
+#Identify and remove outliers
+model <- lm(es~ zooALL_effect_size$Value, data = zooALL_effect_size)
+residuals <- model$residuals
+outliers <- zooALL_effect_size[abs(residuals) > 2*sd(residuals), ]
+
+zooALL_effect_size_filtered <- zooALL_effect_size %>%
+  filter(!row.names(.) %in% row.names(outliers))
+
+#zooALL_effect_size$Type!="Z-score"
+ggplot(zooALL_effect_size_filtered[,], aes(x=es,y=Grouping, col=factor(Grouping), fill=factor(Grouping)))+
+  stat_halfeye(
+  # adjust bandwidth
+    adjust = 1,
+   #move to the right
+    justification = -0.1,
+  # remove the slub interval
+    .width = 0,
+    point_colour = NA) +
+  stat_summary(fun =  mean, geom = "point",size=2,col="black") + 
+  stat_summary(fun.data = mean_cl_normal, geom = "errorbar",width=0.1,col="black")+
+  #stat_dots(
+  # ploting on left side
+  #  side = "left",
+  # adjusting position
+  #  justification = 1.1,
+  # adjust grouping (binning) of observations
+  #  binwidth = 0.25
+  #) +
+  # Themes and Labels
+  scale_fill_tq() +
+  xlim(-1.3,1.3)+
+  theme_tq() +
+  xlab("Hedge's (g) effect size")+
+  theme(axis.title.y = element_blank())+
+  geom_vline(xintercept = 0, linetype=2,size = 0.75)+
+  theme(legend.position = "none")
+#+
+# scale_y_discrete(labels=c("Humidity 
+# (n=53 , k=79)", "Precipitation 
+#(n=100, k=164)","Temperature 
+#(n=117, k=185)"))
+```
+
+```{r Effect sizes when the same locations from a study were removed, include=TRUE}
+
+location_es <-zooALL_effect_size #create copy of effect size dataset
+
+## Subset overall dataset to each environmental condition
+temp_df <- subset(location_es, location_es$Environmental_condition == 'Temperature')
+rain_df <- subset(location_es, location_es$Environmental_condition == 'Precipitation')
+humidity_df <- subset(location_es, location_es$Environmental_condition == 'Humidity')
+
+
+## Subset each of these into 2 datasets (1. Unique locations, 2. Missing values)
+
+#temperature
+temp_unique <- temp_df[!duplicated(temp_df$Location),]
+temp_na <- subset(temp_df, temp_df$Location %in% c(""))
+
+#rainfall
+rain_unique <- rain_df[!duplicated(rain_df$Location),]
+rain_na <- subset(rain_df, rain_df$Location %in% c(""))
+
+#humidity
+humidity_unique <- humidity_df[!duplicated(humidity_df$Location),]
+humidity_na <- subset(humidity_df, humidity_df$Location %in% c(""))
+
+# Combine all subsets into a final dataset & remove duplicates within the same study
+final_dataset <-  rbind(temp_unique, temp_na, rain_unique, rain_na, humidity_unique, humidity_na)
+location_effect_size <- final_dataset[!duplicated(final_dataset[c('Reference_ID','Location', 'Environmental_condition')]),]
+
+
+##create groupings
+location_effect_size$group1<-location_effect_size$Environmental_condition
+location_effect_size$group2<-paste(location_effect_size$Environmental_condition,location_effect_size$Type,sep="_")
+location_effect_size$group3<-paste(location_effect_size$Environmental_condition,location_effect_size$type,sep="_")
+location_effect_size$group4<-paste(location_effect_size$Environmental_condition,location_effect_size$type,location_effect_size$vector, sep="_")
+location_effect_size$group5<-paste(location_effect_size$Environmental_condition,location_effect_size$P_V_B,sep="_")
+location_effect_size$group6<-paste(location_effect_size$Environmental_condition,location_effect_size$type,location_effect_size$P_V_B, sep="_")
+
+
+###chose one
+#location_effect_size$Grouping<-location_effect_size$group1
+#location_effect_size$Grouping<-location_effect_size$group2
+#location_effect_size$Grouping<-location_effect_size$Type
+location_effect_size$Grouping<-location_effect_size$group3
+
+summary(location_effect_size)
+
+#View(location_effect_size)
+#location_effect_size$Type!="Z-score"
+ggplot(location_effect_size[,], aes(x=es,y=Grouping, col=factor(Grouping), fill=factor(Grouping)))+
+  stat_halfeye(
+  # adjust bandwidth
+    adjust = 1,
+   #move to the right
+    justification = -0.1,
+  # remove the slub interval
+    .width = 0,
+    point_colour = NA) +
+  stat_summary(fun =  mean, geom = "point",size=2,col="black") + 
+  stat_summary(fun.data = mean_cl_normal, geom = "errorbar",width=0.1,col="black")+
+  #stat_dots(
+  # ploting on left side
+  #  side = "left",
+  # adjusting position
+  #  justification = 1.1,
+  # adjust grouping (binning) of observations
+  #  binwidth = 0.1
+  #) +
+  # Themes and Labels
+  scale_fill_tq() +
+  xlim(-1.3,1.3)+
+  theme_tq() +
+  xlab("Hedge's (g) effect size")+
+  theme(axis.title.y = element_blank())+
+  geom_vline(xintercept = 0, linetype=2,size = 0.75)+
+  theme(legend.position = "none")
+
+ggplot(location_effect_size[,], aes(x=es,y=Grouping, col=factor(Grouping), fill=factor(Grouping)))+
+  stat_halfeye(
+  # adjust bandwidth
+    adjust = 1,
+   #move to the right
+    justification = -0.1,
+  # remove the slub interval
+    .width = 0,
+    point_colour = NA) +
+  stat_summary(fun =  mean, geom = "point",size=2,col="black") + 
+  stat_summary(fun.data = mean_cl_normal, geom = "errorbar",width=0.1,col="black")+
+  #stat_dots(
+  # ploting on left side
+  #  side = "left",
+  # adjusting position
+  #  justification = 1.1,
+  # adjust grouping (binning) of observations
+  #  binwidth = 0.1
+  #) +
+  # Themes and Labels
+  scale_fill_tq() +
+  xlim(-2.359,2.359)+
+  theme_tq() +
+  xlab("Hedge's (g) effect size")+
+  theme(axis.title.y = element_blank())+
+  geom_vline(xintercept = 0, linetype=2,size = 0.75)+
+  theme(legend.position = "none")
+
+ggplot(location_effect_size[,], aes(x=es,y=Grouping, col=factor(Grouping), fill=factor(Grouping)))+
+  stat_halfeye(
+  # adjust bandwidth
+    adjust = 1,
+   #move to the right
+    justification = -0.1,
+  # remove the slub interval
+    .width = 0,
+    point_colour = NA) +
+  stat_summary(fun =  mean, geom = "point",size=2,col="black") + 
+  stat_summary(fun.data = mean_cl_normal, geom = "errorbar",width=0.1,col="black")+
+  #stat_dots(
+  # ploting on left side
+  #  side = "left",
+  # adjusting position
+  #  justification = 1.1,
+  # adjust grouping (binning) of observations
+  #  binwidth = 0.1
+  #) +
+  # Themes and Labels
+  scale_fill_tq() +
+  xlim(-3.3,3.3)+
+  theme_tq() +
+  xlab("Hedge's (g) effect size")+
+  theme(axis.title.y = element_blank())+
+  geom_vline(xintercept = 0, linetype=2,size = 0.75)+
+  theme(legend.position = "none")
+```
+
+```{r Graphs using the 1 location method while excluding countries that may impact trends, include=TRUE}
+# Define a vector of diseases to loop through
+country_vec <- unique(location_effect_size$Country)
+
+# Create an empty list to store the plots
+plot.1_list <- list()
+
+mean_error_dataset.1 <- data.frame(Country = character(),
+                                 Grouping = character(),
+                                 Mean = numeric(),
+                                 Lower = numeric(),
+                                 Upper = numeric(),
+                                 stringsAsFactors = FALSE)
+
+# Loop through each country and create a plot with data points dropped
+for (country in country_vec) {
+  
+    n_points <- sum(location_effect_size$Country == country)
+  
+  # Only create the plot if the number of data points is less than 10
+  if (n_points > 10) {
+  # Create a subset of the data with the selected country removed
+  data_subset.1 <- location_effect_size[location_effect_size$Country != country, ]
+  
+    # Calculate the mean and confidence intervals for each factor level within the grouping level
+    mean_error.1 <- data_subset.1 %>%
+      group_by(Grouping) %>%
+      summarise(Mean = mean(es),
+                SE = sd(es) / sqrt(n()),
+                Lower = Mean - 1.96 * SE,
+                Upper = Mean + 1.96 * SE)
+    
+    # Append the mean and error bars to the mean_error_dataset
+    mean_error.1$Country <- country
+    mean_error_dataset.1 <- rbind(mean_error_dataset.1, mean_error.1)
+   {
+    # Create the plot with the subsetted data
+    p <- ggplot(data_subset.1[, ], aes(x = es, y = Grouping, col = factor(Grouping), fill = factor(Grouping))) +
+      stat_halfeye(
+        adjust = 1,
+        justification = -0.1,
+        .width = 0,
+        point_colour = NA
+      ) +
+      stat_summary(fun = mean, geom = "point", size = 2, col = "black") +
+      stat_summary(fun.data = mean_cl_normal, geom = "errorbar", width = 0.1, col = "black") +
+      scale_fill_tq() +
+      xlim(-3.3, 3.3) +
+      theme_tq() +
+      xlab("Hedge's (g) effect size") +
+      theme(axis.title.y = element_blank()) +
+      geom_vline(xintercept = 0, linetype = 2, size = 0.75) +
+      theme(legend.position = "none") +
+      ggtitle(paste("Effect Size by Grouping - Excluding", country, "Data"))
+    
+    # Add the plot to the list
+    plot.1_list[[country]] <- p
+  }
+  }
+}
+
+# Print the plots in the list
+for (i in seq_along(plot.1_list)) {
+  if (!is.null(plot.1_list[[i]])) {
+    print(plot.1_list[[i]])
+  }
+}
+
+mean_error_dataset.1
+# Cat & Whiskers plot of the trends when each country is removed
+
+pw.1 <- ggplot(mean_error_dataset.1, aes(x = Mean, y = Grouping, colour = mean_error_dataset.1$ Country)) +
+  geom_point(position = position_dodge2v(height = 0.9)) +
+  geom_errorbarh(
+    aes(xmin = Lower, xmax = Upper),
+    position = position_dodge2v(height = 0.4)) +
+  xlim(-1.3, 1.3) +
+  geom_vline(xintercept = 0, linetype = 2, size = 0.75) +
+  theme_minimal()+
+  xlab("Hedge (g) Effect size")+ylab("Grouping")+labs(colour ="Country excluded")
+pw.1
+```
+```{r  plots for effect sizes when excluding diseases that may influence trends, include = TRUE}
+# Define a vector of diseases to loop through
+disease_vec <- unique(zooALL_effect_size$Disease)
+
+# Create an empty list to store the plots
+plot_list <- list()
+
+# Create an empty dataset to store the means and error bars
+mean_error_dataset <- data.frame(Disease = character(),
+                                 Grouping = character(),
+                                 Mean = numeric(),
+                                 Lower = numeric(),
+                                 Upper = numeric(),
+                                 stringsAsFactors = FALSE)
+
+# Loop through each disease and create a plot with data points dropped
+for (disease in disease_vec) {
+  n_points <- sum(location_effect_size$Disease == disease)
+  
+  # Only create the plot if the number of data points is less than 10
+  if (n_points > 10) {
+    # Create a subset of the data with the selected disease removed
+    data_subset <- zooALL_effect_size[zooALL_effect_size$Disease != disease, ]
+    
+    # Calculate the mean and confidence intervals for each factor level within the grouping level
+    mean_error <- data_subset %>%
+      group_by(Grouping) %>%
+      summarise(Mean = mean(es),
+                SE = sd(es) / sqrt(n()),
+                Lower = Mean - 1.96 * SE,
+                Upper = Mean + 1.96 * SE)
+    
+    # Append the mean and error bars to the mean_error_dataset
+    mean_error$Disease <- disease
+    mean_error_dataset <- rbind(mean_error_dataset, mean_error)
+    
+    # Check if the subsetted data has at least 5 datapoints for the current disease
+    {
+      # Create the plot with the subsetted data
+      p <- ggplot(data_subset[, ], aes(x = es, y = Grouping, col = factor(Grouping), fill = factor(Grouping))) +
+        stat_halfeye(
+          adjust = 1,
+          justification = -0.1,
+          .width = 0,
+          point_colour = NA
+        ) +
+        stat_summary(fun = mean, geom = "point", size = 2, col = "black") +
+        stat_summary(
+          fun.data = function(x) {
+            Mean <- mean(x)
+            SE <- sd(x) / sqrt(length(x))
+            Lower <- Mean - 1.96 * SE
+            Upper <- Mean + 1.96 * SE
+            data.frame(y = Mean, ymin = Lower, ymax = Upper)
+          },
+          geom = "errorbar",
+          width = 0.1,
+          col = "black"
+        ) +
+        scale_fill_tq() +
+        xlim(-1.3, 1.3) +
+        theme_tq() +
+        xlab("Hedge's (g) effect size") +
+        theme(axis.title.y = element_blank()) +
+        geom_vline(xintercept = 0, linetype = 2, size = 0.75) +
+        theme(legend.position = "none") +
+        ggtitle(paste("Effect Size by Grouping - Excluding", disease, "Data"))
+      
+      # Add the plot to the list
+      plot_list[[disease]] <- p
+    }
+  }
+}
+
+# Print the plots in the list
+for (i in seq_along(plot_list)) {
+  if (!is.null(plot_list[[i]])) {
+    print(plot_list[[i]])
+  }
+}
+
+mean_error_dataset
+
+# Create the dot and whiskers plot using the mean_error_dataset
+pw <- ggplot(mean_error_dataset, aes(x = Mean, y = Grouping, colour = Disease)) +
+  geom_point(position = position_dodge2v(height = 0.9)) +
+  geom_errorbarh(
+    aes(xmin = Lower, xmax = Upper),
+    position = position_dodge2v(height = 0.4)) +
+  xlim(-1, 1) +
+  geom_vline(xintercept = 0, linetype = 2, size = 0.75) +
+  theme_minimal()+
+  xlab("Hedge (g) Effect size")+ylab("Grouping")+labs(colour ="Disease excluded")
+pw
+```
+#### Meta-analytical Models
+
+```{r fitting a meta-analytical model to the data ,include =TRUE, error=TRUE}
+#Inputting variance values for effect sizes missing variance information and using sensitivity analyses to ensure the appropriate method was used.
+Meta_effect <-zooALL_effect_size
+Meta_effect<-as.data.frame(Meta_effect)
+
+#### create a median variance for each missing datapoint
+
+# Compute the overall median variance
+overall_median_var <- median(Meta_effect$var, na.rm = TRUE)
+
+# Creat loop to impute missing variances
+for (i in unique(Meta_effect$Reference_ID)) {
+  study_var <- median(Meta_effect$var[Meta_effect$Reference_ID == i], na.rm = TRUE)
+  if (is.na(study_var)) {
+    # If all variances are missing for  study, use overall median variance
+    study_var <- overall_median_var
+    cat("All variances missing for study ID:", i, "- substituting with overall median variance.\n")
+  }
+  Meta_effect$var[Meta_effect$Reference_ID == i & is.na(Meta_effect$var)] <- study_var
+}
+
+#### create a linear regression for fitting variance for each missing datapoint
+
+Meta_effect.1<-zooALL_effect_size #create a copy of data
+variance_lm <- lm (var ~ N.value + Date_published, data = Meta_effect.1) #create linear regression with N.value and Date published as predictors
+variance_na <-is.na(Meta_effect.1$var) #find out how many datapoints were missing variance values
+Meta_effect_na<-subset(Meta_effect.1, is.na(Meta_effect.1$var)) #subset data to contain only missing values
+Meta_effect.1$var[variance_na] <-predict(variance_lm, newdata = Meta_effect_na) # impute variance values into original dataset.
+
+
+Meta_effect.1 <- Meta_effect.1[Meta_effect.1$var > 0,]
+
+#### Create meta-analytical models
+ZooALL_effect_size_full<-subset(zooALL_effect_size,!is.na(zooALL_effect_size$var))
+
+# Models for Original, Median, and Linear imputed variance
+
+Original_es<-rma.mv(yi = es, V=var, W=weight, mods = ~ type + Environmental_condition + Study_period, random = list(Disease = ~ 1 | Disease, Country = ~ 1 | Country, Study = ~ 1 | Reference_ID, Observation = ~ 1 | study), data=ZooALL_effect_size_full, method = "REML", control = list(rel.tol=1e-5),test = "t") 
+summary(Original_es)
+
+Median_es <- rma.mv(yi = es, V=var, mods = ~ type + Environmental_condition + Study_period, random = list(Disease = ~ 1 | Disease, Country = ~ 1 | Country, Study = ~ 1 | Reference_ID, Observation = ~ 1 | study), data=Meta_effect, method = "REML", control = list(rel.tol=1e-5),test="t") 
+summary(Median_es)
+
+Regression_es<- rma.mv(yi = es, V=var, mods = ~ type + Environmental_condition + Study_period, random = list(Disease = ~ 1 | Disease, Country = ~ 1 | Country, Study = ~ 1 | Reference_ID , Observation = ~ 1 | study), data=Meta_effect.1, method = "REML", control = list(rel.tol=1e-4),test = "t") 
+summary(Regression_es)
+
+Original_es_1<-rma.mv(yi = es, V=var, W=weight, mods = ~ type + Environmental_condition + Study_period, random = list(Disease = ~ 1 | Disease, Country = ~ 1 | Country, Study = ~ 1 | Reference_ID), data=ZooALL_effect_size_full, method = "REML", control = list(rel.tol=1e-5),test = "t") #not including study_id
+summary(Original_es)
+
+Median_es_1 <- rma.mv(yi = es, V=var, mods = ~ type + Environmental_condition + Study_period, random = list(Disease = ~ 1 | Disease, Country = ~ 1 | Country, Study = ~ 1 | Reference_ID), data=Meta_effect, method = "REML", control = list(rel.tol=1e-5),test="t") #not including study_id
+summary(Median_es)
+
+Regression_es_1<- rma.mv(yi = es, V=var, mods = ~ type + Environmental_condition + Study_period, random = list(Disease = ~ 1 | Disease, Country = ~ 1 | Country, Study = ~ 1 | Reference_ID), data=Meta_effect.1, method = "REML", control = list(rel.tol=1e-4),test = "t") #not including study_id
+summary(Regression_es)
+```
+```{r funnel plots to test for bias or heterogeneity, include = TRUE}
+funnel(Original_es)
+funnel(Median_es)
+funnel(Regression_es)
+funnel(Original_es_1)
+funnel(Median_es_1)
+funnel(Regression_es_1)
+```
+
+
+#### Chi-square
+
+```{r Overall Chi-square, include=TRUE}
+zooALL_chi <- zooALL[zooALL$Direction !="no change",]
+zooALL_chi$P.value_general <- as.factor(zooALL_chi$P.value_general)
+
+#All
+xx<-xtabs(data = zooALL_chi, Dummy~Direction)
+xx
+chisq.test(xx)
+
+#Temperature
+xxTemp<-xtabs(data = zooALL_chi[zooALL_chi$Environmental_condition=="Temperature",], Dummy~Direction)
+xxTemp
+chisq.test(xxTemp)
+
+#Rainfall
+xxRain<-xtabs(data = zooALL_chi[zooALL_chi$Environmental_condition=="Precipitation",], Dummy~Direction)
+xxRain
+chisq.test(xxRain)
+
+#Humidity
+xxHumid<-xtabs(data = zooALL_chi[zooALL_chi$Environmental_condition=="Humidity",], Dummy~Direction)
+xxHumid
+chisq.test(xxHumid)
+```
+
+```{r Examining Disease Biases, include=TRUE}
+## Disease ##
+zoot<-as.data.frame(xtabs(data = zooALL_chi, Dummy~Disease))
+zoot$prob=1/zoot$Freq
+zoot$prob=zoot$prob/max(zoot$prob)
+
+nloop = 1000 #number of loops 
+nsamp = 200 #number of samples per loop
+
+res_df<-data.frame(i=1:nloop, nsamp=nsamp, prec_chi=NA,prec_p=NA,temp_chi=NA,temp_p=NA,hum_chi=NA,hum_p=NA)#create dataset
+
+for (i in 1:nloop){
+  
+  #merge all data with summary table zoot
+  zoo1<-merge(zooALL_chi, zoot, by="Disease")
+  
+  #choose nsamp rows at random but choosing rarer disease more often
+  zoo1<-zoo1[sample(1:nrow(zoo1),nsamp,prob = zoo1$prob),]
+  
+  #chi-square test (rainfall)
+  xxRain.1<-xtabs(data = zoo1[zoo1$Environmental_condition=="Precipitation",],Dummy~Direction)
+  xxRain.1
+  prec<-chisq.test(xxRain.1)
+  
+  #chi-square test (temperature)
+  xxTemp.1<-xtabs(data = zoo1[zoo1$Environmental_condition=="Temperature",],Dummy~Direction)
+  xxTemp.1
+  temp<-chisq.test(xxTemp.1)
+  
+  #chi-square test (humidity)
+  xxHumid.1<-xtabs(data = zoo1[zoo1$Environmental_condition=="Humidity",],Dummy~Direction)
+  xxHumid.1
+  hum<-chisq.test(xxHumid.1)
+  
+  ##populate results
+  
+  res_df$prec_chi[i]<-prec$statistic
+  res_df$prec_p[i]<-prec$p.value
+  res_df$temp_chi[i]<-temp$statistic
+  res_df$temp_p[i]<-temp$p.value
+  res_df$hum_chi[i]<-hum$statistic
+  res_df$hum_p[i]<-hum$p.value
+  
+} ##end of i loop
+
+Disease <- ggplot(data = res_df, aes(x = temp_p))+geom_density(size=1, colour = "red")+
+  geom_density(aes(x=hum_p),size=1, colour ="green")+
+  geom_density(aes(x=prec_p),size=1, colour ="blue")+
+  xlab("P value")+ylab("Density")+
+  theme_minimal()+ 
+  geom_vline(xintercept = 0.05,lty=2)
+
+Disease
+
+summary(res_df)
+```
+
+```{r Examining Location Biases, include=TRUE}
+## Country ##
+zoot1<-as.data.frame(xtabs(data = zooALL_chi,Dummy~Country))
+zoot1$prob=1/zoot1$Freq
+zoot1$prob=zoot1$prob/max(zoot1$prob)
+
+res_df1<-data.frame(i=1:nloop,nsamp=nsamp, prec_chi=NA, prec_p=NA,temp_chi=NA,temp_p=NA,hum_chi=NA, hum_p=NA)
+
+for(i in 1:nloop){
+  
+  #merge all data with summary table zoot1
+  zoo2<-merge(zooALL_chi,zoot1, by = "Country")
+  
+  #choose to sample random rows but choosing rarer countries more often
+  zoo2<-zoo2[sample(1:nrow(zoo2),nsamp,prob = zoo2$prob),]
+  
+  #xtabs
+  
+  #rainfall
+  xxRain.2<-xtabs(data = zoo2[zoo2$Environmental_condition =="Precipitation",],Dummy~Direction)
+  prec<-chisq.test(xxRain.2)
+  
+  
+  #temperature
+  xxTemp.2<-xtabs(data = zoo2[zoo2$Environmental_condition=="Temperature",],Dummy~Direction)
+  temp<-chisq.test(xxTemp.2)
+  
+  #humidity
+  xxHumid.2<-xtabs(data = zoo2[zoo2$Environmental_condition=="Humidity",],Dummy~Direction)
+  hum<-chisq.test(xxHumid.2)
+  
+  ##populate results
+  res_df1$prec_chi[i]<-prec$statistic
+  res_df1$prec_p[i]<-prec$p.value
+  res_df1$temp_chi[i]<-temp$statistic
+  res_df1$temp_p[i]<-temp$p.value
+  res_df1$hum_chi[i]<-hum$statistic
+  res_df1$hum_p[i]<-hum$p.value
+  
+}
+
+Region <- ggplot(data = res_df1, aes(x = prec_p))+geom_density(size=1, colour = "blue")+
+  geom_density(aes(x=hum_p),size=1, colour ="green")+
+  geom_density(aes(x=temp_p),size=1, colour ="red")+
+  xlab("P value")+ylab("Density")+
+  theme_minimal()+ 
+  geom_vline(xintercept = 0.05,lty=2)
+
+Region
+
+summary(res_df1)
+```
+```{r Examining transmission pathway dynamics, echo=TRUE}
+## Country ##
+zoot2<-as.data.frame(xtabs(data = zooALL_chi,Dummy~ type))
+zoot2$prob=1/zoot2$Freq
+zoot2$prob=zoot2$prob/max(zoot2$prob)
+
+res_df2<-data.frame(i=1:nloop,nsamp=nsamp, prec_chi=NA, prec_p=NA,temp_chi=NA,temp_p=NA,hum_chi=NA, hum_p=NA)
+
+for(i in 1:nloop){
+  
+  #merge all data with summary table zoot2
+  zoo3<-merge(zooALL_chi,zoot2, by = "type")
+  
+  #choose to sample random rows but choosing rarer countries more often
+  zoo3<-zoo3[sample(1:nrow(zoo3),nsamp,prob = zoo3$prob),]
+  
+  #xtabs
+  
+  #rainfall
+  xxRain.2<-xtabs(data = zoo3[zoo3$Environmental_condition =="Precipitation",],Dummy~Direction)
+  prec<-chisq.test(xxRain.2)
+  
+  
+  #temperature
+  xxTemp.2<-xtabs(data = zoo3[zoo3$Environmental_condition=="Temperature",],Dummy~Direction)
+  temp<-chisq.test(xxTemp.2)
+  
+  #humidity
+  xxHumid.2<-xtabs(data = zoo3[zoo3$Environmental_condition=="Humidity",],Dummy~Direction)
+  hum<-chisq.test(xxHumid.2)
+  
+  ##populate results
+  res_df2$prec_chi[i]<-prec$statistic
+  res_df2$prec_p[i]<-prec$p.value
+  res_df2$temp_chi[i]<-temp$statistic
+  res_df2$temp_p[i]<-temp$p.value
+  res_df2$hum_chi[i]<-hum$statistic
+  res_df2$hum_p[i]<-hum$p.value
+  
+}
+
+Transmission <- ggplot(data = res_df2, aes(x = prec_p))+geom_density(size=1, colour = "blue")+
+  geom_density(aes(x=hum_p),size=1, colour ="green")+
+  geom_density(aes(x=temp_p),size=1, colour ="red")+
+  xlab("P value")+ylab("Density")+
+  theme_minimal()+ 
+  geom_vline(xintercept = 0.05,lty=2)
+
+Transmission
+
+summary(res_df2)
+```
+
+```{r Examining response pathway dynamics, echo=TRUE}
+## Country ##
+zoot3<-as.data.frame(xtabs(data = zooALL_chi,Dummy~Response))
+zoot3$prob=1/zoot3$Freq
+zoot3$prob=zoot3$prob/max(zoot3$prob)
+
+res_df3<-data.frame(i=1:nloop,nsamp=nsamp, prec_chi=NA, prec_p=NA,temp_chi=NA,temp_p=NA,hum_chi=NA, hum_p=NA)
+
+for(i in 1:nloop){
+  
+  #merge all data with summary table zoot3
+  zoo4<-merge(zooALL_chi,zoot3, by = "Response")
+  
+  #choose to sample random rows but choosing rarer countries more often
+  zoo4<-zoo4[sample(1:nrow(zoo4),nsamp,prob = zoo4$prob),]
+  
+  #xtabs
+  
+  #rainfall
+  xxRain.3<-xtabs(data = zoo3[zoo3$Environmental_condition =="Precipitation",],Dummy~Direction)
+  prec<-chisq.test(xxRain.3)
+  
+  
+  #temperature
+  xxTemp.3<-xtabs(data = zoo4[zoo4$Environmental_condition=="Temperature",],Dummy~Direction)
+  temp<-chisq.test(xxTemp.3)
+  
+  #humidity
+  xxHumid.3<-xtabs(data = zoo4[zoo4$Environmental_condition=="Humidity",],Dummy~Direction)
+  hum<-chisq.test(xxHumid.3)
+  
+  ##populate results
+  res_df3$prec_chi[i]<-prec$statistic
+  res_df3$prec_p[i]<-prec$p.value
+  res_df3$temp_chi[i]<-temp$statistic
+  res_df3$temp_p[i]<-temp$p.value
+  res_df3$hum_chi[i]<-hum$statistic
+  res_df3$hum_p[i]<-hum$p.value
+  
+}
+
+Response <- ggplot(data = res_df3, aes(x = prec_p))+geom_density(size=1, colour = "blue")+
+  geom_density(aes(x=hum_p),size=1, colour ="green")+
+  geom_density(aes(x=temp_p),size=1, colour ="red")+
+  xlab("P value")+ylab("Density")+
+  theme_minimal()+ 
+  geom_vline(xintercept = 0.05,lty=3)
+
+Response
+
+summary(res_df3)
+```
+
+```{r Examining pathogen taxonomy biases, echo=TRUE}
+## Country ##
+zoot4<-as.data.frame(xtabs(data = zooALL_chi,Dummy~Taxa_genus))
+zoot4$prob=1/zoot4$Freq
+zoot4$prob=zoot4$prob/max(zoot4$prob)
+
+res_df4<-data.frame(i=1:nloop,nsamp=nsamp, prec_chi=NA, prec_p=NA,temp_chi=NA,temp_p=NA,hum_chi=NA, hum_p=NA)
+
+for(i in 1:nloop){
+  
+  #merge all data with summary table zoot3
+  zoo5<-merge(zooALL_chi,zoot4, by = "Taxa_genus")
+  
+  #choose to sample random rows but choosing rarer countries more often
+  zoo5<-zoo5[sample(1:nrow(zoo5),nsamp,prob = zoo5$prob),]
+  
+  #xtabs
+  
+  #rainfall
+  xxRain.4<-xtabs(data = zoo5[zoo5$Environmental_condition =="Precipitation",],Dummy~Direction)
+  prec<-chisq.test(xxRain.4)
+  
+  
+  #temperature
+  xxTemp.4<-xtabs(data = zoo5[zoo5$Environmental_condition=="Temperature",],Dummy~Direction)
+  temp<-chisq.test(xxTemp.4)
+  
+  #humidity
+  xxHumid.4<-xtabs(data = zoo5[zoo5$Environmental_condition=="Humidity",],Dummy~Direction)
+  hum<-chisq.test(xxHumid.4)
+  
+  ##populate results
+  res_df4$prec_chi[i]<-prec$statistic
+  res_df4$prec_p[i]<-prec$p.value
+  res_df4$temp_chi[i]<-temp$statistic
+  res_df4$temp_p[i]<-temp$p.value
+  res_df4$hum_chi[i]<-hum$statistic
+  res_df4$hum_p[i]<-hum$p.value
+  
+}
+
+Taxa <- ggplot(data = res_df4, aes(x = prec_p))+geom_density(size=1, colour = "blue")+
+  geom_density(aes(x=hum_p),size=1, colour ="green")+
+  geom_density(aes(x=temp_p),size=1, colour ="red")+
+  xlab("P value")+ylab("Density")+
+  theme_minimal()+ 
+  geom_vline(xintercept = 0.05,lty=3)
+
+Taxa
+
+summary(res_df4)
+```
+
+```{r Examining environmental measure (timeframe between measures), echo=TRUE}
+## Country ##
+zoot5<-as.data.frame(xtabs(data = zooALL_chi,Dummy~Specific_metric))
+zoot5$prob=1/zoot5$Freq
+zoot5$prob=zoot5$prob/max(zoot5$prob)
+
+res_df5<-data.frame(i=1:nloop,nsamp=nsamp, prec_chi=NA, prec_p=NA,temp_chi=NA,temp_p=NA,hum_chi=NA, hum_p=NA)
+
+for(i in 1:nloop){
+  
+  #merge all data with summary table zoot3
+  zoo6<-merge(zooALL_chi,zoot5, by = "Specific_metric")
+  
+  #choose to sample random rows but choosing rarer countries more often
+  zoo6<-zoo6[sample(1:nrow(zoo6),nsamp,prob = zoo6$prob),]
+  
+  #xtabs
+  
+  #rainfall
+  xxRain.5<-xtabs(data = zoo6[zoo6$Environmental_condition =="Precipitation",],Dummy~Direction)
+  prec<-chisq.test(xxRain.5)
+  
+  
+  #temperature
+  xxTemp.5<-xtabs(data = zoo6[zoo6$Environmental_condition=="Temperature",],Dummy~Direction)
+  temp<-chisq.test(xxTemp.5)
+  
+  #humidity
+  xxHumid.5<-xtabs(data = zoo6[zoo6$Environmental_condition=="Humidity",],Dummy~Direction)
+  hum<-chisq.test(xxHumid.5)
+  
+  ##populate results
+  res_df5$prec_chi[i]<-prec$statistic
+  res_df5$prec_p[i]<-prec$p.value
+  res_df5$temp_chi[i]<-temp$statistic
+  res_df5$temp_p[i]<-temp$p.value
+  res_df5$hum_chi[i]<-hum$statistic
+  res_df5$hum_p[i]<-hum$p.value
+  
+}
+
+Env <- ggplot(data = res_df5, aes(x = prec_p))+geom_density(size=1, colour = "blue")+
+  geom_density(aes(x=hum_p),size=1, colour ="green")+
+  geom_density(aes(x=temp_p),size=1, colour ="red")+
+  xlab("P value")+ylab("Density")+
+  theme_minimal()+ 
+  geom_vline(xintercept = 0.05,lty=3)
+
+Env
+
+summary(res_df5)
+```
+
+
+
+#### Map of study distribution of country
+
+```{r Mapping the number of studies in each country/region, include = TRUE}
+# group by country and count the number of unique reference_IDs
+Country_count <- zooALL_effect_size %>%
+  group_by(Country) %>%
+  summarise(num_studies = n_distinct(Reference_ID))
+Country_count
+
+#Change regions to the countries included, to highlight global coverage of studies conducted fully.
+spain_portugal <-data.frame(Country =c("Spain","Portugal"),
+                            num_studies =c(1,1))
+
+Africa <-data.frame(Country = c("Botswana", "Kenya", "Madagascar", "Mauritania", "Namibia", "Senegal", "South Africa", "Sudan", "Swaziland"), num_studies =c(1,1,1,1,1,1,1,1,1))
+  
+North_Arctic <- data.frame(Country =c("Finland", "Sweden", "Norway", "Russia"), num_studies = c(1,1,1,1))
+  
+West_and_Central <- data.frame(Country =c("South Sudan", "Democratic Republic of the Congo","Ivory Coast", "Gabon","Uganda","Republic of Congo","Guinea"),num_studies = c(1,1,1,1,1,1,1))
+
+Europe <-data.frame(Country =c("Belgium","Bulgaria","Bosnia and Herzegovina","Croatia","Czech Republic", "Denmark", "Finland","France", "Germany","Greece","Italy","Montenegro", "Netherlands", "Norway", "Poland", "Sweden", "Slovenia", "Slovakia", "Serbia", "Switzerland","UK"),num_studies = c(1,1,1,1,1,1,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1))
+
+#Filter and add countries which are described as Regions,Continents etc
+Country_count.1<-Country_count %>% 
+  filter(Country !="Iberian penninsula") %>% filter(Country !="Africa") %>% filter(Country != "Northern Arctic Region") %>% 
+  filter(Country != "West & Central Africa") %>% 
+  filter(Country != "Europe") %>% 
+  bind_rows(spain_portugal,Africa, North_Arctic, West_and_Central,Europe) %>% group_by(Country) %>%
+  summarise(num_studies = sum(num_studies))
+
+Country_count.1
+names(Country_count.1)[names(Country_count.1)=="Country"]<-"region"
+
+mapdata<-map_data("world") #download mapdata
+
+world_countries <- map_data("world")$region
+unknown_countries <- setdiff(Country_count.1$region, world_countries) #ensure all country labels match mapdata
+unknown_countries
+
+mapdata1<-left_join(mapdata,Country_count.1, by="region")
+
+map1 <- ggplot(mapdata1, aes(x = long, y = lat, group = group)) + 
+  geom_polygon(aes(fill = num_studies)) + 
+  scale_fill_gradient(na.value = "lavenderblush", breaks = seq(0, 50, 5), low = "lightblue", high = "darkblue")+ theme_minimal() + 
+scale_y_continuous(limits = c(-60, 90)) + 
+xlab("Longitude") + 
+ylab("Latitude") + 
+borders("world", colour = "black") + 
+xlim(-200, 200)+
+labs(fill="Study number")
+
+map1
+```
+
+```{r figure 4, echo = TRUE}
+fig4<-zooALL_effect_size_filtered %>% 
+  filter(!is.na(se))
+
+figure4<-ggplot(fig4, aes(x=es, y=-es,colour=fig4$type))+geom_point()+
+  geom_errorbarh(aes(xmin = es -se, xmax = es + se))+
+  geom_vline(xintercept = 0, linetype = 2, size = 0.75, yintercept = 5)
+  
+figure4<-figure4+theme_cowplot()+
+  labs(y=NULL, x= "effect size")+
+  theme(axis.text.y = element_blank())+
+  theme(axis.ticks.y = element_blank())+
+  labs(colour=NULL)
+
+
+histogram <- ggplot(zooALL_effect_size_filtered, aes(x = es)) +
+  geom_histogram(binwidth = 0.2, fill = "blue", color = "black", alpha = 0.5,position = position_nudge(0.022)) +
+  theme_void() +
+  theme(plot.margin = margin(0, 0, 5, 0)) +
+  geom_vline(xintercept = 0, linetype = 2, size = 0.75) 
+  
+
+combined_plot <- histogram / figure4 +
+  plot_layout(guides = "collect",heights = c(0.5,3))
+
+combined_plot
+```
+
+
+```{r figure 4 temperature,echo=TRUE}
+##Temperature
+fig4_temp_og<-zooALL_effect_size_filtered %>% filter(zooALL_effect_size_filtered$Environmental_condition=="Temperature") #temperature only
+fig4_temp<-fig4_temp_og %>% #temperature only with standard error values
+  filter(!is.na(se))
+
+figure4_temp<-ggplot(fig4_temp, aes(x=es, y=-es,colour=type))+geom_point()+
+  geom_errorbarh(aes(xmin = es -se, xmax = es + se))+
+  geom_vline(xintercept = 0, linetype = 2, size = 0.75)
+  
+figure4_temp<-figure4_temp+theme_cowplot()+
+  labs(y=NULL, x= "effect size")+
+  theme(axis.text.y = element_blank())+
+  theme(axis.ticks.y = element_blank())+
+  labs(colour=NULL)
+
+
+histogram_temp <- ggplot(fig4_temp_og, aes(x = es)) +
+  stat_halfeye(binwidth = 0.2, fill = "red", color = "black", alpha = 0.5) +
+  theme_void() +
+  theme(plot.margin = margin(0, 0, 5, 0)) +
+  geom_vline(xintercept = 0, linetype = 2, size = 0.75)#histogram using all temperature effect size 
+
+
+
+combined_plot_temp <- histogram_temp / figure4_temp +
+  plot_layout(guides = "collect",heights = c(0.5,3))
+
+combined_plot_temp
+```
+
+
+
+
+
+
+
+```{r figure 4 precipitation,echo=TRUE}
+##Precipitation
+fig4_precip_og<-zooALL_effect_size_filtered %>% filter(zooALL_effect_size_filtered$Environmental_condition=="Precipitation")
+fig4_precip<-fig4_precip_og %>% 
+  filter(!is.na(se))
+
+figure4_precip<-ggplot(fig4_precip, aes(x=es, y=-es,colour=fig4_precip$type))+geom_point()+
+  geom_errorbarh(aes(xmin = es -se, xmax = es + se))+
+  geom_vline(xintercept = 0, linetype = 2, size = 0.75)
+  
+figure4_precip<-figure4_precip+theme_cowplot()+
+  labs(y=NULL, x= "effect size")+
+  theme(axis.text.y = element_blank())+
+  theme(axis.ticks.y = element_blank())+
+  labs(colour=NULL)
+
+
+histogram_precip <- ggplot(fig4_precip_og, aes(x = es)) +
+  stat_halfeye(fill = "blue", color = "black", alpha = 0.5) +
+  theme_void() +
+  theme(plot.margin = margin(0, 0, 5, 0)) +
+  geom_vline(xintercept = 0, linetype = 2, size = 0.75) 
+  
+
+combined_plot_precip <- histogram_precip / figure4_precip +
+  plot_layout(guides = "collect",heights = c(0.5,3))
+
+combined_plot_precip
+```
+
+```{r figure 4 humidity ,echo=TRUE}
+##Humidity
+fig4_hum_og<-zooALL_effect_size_filtered %>% filter(zooALL_effect_size_filtered$Environmental_condition=="Humidity")
+fig4_hum<-fig4_hum_og %>% 
+  filter(!is.na(se))
+
+figure4_hum<-ggplot(fig4_hum, aes(x=es, y=-es,colour=fig4_hum$type))+geom_point()+
+  geom_errorbarh(aes(xmin = es -se, xmax = es + se))+
+  geom_vline(xintercept = 0, linetype = 2, size = 0.75, yintercept = 5)
+  
+figure4_hum<-figure4_hum+theme_cowplot()+
+  labs(y=NULL, x= "effect size")+
+  theme(axis.text.y = element_blank())+
+  theme(axis.ticks.y = element_blank())+
+  labs(colour=NULL)
+
+
+
+histogram_hum <- ggplot(fig4_hum_og, aes(x = es)) +
+  stat_halfeye( fill = "green", color = "black",alpha=0.5) +
+  theme_void() +
+  theme(plot.margin = margin(0, 0, 5, 0)) +
+  geom_vline(xintercept = 0, linetype = 2, size = 0.75) 
+  
+
+combined_plot_hum <- histogram_hum / figure4_hum +
+  plot_layout(guides = "collect",heights = c(0.5,3))
+
+combined_plot_hum
+```
+```{r combining above plots, echo =true}
+final_fig4<-plot_grid(combined_plot_temp,combined_plot_precip,combined_plot_hum,ncol=3)
+final_fig4
+
+
+final4<-plot_grid(figure4_temp,figure4_precip,figure4_hum,ncol=1)
+final4
+
+final_fig_4<-plot_grid(dist,final4)
+final_fig_4
+```
+```{r HVH on top, echo = TRUE}
+custom_colour <-c("skyblue","red")
+
+fig4_temp_og<-location_effect_size %>% filter(location_effect_size$Environmental_condition=="Temperature")
+#temperature only
+fig4_temp<-fig4_temp_og %>% #tempeorature only with standard error values
+  filter(!is.na(se))
+
+figure4_temp<-ggplot(fig4_temp, aes(x=es, y=-es,colour=type))+
+  geom_point(size=1)+
+  geom_errorbar(aes(xmin = es -se, xmax = es + se, width=0.1))+
+  geom_vline(xintercept = 0, linetype = 2)+
+  scale_colour_manual(values = custom_colour) +
+  theme_cowplot()+
+  labs(y=NULL, x= "effect size")+
+  theme(axis.text.y = element_blank())+
+  theme(axis.ticks.y = element_blank())+
+  labs(colour=NULL)+
+  guides(size=FALSE,colour=FALSE)+ xlim(-2.5,2.5)
+figure4_temp
+
+histogram_temp <- ggplot(fig4_temp_og, aes(x =es))+
+stat_halfeye(aes(fill=type,alpha=1.5))+
+  theme_void() +  theme(plot.margin = margin(0, 0, 5, 0))+
+  geom_vline(xintercept = 0, linetype = 2, size = 0.75)+
+  guides(alpha=FALSE)+scale_fill_manual(values=custom_colour)+xlim(-2.39,2.39)
+
+histogram_temp
+
+
+combined_plot_temp <- histogram_temp / figure4_temp +
+  plot_layout(guides = "collect",heights = c(0.5,3))
+
+combined_plot_temp
+```
