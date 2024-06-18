@@ -1,11 +1,11 @@
 ---
 title: "Climate impacts on zoonotic disease meta-analysis: text"
 output:
-  html_document: 
-    keep_md: yes
   html_notebook: 
     theme: flatly
     fig_caption: yes
+  html_document: 
+    keep_md: yes
 editor_options:
   chunk_output_type: inline
 ---
@@ -180,8 +180,6 @@ signif = df %>% filter(Direction!="") %>% filter(P.value_general!="") %>%  filte
 
 
 ```
-
-The majority of studies assessed reported a sigfnificant relationship between climate measures and some index of zoonotic disease risk (`r paste0(round(alfa_005_p,3)*100, "%")` significant at α=0.05, `r paste0(round(alfa_001_p,2)*100, "%")` at α=0.01, `r paste0(round(alfa_0001_p,2)*100, "%")` at α=0.001).
 
 ```{r chisq_groups_removed_function}
 
@@ -409,7 +407,25 @@ saveWorkbook(wb, file_name, overwrite = TRUE)
 
 ```
 
-There were significantly more increases in a measure of risk (`r round((table(signif$Direction))[["increase"]]/(table(signif$Direction))[["decrease"]],1)` times more) reported than decreases ($\overline{\chi^2}$ = `r round(none_removed$means_chi["chi_all", "none_removed"],2)`, df = 1, 95% CI = `r round(none_removed$means_chi["chi_ci_lower_all", "none_removed"],2)` -- `r round(none_removed$means_chi["chi_ci_upper_all", "none_removed"],2)`, p = `r round(none_removed$means_pval["p_all", "none_removed"],3)`), from 1000 bootstraps of 80% of the data). When subsetting the data to examine environmental categories separately, humidity and temperature did not follow the same pattern as for the overall dataset with even numbers of increases and decreases (Humidity: $\overline{\chi^2}$ = `r round(none_removed$means_chi["hum_chi", "none_removed"],2)`, df=1, p= `r round(none_removed$means_pval["hum_p", "none_removed"],3)`; Temperature: $\overline{\chi^2}$ = `r round(none_removed$means_chi["temp_chi", "none_removed"],2)`, df=1, p= `r round(none_removed$means_pval["temp_p", "none_removed"],3)`). The proportions seen within the overall dataset were robust to dropping major regions, disease groups, pathogen types, statistical methods and hosts from the calculations (Table S1). Notably, removal of Vectored diseases from the analysis resulted in insignificant difference between proportions of increases and decreases in risk reported. When dropping groups from the subsets of the datasets describing only one environmental category, levels of significance of some proportions within Temperature and Precipitation subsets also changed.
+The majority of studies assessed reported a significant relationship between climate measures and some index of zoonotic disease risk (`r paste0(round(alfa_005_p,3)*100, "%")` significant at α=0.05, `r paste0(round(alfa_001_p,2)*100, "%")` at α=0.01, `r paste0(round(alfa_0001_p,2)*100, "%")` at α=0.001). There were significantly more increases in a measure of risk (`r round((table(signif$Direction))[["increase"]]/(table(signif$Direction))[["decrease"]],1)` times more) reported than decreases ($\overline{\chi^2}$ = `r round(none_removed$means_chi["chi_all", "none_removed"],2)`, df = 1, 95% CI = `r round(none_removed$means_chi["chi_ci_lower_all", "none_removed"],2)` -- `r round(none_removed$means_chi["chi_ci_upper_all", "none_removed"],2)`, p = `r round(none_removed$means_pval["p_all", "none_removed"],3)`), from 1000 bootstraps of 80% of the data). The proportions seen within the overall dataset were robust to dropping most major regions, disease groups, pathogen types, statistical methods and hosts from the calculations (Table S1). However, when dividing the dataset into vectored and non-vectored diseases, only the subset containing vectored diseases showed significantly more increases than decreases in a measure of disease risk (Non-vectored diseases: $\overline{\chi^2}$ = `r round(df_all$Chi_Square[df_all$Group=="Vectored"],2)`, df=1, p= `r round(df_all$P_value[df_all$Group=="Vectored"],3)`; Vectored diseases: $\overline{\chi^2}$ = `r round(df_all$Chi_Square[df_all$Group=="Non.vectored"],2)`, df=1, p= `r round(df_all$P_value[df_all$Group=="Non.vectored"],5)`, Table S1).
+
+When subsetting the data to examine environmental categories individually (Temperature, Precipitation and Humidity data separately), only the Precipitation subset showed significantly more increases than decreases in a measure of disease risk (Humidity: $\overline{\chi^2}$ = `r round(none_removed$means_chi["hum_chi", "none_removed"],2)`, df=1, p= `r round(none_removed$means_pval["hum_p", "none_removed"],3)`; Temperature: $\overline{\chi^2}$ = `r round(none_removed$means_chi["temp_chi", "none_removed"],2)`, df=1, p= `r round(none_removed$means_pval["temp_p", "none_removed"],3)`; Precipitation: $\overline{\chi^2}$ = `r round(none_removed$means_chi["prec_chi", "none_removed"],2)`, df=1, p= `r round(none_removed$means_pval["prec_p", "none_removed"],3)`). 
+
+```{r sample_sizes_groups}
+tmp_samples = df %>%
+    filter(Direction != "" & P.value_general != "" &
+             P.value_general != ">0.05" & Environmental_condition=="Temperature") 
+tmp_samples %>%
+  summarize(percentage = mean(General_Disease == "Hantaviral diseases") * 100) %>% round(1)
+
+prec_samples = df %>%
+    filter(Direction != "" & P.value_general != "" &
+             P.value_general != ">0.05" & Environmental_condition=="Precipitation")
+prec_samples = prop.table(table(prec_samples$General_Disease))
+```
+
+When dropping groups from the subsets examining environmental categories individually, levels of significance of some proportions within temperature and precipitation subsets also changed. Temperature subset showed significantly more increases  than  decreases in disease risk after removal of Hantaviral diseases (`r paste0(tmp_samples %>% summarize(percentage = mean(General_Disease == "Hantaviral diseases") * 100) %>% round(1), "%")` of the susbet),  rodents as a reservoir (`r paste0(tmp_samples %>% summarize(percentage = mean(Principal_reservoir == "Rodents") * 100) %>% round(1), "%")` of the subset), livestock as a reservoir (`r paste0(tmp_samples %>% summarize(percentage = mean(Principal_reservoir == "Livestock") * 100) %>% round(1), "%")` of the subset), or when including only vectored diseases (`r paste0(tmp_samples %>% summarize(percentage = mean(Transmission_type == "Vectored") * 100) %>% round(1) %>% pull(), "%")` of the subset). Simultaneously, precipitation subset no longer had significantly more increases than decreases in disease risk when rodents as a reservoir (`r paste0(prec_samples %>% summarize(percentage = mean(Principal_reservoir == "Rodents") * 100) %>% round(1), "%")` of the subset) or non-vectored diseases (`r paste0(tmp_samples %>% summarize(percentage = mean(Transmission_type == "Non-vectored") * 100) %>% round(1), "%")` of the susbet) were removed.
+
 
 ###Publication bias
 
