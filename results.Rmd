@@ -409,6 +409,82 @@ print(list_of_dfs)
 # saveWorkbook(wb, file_name, overwrite = TRUE)
 ```
 
+### Secondary reporting rates
+
+```{r secondary_reporting_rates}
+#SETUP ---------------------------------------------------------------------
+second = df
+
+#filter out records without P values
+second = second %>% filter(P.value_general!="" & !is.na(P.value_general))
+
+#unify P-values
+second$P.value_general[second$P.value_general=="<.0.05" |
+                       second$P.value_general=="<0..05" | 
+                       second$P.value_general=="<0.0001"|
+                       second$P.value_general=="<0.001" | 
+                       second$P.value_general=="<0.01"] = "<0.05"
+#save IDs of unique studies
+studies = unique(second$Reference_ID)
+
+#make dataframe to write in
+studies_with_secondary = data.frame(studies = studies, secondary = NA, any_significant = NA,
+                                    two_or_more_significant = NA)
+
+#EVALUATE REPORTING RATES ------------------------------------------------------------------------
+for(i in (studies_with_secondary$studies)){
+ sub = second %>% filter(Reference_ID==i) #subset records for 1 study
+ levels = sub$P.value_general #list significance levels within the study
+ 
+ #note studies with 2 or more significance values reported
+ if(length(levels)>1){
+   studies_with_secondary$secondary[studies_with_secondary$studies==i] = TRUE
+ }
+ #note studies with at least 1 significant result
+ if("<0.05" %in% levels){
+    studies_with_secondary$any_significant[studies_with_secondary$studies==i] = TRUE
+ } else{
+   studies_with_secondary$any_significant[studies_with_secondary$studies==i] = FALSE
+ }
+ #note studies with more than 1 significant result
+ if(sum(levels=="<0.05")>1){
+   studies_with_secondary$two_or_more_significant[studies_with_secondary$studies==i] = TRUE
+ } else {studies_with_secondary$two_or_more_significant[studies_with_secondary$studies==i] = FALSE}
+}
+
+# FILTER STUDIES WITH >1 REPORTED SIGNIFICANCE LEVEL & >1 SIGNIFICANT RESULT (or >=1 SIGNIFICANT?)-------
+tmp = studies_with_secondary %>% filter(secondary==TRUE & any_significant==TRUE)
+#tmp = studies_with_secondary %>% filter(secondary==TRUE & two_or_more_significant==TRUE) #can choose this one 
+
+tmp2 = df %>% filter(Reference_ID %in% tmp$studies) %>% 
+  filter(P.value_general!="" & !is.na(P.value_general))
+
+#unify P-values
+tmp2$P.value_general[tmp2$P.value_general=="<.0.05" |
+                    tmp2$P.value_general=="<0..05"] = "<0.05"
+tmp2 = as.data.frame(table(tmp2$P.value_general)); names(tmp2) = c("significance","freq")
+
+#calculate proportions
+tmp2 %<>% mutate(P = freq/sum(freq))
+
+#SIGNIFICANCE AT DIFFERENT LEVELS ------------------------------------------------
+cat("Proportion of studies significant at alfa = 0.05: ", 
+    tmp2 %>% filter(significance!=">0.05") %>% 
+    summarise(total_sum = sum(P, na.rm = TRUE)) %>% 
+    pull(total_sum), "\n")
+
+cat("Proportion of studies significant at alfa = 0.01: ",
+    tmp2 %>% filter(!significance %in% c("<0.05",">0.05")) %>%
+    summarise(total_sum = sum(P, na.rm = TRUE)) %>% 
+    pull(total_sum),"\n")
+
+cat("Proportion of studies significant at alfa = 0.001: ",
+    tmp2 %>% filter(!significance %in% c("<0.05",">0.05","<0.01")) %>%
+      summarise(total_sum = sum(P, na.rm = TRUE)) %>%
+      pull(total_sum),"\n")
+
+```
+
 ### Journals IF vs Effect Sizes/Pvals
 
 ```{r journals, echo=TRUE, message=TRUE, warning=TRUE, fig.show='hold',fig.width = 10, fig.height = 4}
@@ -767,6 +843,7 @@ df%>%#
 ```
 
 By category:
+
 ```{r}
 df%>%#
   subset(Linear_Nonlinear == 'Linear')%>%
@@ -775,11 +852,10 @@ df%>%#
   mutate(prop = n /sum(n), tot = sum(n))
 ```
 
+## Determining how category distributions differ from full dataset
 
-### Determining how category distributions differ from full dataset
+## Defining statistical test
 
-
-# Defining statistical test
 ```{r}
 ad2_stat <- function(x, y) {
 
@@ -798,8 +874,6 @@ ad2_stat <- function(x, y) {
 }
 
 ```
-
-
 
 ```{r}
 # A homogeneity test using the Anderson-Darling statistic
@@ -959,8 +1033,7 @@ results_df
 write.csv(results_df, 'outputs/tables/DistributionADTest_Results.csv', row.names = F)
 ```
 
-
-# 3.2 Reported direction vs calculated
+## 3.2 Reported direction vs calculated
 
 ```{r rep_vs_calc}
 # Filter only P-val <0.05 & no missing directions/es_cats
@@ -971,7 +1044,6 @@ tmp = df  %>%
 
 
 ```
-
 
 ## Results Section: Comparison of Vector and Non-vector borne disease
 
@@ -984,9 +1056,8 @@ df%>%
 
 ```
 
-
-
 Testing vectored vs non-vectored
+
 ```{r ad2}
 
 # create named list for results
