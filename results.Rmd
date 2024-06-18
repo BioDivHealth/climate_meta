@@ -766,7 +766,91 @@ df%>%#
   mutate(prop = n /sum(n), tot = sum(n))
 ```
 
+By category:
+```{r}
+df%>%#
+  subset(Linear_Nonlinear == 'Linear')%>%
+  count(es_cat, Environmental_condition)%>%
+  group_by(Environmental_condition)%>%
+  mutate(prop = n /sum(n), tot = sum(n))
+```
+
+
 ### Determining how category distributions differ from full dataset
+
+
+# Defining statistical test
+```{r}
+ad2_stat <- function(x, y) {
+
+  # Sample sizes
+  n <- length(x)
+  m <- length(y)
+
+  # Pooled sample and pooled ecdf
+  z <- c(x, y)
+  z <- z[-which.max(z)] # Exclude the largest point
+  H <- rank(z) / (n + m)
+
+  # Statistic computation via ecdf()
+  (n * m / (n + m)^2) * sum((ecdf(x)(z) - ecdf(y)(z))^2 / ((1 - H) * H))
+
+}
+
+```
+
+
+
+```{r}
+# A homogeneity test using the Anderson-Darling statistic
+perm_comp_test <- function(x, y, B = 1e3) {
+
+  # Sizes of x and y
+  n <- length(x)
+  m <- length(y)
+
+  # Test statistic function. Requires TWO arguments, one being the original
+  # data (X_1, ..., X_n, Y_1, ..., Y_m) and the other containing the random
+  # index for permuting the sample
+  Tn <- function(data, perm_index) {
+
+    # Permute sample by perm_index
+    data <- data[perm_index]
+
+    # Split into two samples
+    x <- data[1:n]
+    y <- data[(n + 1):(n + m)]
+
+    # Test statistic -- MODIFY DEPENDING ON THE PROBLEM
+    ad2_stat(x = x, y = y)
+
+  }
+
+  # Perform permutation resampling with the aid of boot::boot
+  Tn_star <- boot::boot(data = c(x, y), statistic = Tn,
+                        sim = "permutation", R = B)
+
+  # Test information -- MODIFY DEPENDING ON THE PROBLEM
+  method <- "Permutation-based Anderson-Darling test of homogeneity"
+  alternative <- "any alternative to homogeneity"
+
+  # p-value: modify if rejection does not happen for large values of the
+  # test statistic
+  pvalue <- mean(Tn_star$t > Tn_star$t0)
+
+  # Construct an "htest" result
+  result <- list(statistic = c("stat" = Tn_star$t0), p.value = pvalue,
+                 statistic_perm = drop(Tn_star$t),
+                 B = B, alternative = alternative, method = method,
+                 data.name = deparse(substitute(x)))
+  class(result) <- "htest"
+
+  # Return "htest"
+  return(result)
+
+}
+
+```
 
 Defining categories and parameters to use in procedure.
 
@@ -776,9 +860,6 @@ categories = list(Transmission_type = c('Vectored', 'Non-vectored'),
                   Pathogen = c('Virus', 'Bacteria'), 
                   vector = c('Mosquito', 'Tick', 'Mite')
                   )
-
-# 10,000 bootstraps
-num_samples = 10000
 
 # random number seed
 set.seed(42)
@@ -804,10 +885,10 @@ for(condition in unique(df$Environmental_condition)){
       group_df = temp%>%
         filter(.data[[category]] == group)
       
-      ad = ad_test(temp$es, group_df$es, nboots=10000)
+      ad = perm_comp_test(temp$es, group_df$es)
 
-      pvals[[paste(condition, category, group, sep='.')]] = ad['P-Value']
-      test_stats[[paste(condition, category, group, sep='.')]] = ad['Test Stat']
+      pvals[[paste(condition, category, group, sep='.')]] = ad$p.value
+      test_stats[[paste(condition, category, group, sep='.')]] = ad$statistic
     }
   }
 }
@@ -846,10 +927,14 @@ for(condition in unique(df$Environmental_condition)){
       temp_filtered = temp%>%
         filter(.data[[category]] != group)
       
-      ad = ad_test(temp_filtered$es, group_df$es, nboots=10000)
+      ad = perm_comp_test(temp_filtered$es, group_df$es)
+      
+      #ad = ad2_stat(nonvec$es, vec$es)
 
-      pvals[[paste(condition, category, group, sep='.')]] = ad['P-Value']
-      test_stats[[paste(condition, category, group, sep='.')]] = ad['Test Stat']
+      pvals[[paste(condition, category, group, sep='.')]] = ad$p.value
+      test_stats[[paste(condition, category, group, sep='.')]] = ad$statistic
+      #pvals[[paste(condition, category, group, sep='.')]] = 1- goftest::pAD(q=ad)
+      #test_stats[[paste(condition, category, group, sep='.')]] = ad
     }
   }
 }
@@ -860,7 +945,7 @@ for(condition in unique(df$Environmental_condition)){
 ```{r}
 results_df2 = data.frame(id = names(pvals),
                         p_val_removed = unlist(pvals),
-                        stat_removed = test_stats)
+                        stat_removed = unlist(test_stats))
 
 results_df = left_join(results_df, results_df2)
 
@@ -871,8 +956,9 @@ rownames(results_df) = NULL
 
 results_df 
 
-#write.csv(results_df, 'outputs/tables/anderson_darling_results.csv', row.names = F)
+write.csv(results_df, 'outputs/tables/DistributionADTest_Results.csv', row.names = F)
 ```
+
 
 # 3.2 Reported direction vs calculated
 
@@ -884,6 +970,47 @@ tmp = df  %>%
        select(Direction, es, es_cat, P.value_general)
 
 
+```
+
+
+## Results Section: Comparison of Vector and Non-vector borne disease
+
+```{r}
+
+df%>%
+  subset(Linear_Nonlinear == 'Linear')%>%
+  group_by(Transmission_type, Environmental_condition)%>%
+  summarize(mn = mean(es), sd = sd(es), n=n())
+
+```
+
+
+
+Testing vectored vs non-vectored
+```{r ad2}
+
+# create named list for results
+pvals  = vector("list")
+test_stats = vector('list')
+
+for(condition in unique(df$Environmental_condition)){
+  # separate out climate factor
+  vec = df%>%
+    subset(Linear_Nonlinear == 'Linear')%>%
+    subset(Environmental_condition == condition)%>%
+    subset(Transmission_type == 'Vectored')
+  
+  nonvec = df%>%
+    subset(Linear_Nonlinear == 'Linear')%>%
+    subset(Environmental_condition == condition)%>%
+    subset(Transmission_type == 'Non-vectored')
+  
+      
+  #ad = ad_test(vec$es, nonvec$es, nboots=10000)
+  ks = ks.test(nonvec$es, vec$es, alternative = 'greater')
+  pvals[[condition]] = ks$p.value
+  test_stats[[condition]] = ks$statistic
+}
 ```
 
 # Main figures
@@ -909,4 +1036,14 @@ colors = c( "#00A8A5" , '#fee8c8', '#A80003')
 f2 = createFig2(df, results_df, colors)
 
 ggsave(f2, file="outputs/Figure2.png", device="png", units="in", width=12, height=9, dpi=600, scale=0.92)
+```
+
+## Figure 3
+
+```{r fig3, echo=FALSE}
+source('Figure3.R')
+colors = c('#A80003',"#00A8A5")
+f3 = createFig3(df, colors)
+
+ggsave(f3, file="outputs/Figure3.png", device="png", units="in", width=8, height=6, dpi=300, scale=1.25)
 ```
