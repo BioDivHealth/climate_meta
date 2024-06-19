@@ -485,6 +485,55 @@ cat("Proportion of studies significant at alfa = 0.001: ",
 
 ```
 
+### Linear vs Non-linear
+
+```{r pvals_linear_nonlinear}
+#filter out records without P values --------------------------------------
+pvals = df %>% filter(P.value_general!="" & !is.na(P.value_general))
+
+# Unify P-values
+pvals$P.value_general[pvals$P.value_general %in% c("<.0.05", "<0..05", 
+                                                   "<0.0001", "<0.001", "<0.01")] <- "<0.05"
+
+# Linear relationships p-values
+pvals_linear = pvals %>% filter(P.value_general!="" & !is.na(P.value_general) & Linear_Nonlinear=="Linear")
+pvals_linear = as.data.frame(table(pvals_linear$P.value_general)) 
+names(pvals_linear) = c("pval","freq")
+# Non-linear relationships p-values
+pvals_nonlinear = pvals %>% filter(P.value_general!="" & !is.na(P.value_general) & Linear_Nonlinear=="Non-linear")
+pvals_nonlinear = as.data.frame(table(pvals_nonlinear$P.value_general))
+names(pvals_nonlinear) = c("pval","freq")
+
+# Create contingency table for tests
+contingency_table <- matrix(
+  c(pvals_linear$freq[1], pvals_linear$freq[2],
+    pvals_nonlinear$freq[1], pvals_nonlinear$freq[2]),
+  nrow = 2,
+  byrow = TRUE
+)
+
+# Perform Fisher's Exact Test
+fisher_test <- fisher.test(contingency_table)
+print(fisher_test)
+
+# Perform Chi-square test
+chi_square_test <- chisq.test(contingency_table)
+print(chi_square_test)
+
+# Calculate proportions for pvals_linear
+pvals_linear <- pvals_linear %>%
+  mutate(proportion = freq / sum(freq))
+
+# Calculate proportions for pvals_nonlinear
+pvals_nonlinear <- pvals_nonlinear %>%
+  mutate(proportion = freq / sum(freq))
+
+# Print the results
+print(pvals_linear)
+print(pvals_nonlinear)
+```
+
+
 ### Journals IF vs Effect Sizes/Pvals
 
 ```{r journals, echo=TRUE, message=TRUE, warning=TRUE, fig.show='hold',fig.width = 10, fig.height = 4}
