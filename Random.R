@@ -25,3 +25,15 @@ df$se_new = NA
 
 df$se_new <- mapply(calculate_se_hedges_g, df$es, df$N.value)
 View(df %>% select(es, se, se_new, N.value))
+
+
+##############################
+## Check Types of statistics
+unique(df$Type)
+
+View(df %>% 
+       select(Reference_ID,
+              N.value, sample.size,es,se, Lower, Upper, Error, Std._error,
+              Statistical_method, Type) %>% 
+       filter(Type==unique(df$Type)[1]) %>% 
+       filter(is.na(se)))
