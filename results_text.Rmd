@@ -59,7 +59,7 @@ df = df%>%
                                         'Bacteria')))
 ```
 
-## Results Section 1: Literature search results
+## Literature search results
 
 ```{r}
 extracted_stats = df %>% filter(!is.na(Value))
@@ -69,7 +69,6 @@ extracted_stats %<>%
   group_by(Environmental_condition) %>% 
   mutate(prop = n/length(extracted_stats$Environmental_condition))
 ```
-
 
 The search criteria isolated 13,468 article titles. After an initial triage of titles, 843 abstracts were assessed, leading to review of 447 full articles (Supp. Fig. S1). The final dataset contained information collated from `r length(unique(df$Reference_ID))` (\~1.4% of the long-list) independent studies, and described empirically observed trends between climate variables and disease risk for `r length(unique(df$Disease))` diseases from `r length(unique(df$Country))` countries. A total of `r length(df$Value[!is.na(df$Value)])` statistics was extracted from the studies, with `r paste0(round(extracted_stats$prop[extracted_stats$Environmental_condition=="Temperature"],2)*100,"%")` (n=`r extracted_stats$n[extracted_stats$Environmental_condition=="Temperature"]`) of data points describing the impacts of temperature, followed by precipitation (`r paste0(round(extracted_stats$prop[extracted_stats$Environmental_condition=="Precipitation"],2)*100,"%")`, n=`r extracted_stats$n[extracted_stats$Environmental_condition=="Precipitation"]`) and humidity (`r paste0(round(extracted_stats$prop[extracted_stats$Environmental_condition=="Humidity"],2)*100,"%")`, n=`r extracted_stats$n[extracted_stats$Environmental_condition=="Humidity"]`).
 
@@ -154,7 +153,7 @@ stat_txt = df %>%
 
 Most of the studies used human case incidence as the response variable (n=`r response_txt$N[response_txt$General_response=="Human disease incidence"]`; `r paste0(round(response_txt$P[response_txt$General_response=="Human disease incidence"],3)*100,"%")`) with host infection rates (n=`r response_txt$N[response_txt$General_response=="Host infection"]`; `r paste0(round(response_txt$P[response_txt$General_response=="Host infection"],3)*100,"%")`) as the next most examined (Fig. 1C). The high representation of hantaviruses and leptospirosis in the literature surveyed resulted in rodents as the most examined host taxonomic group (n=`r taxgroups_txt$N[taxgroups_txt$Principal_reservoir=="Rodents"]`; `r paste0(round(taxgroups_txt$P[taxgroups_txt$Principal_reservoir=="Rodents"],3)*100,"%")`), followed by multispecies studies examining mammal groups (n=`r taxgroups_txt$N[taxgroups_txt$Principal_reservoir=="Mammals (multispecies)"]`; `r paste0(round(taxgroups_txt$P[taxgroups_txt$Principal_reservoir=="Mammals (multispecies)"],3)*100,"%")`) (Fig. 1D). Seven studies (`r paste0(round(taxgroups_txt$P[taxgroups_txt$Principal_reservoir=="Bats"],3)*100,"%")`) examined disease with a bat reservoir. Viral pathogens were most commonly studied (n=`r pathogen_txt$N[pathogen_txt$Pathogen=="Virus"]`; `r paste0(round(pathogen_txt$P[pathogen_txt$Pathogen=="Virus"],3)*100,"%")`), followed by bacteria (n=`r pathogen_txt$N[pathogen_txt$Pathogen=="Bacteria"]`; `r paste0(round(pathogen_txt$P[pathogen_txt$Pathogen=="Bacteria"],3)*100,"%")`) and parasites (n=`r pathogen_txt$N[pathogen_txt$Pathogen=="Parasite"]`; `r paste0(round(100 - (round(pathogen_txt$P[pathogen_txt$Pathogen=="Bacteria"],3)*100+round(pathogen_txt$P[pathogen_txt$Pathogen=="Virus"],3)*100),2),"%")`; Fig. 1E). Only `r paste0(round(linear_nonlinear$P[linear_nonlinear$Linear_Nonlinear=="Non-linear"],3)*100,"%")` (n=`r linear_nonlinear$N[linear_nonlinear$Linear_Nonlinear=="Non-linear"]`) of studies examined non-linear relationships (Fig. 1F). Generalised linear statistical models were the most frequently used statistical tool (n=`r stat_txt$N[stat_txt$General_Stats_Method=="GL(M)M"]`; `r paste0(round(stat_txt$P[stat_txt$General_Stats_Method=="GL(M)M"],3)*100,"%")`), followed by correlation approaches (n=`r stat_txt$N[stat_txt$General_Stats_Method=="Correlation"]`; `r paste0(round(stat_txt$P[stat_txt$General_Stats_Method=="Correlation"],3)*100,"%")`; Fig. 1G).
 
-## Results Section 2: Reported significance of climate measures in studies and publication bias
+## Reported significance of climate measures in studies and publication bias
 
 ```{r reppvalsignificance_text, include=FALSE}
 #filter out records without P values --------------------------------------
@@ -214,7 +213,6 @@ print(chi_square_test)
 # pvals_linear %<>% mutate(P = freq/sum(freq)) %>% filter(pval!=">0.05") %>% summarise(total_sum = sum(P, na.rm = TRUE)) %>% pull(total_sum)
 # pvals_nonlinear %<>% mutate(P = freq/sum(freq)) %>% filter(pval!=">0.05") %>% summarise(total_sum = sum(P, na.rm = TRUE)) %>% pull(total_sum)
 ```
-
 
 ```{r chisq_groups_removed_function}
 
@@ -442,12 +440,56 @@ saveWorkbook(wb, file_name, overwrite = TRUE)
 
 ```
 
-The majority of studies assessed reported a significant relationship between climate measures and some index of zoonotic disease risk (`r paste0(round(alfa_005_p,3)*100, "%")` significant at α=0.05, `r paste0(round(alfa_001_p,2)*100, "%")` at α=0.01, `r paste0(round(alfa_0001_p,2)*100, "%")` at α=0.001).
-There were significantly more increases in a measure of risk (`r round((table(signif$Direction))[["increase"]]/(table(signif$Direction))[["decrease"]],1)` times more) reported than decreases ($\overline{\chi^2}$ = `r round(none_removed$means_chi["chi_all", "none_removed"],2)`, df = 1, 95% CI = `r round(none_removed$means_chi["chi_ci_lower_all", "none_removed"],2)` -- `r round(none_removed$means_chi["chi_ci_upper_all", "none_removed"],2)`, p = `r round(none_removed$means_pval["p_all", "none_removed"],3)`), from 1000 bootstraps of 80% of the data). The proportions seen within the overall dataset were robust to dropping most major regions, disease groups, pathogen types, statistical methods and hosts from the calculations (Table S1). However, when dividing the dataset into vectored and non-vectored diseases, only the subset containing vectored diseases showed significantly more increases than decreases in a measure of disease risk (Non-vectored diseases: $\overline{\chi^2}$ = `r round(df_all$Chi_Square[df_all$Group=="Vectored"],2)`, df=1, p= `r round(df_all$P_value[df_all$Group=="Vectored"],3)`; Vectored diseases: $\overline{\chi^2}$ = `r round(df_all$Chi_Square[df_all$Group=="Non.vectored"],2)`, df=1, p= `r round(df_all$P_value[df_all$Group=="Non.vectored"],5)`, Table S1).
+```{r secondary_reporting}
+# Filter out records without P values
+second <- df %>% 
+  filter(P.value_general != "" & !is.na(P.value_general))
 
-When subsetting the data to examine environmental categories individually (Temperature, Precipitation and Humidity data separately), only the Precipitation subset showed significantly more increases than decreases in a measure of disease risk (Temperature: $\overline{\chi^2}$ = `r round(none_removed$means_chi["temp_chi", "none_removed"],2)`, df=1, p= `r round(none_removed$means_pval["temp_p", "none_removed"],3)`; Precipitation: $\overline{\chi^2}$ = `r round(none_removed$means_chi["prec_chi", "none_removed"],2)`, df=1, p= `r round(none_removed$means_pval["prec_p", "none_removed"],3)`; Humidity: $\overline{\chi^2}$ = `r round(none_removed$means_chi["hum_chi", "none_removed"],2)`, df=1, p= `r round(none_removed$means_pval["hum_p", "none_removed"],3)`). 
+# Unify P-values
+second <- second %>%
+  mutate(P.value_general = ifelse(P.value_general %in% c("<.0.05", "<0..05", 
+                            "<0.0001", "<0.001","<0.01"), "<0.05", P.value_general))
+# Save IDs of unique studies
+studies <- unique(second$Reference_ID)
 
+# Create a dataframe to store results
+studies_with_secondary <- data.frame(studies = studies, secondary = NA, 
+                                     any_significant = NA,two_or_more_significant = NA)
+# Evaluate reporting rates
+for(i in studies_with_secondary$studies) {
+  
+  sub <- second %>% filter(Reference_ID == i) # Subset records for one study
+  levels <- sub$P.value_general # List significance levels within the study
+  
+  # Note studies with 2 or more significance values reported
+  studies_with_secondary$secondary[studies_with_secondary$studies == i] <- length(levels) > 1
+  
+  # Note studies with at least 1 significant result
+  studies_with_secondary$any_significant[studies_with_secondary$studies == i] <- "<0.05" %in% levels
+  
+  # Note studies with more than 1 significant result
+  studies_with_secondary$two_or_more_significant[studies_with_secondary$studies == i] <- sum(levels == "<0.05") > 1
+}
 
+#all studies with secondary reporting
+sum(studies_with_secondary$secondary)
+#percentage of studies with secondary reporting within full list of studies
+paste0(round(sum(studies_with_secondary$secondary)/length(unique(df$Reference_ID)),2)*100,"%") 
+#secondary with at least 1 significant
+sum(studies_with_secondary$any_significant[studies_with_secondary$secondary==TRUE]) 
+# percentage of secondary with at least 1 significant
+paste0(round(sum(studies_with_secondary$any_significant[studies_with_secondary$secondary==TRUE])/sum(studies_with_secondary$secondary),2)*100, "%")
+# secondary with 2 or more significant
+sum(studies_with_secondary$two_or_more_significant[studies_with_secondary$secondary==TRUE])
+# percentage of secondary with 2 or more significant
+paste0(round(sum(studies_with_secondary$two_or_more_significant[studies_with_secondary$secondary==TRUE])/sum(studies_with_secondary$any_significant[studies_with_secondary$secondary==TRUE]),2)*100,"%")
+```
+
+The majority of studies assessed reported a significant relationship between climate measures and some index of zoonotic disease risk (`r paste0(round(alfa_005_p,3)*100, "%")` significant at α=0.05, `r paste0(round(alfa_001_p,2)*100, "%")` at α=0.01, `r paste0(round(alfa_0001_p,2)*100, "%")` at α=0.001). Out of `r length(unique(df$Reference_ID))` studies, `r sum(studies_with_secondary$secondary)` (`r paste0(round(sum(studies_with_secondary$secondary)/length(unique(df$Reference_ID)),2)*100,"%")`) reported more than one statistic with an associated p-value. Among these `r sum(studies_with_secondary$secondary)` studies, `r sum(studies_with_secondary$any_significant[studies_with_secondary$secondary==TRUE])` (`r paste0(round(sum(studies_with_secondary$any_significant[studies_with_secondary$secondary==TRUE])/sum(studies_with_secondary$secondary),2)*100, "%")`) had at least one significant result. Furthermore, `r sum(studies_with_secondary$two_or_more_significant[studies_with_secondary$secondary==TRUE])` of these `r sum(studies_with_secondary$any_significant[studies_with_secondary$secondary==TRUE])` studies (`r paste0(round(sum(studies_with_secondary$two_or_more_significant[studies_with_secondary$secondary==TRUE])/sum(studies_with_secondary$any_significant[studies_with_secondary$secondary==TRUE]),2)*100,"%")`) reported two or more significant relationships.
+
+There were significantly more increases in a measure of risk (`r round((table(signif$Direction))[["increase"]]/(table(signif$Direction))[["decrease"]],1)` times more) reported than decreases ($\overline{\chi^2}$ = `r round(none_removed$means_chi["chi_all", "none_removed"],2)`, df = 1, 95% CI = `r round(none_removed$means_chi["chi_ci_lower_all", "none_removed"],2)` -- `r round(none_removed$means_chi["chi_ci_upper_all", "none_removed"],2)`, p = `r round(none_removed$means_pval["p_all", "none_removed"],3)`), from 1000 bootstraps of 80% of the data). The proportions seen within the overall dataset were robust to dropping most major regions, disease groups, pathogen types, statistical methods and hosts from the calculations (Table S2). However, when dividing the dataset into vectored and non-vectored diseases, only the subset containing vectored diseases showed significantly more increases than decreases in a measure of disease risk (Non-vectored diseases: $\overline{\chi^2}$ = `r round(df_all$Chi_Square[df_all$Group=="Vectored"],2)`, df=1, p= `r round(df_all$P_value[df_all$Group=="Vectored"],3)`; Vectored diseases: $\overline{\chi^2}$ = `r round(df_all$Chi_Square[df_all$Group=="Non.vectored"],2)`, df=1, p= `r round(df_all$P_value[df_all$Group=="Non.vectored"],5)`, Table S2).
+
+After subsetting the data to examine environmental categories individually (Temperature, Precipitation and Humidity data separately), only the Precipitation subset showed significantly more increases than decreases in a measure of disease risk (Temperature: $\overline{\chi^2}$ = `r round(none_removed$means_chi["temp_chi", "none_removed"],2)`, df=1, p= `r round(none_removed$means_pval["temp_p", "none_removed"],3)`; Precipitation: $\overline{\chi^2}$ = `r round(none_removed$means_chi["prec_chi", "none_removed"],2)`, df=1, p= `r round(none_removed$means_pval["prec_p", "none_removed"],3)`; Humidity: $\overline{\chi^2}$ = `r round(none_removed$means_chi["hum_chi", "none_removed"],2)`, df=1, p= `r round(none_removed$means_pval["hum_p", "none_removed"],3)`; Tables S3 - 5).
 
 ```{r sample_sizes_groups}
 tmp_samples = df %>%
@@ -462,10 +504,7 @@ prec_samples = df %>%
 prec_samples = prop.table(table(prec_samples$General_Disease))
 ```
 
-When dropping groups from the subsets examining environmental categories individually, levels of significance of some proportions within temperature and precipitation subsets also changed. Temperature subset showed significantly more increases  than  decreases in disease risk after removal of Hantaviral diseases (n = `r  sum(tmp_samples$General_Disease == "Hantaviral diseases")`; `r paste0(tmp_samples %>% summarize(percentage = mean(General_Disease == "Hantaviral diseases") * 100) %>% round(1), "%")` of the subset),  rodents as a reservoir (n = `r  sum(tmp_samples$Principal_reservoir == "Rodents")`; `r paste0(tmp_samples %>% summarize(percentage = mean(Principal_reservoir == "Rodents") * 100) %>% round(1), "%")` of the subset), livestock as a reservoir (n = `r  sum(tmp_samples$Principal_reservoir == "Livestock")`; `r paste0(tmp_samples %>% summarize(percentage = mean(Principal_reservoir == "Livestock") * 100) %>% round(1), "%")` of the subset), or when including only vectored diseases (n = `r  sum(tmp_samples$Transmission_type == "Vectored")`; `r paste0(tmp_samples %>% summarize(percentage = mean(Transmission_type == "Vectored") * 100) %>% round(1) %>% pull(), "%")` of the subset). Simultaneously, precipitation subset no longer had significantly more increases than decreases in disease risk when rodents as a reservoir (n = `r  sum(tmp_samples$Principal_reservoir == "Rodents")`; `r paste0(prec_samples %>% summarize(percentage = mean(Principal_reservoir == "Rodents") * 100) %>% round(1), "%")` of the subset) or non-vectored diseases (n = `r  sum(tmp_samples$Transmission_type == "Non-vectored")`; `r paste0(tmp_samples %>% summarize(percentage = mean(Transmission_type == "Non-vectored") * 100) %>% round(1), "%")` of the subset) were removed.
-
-
-###Publication bias
+When dropping groups from the subsets examining environmental categories individually, levels of significance of some proportions within temperature and precipitation subsets also changed. Temperature subset showed significantly more increases than decreases in disease risk after removal of Hantaviral diseases (n = `r  sum(tmp_samples$General_Disease == "Hantaviral diseases")`; `r paste0(tmp_samples %>% summarize(percentage = mean(General_Disease == "Hantaviral diseases") * 100) %>% round(1), "%")` of the subset), rodents as a reservoir (n = `r  sum(tmp_samples$Principal_reservoir == "Rodents")`; `r paste0(tmp_samples %>% summarize(percentage = mean(Principal_reservoir == "Rodents") * 100) %>% round(1), "%")` of the subset), livestock as a reservoir (n = `r  sum(tmp_samples$Principal_reservoir == "Livestock")`; `r paste0(tmp_samples %>% summarize(percentage = mean(Principal_reservoir == "Livestock") * 100) %>% round(1), "%")` of the subset), or when including only vectored diseases (n = `r  sum(tmp_samples$Transmission_type == "Vectored")`; `r paste0(tmp_samples %>% summarize(percentage = mean(Transmission_type == "Vectored") * 100) %>% round(1) %>% pull(), "%")` of the subset). Simultaneously, precipitation subset no longer had significantly more increases than decreases in disease risk when rodents as a reservoir (n = `r  sum(tmp_samples$Principal_reservoir == "Rodents")`; `r paste0(prec_samples %>% summarize(percentage = mean(Principal_reservoir == "Rodents") * 100) %>% round(1), "%")` of the subset) or non-vectored diseases (n = `r  sum(tmp_samples$Transmission_type == "Non-vectored")`; `r paste0(tmp_samples %>% summarize(percentage = mean(Transmission_type == "Non-vectored") * 100) %>% round(1), "%")` of the subset) were removed.
 
 ```{r journals, echo=TRUE, message=TRUE, warning=TRUE}
 #-----ES.   ------------------------------------------------------------------
@@ -523,7 +562,9 @@ p2 <- p2 + annotate("text", x = max(dat_pub2$Journal_5yr_Impact) * 0.6, y = max(
                     color = "black", size = 5, hjust = 0)
 ```
 
-When comparing high and low impact factor journals, there was no significant correlation between journal impact factors and reported P-values (Fig. S2, PCC = `r round(correlation2$estimate, 2)[[1]]`, p = `r round(correlation2$p.value,3)`) or effect sizes (Fig S2., PCC = `r round(correlation1$estimate, 2)[[1]]`, p = `r round(correlation1$p.value,3)`).
+#### **Publication bias**
+
+When comparing high and low impact factor journals, there was no significant correlation between journal impact factors and reported P-values (Fig. S2, PCC = `r round(correlation2$estimate, 2)[[1]]`, p = `r round(correlation2$p.value,3)`) or effect sizes (Fig. S2, PCC = `r round(correlation1$estimate, 2)[[1]]`, p = `r round(correlation1$p.value,3)`).
 
 ```{r eggers_tests}
 f1 <- df %>% filter(!is.na(se) & !is.na(es))
@@ -555,9 +596,9 @@ pcurve_results = pcurve(tmp, effect.estimation = FALSE)
 #Right skewness test for Full curve & Half curve has p = 0 (p<0.001)
 ```
 
-There was limited evidence of publication bias inferred from funnel plots made by plotting standard errors against respective effect sizes (Fig. S3). Egger's regression tests for funnel plot asymmetry showed significant asymmetry of funnel plots for the overall dataset (P-value = `r round(list_regtest$All,3)`) and precipitation data (P-value = `r round(list_regtest$Precipitation,3)`), but no significant asymmetry was identified within humidity and temperature data (Fig. S3/Table SX). Furthermore, P-values extracted from the studies were examined to check for potential evidence of "p-hacking". Visual inspection of the distribution of P-values surrounding p = 0.05 did not find evidence of p-hacking. This was further supported by P-curve analysis and a significant result of a right-skewness test for the distribution of P-values (p < 0.001).
+There was limited evidence of publication bias inferred from funnel plots made by plotting standard errors against respective effect sizes (Fig. S3). Egger's regression tests for funnel plot asymmetry showed significant asymmetry of funnel plots for the overall dataset (P-value = `r round(list_regtest$All,3)`) and precipitation data (P-value = `r round(list_regtest$Precipitation,3)`), but no significant asymmetry was identified within humidity and temperature data (Fig. S3/Table SX). Furthermore, P-values extracted from the studies were examined to check for potential evidence of "p-hacking". Visual inspection of the distribution of P-values surrounding p = 0.05 did not find evidence of p-hacking. This was further supported by P-curve analysis and a significant result of a right-skewness test for the distribution of P-values (p \< 0.001).
 
-## Results Section 3: Direction of climate effects on measures of disease risk
+## Direction of climate effects on measures of disease risk
 
 ```{r}
 sum(!is.na(df$es))
@@ -590,7 +631,7 @@ paste0(round(es_categories$prop[es_categories$es_cat=="No effect" &
 es_categories$n[es_categories$es_cat=="No effect" & es_categories$Environmental_condition=="Precipitation"]
 ```
 
-To compare measured climate effects between studies and disease groups, Hedges g effect size was calculated for each extracted statistic from the studies. Hedges g was able to be calculated for a total of `r sum(!is.na(df$es))` statistics (`r paste0(round(sum(!is.na(df$es))/sum(!is.na(df$Value)),2)*100,"%")` of the extracted statistics). Confidence intervals around Hedges g were able to be calculated for `r df %>% filter(!is.na(ci.lo) & !is.na(ci.hi)) %>% count() %>% pull()` effect sizes. Temperature showed the highest proportion of positive effects on measures of disease risk, as `r paste0(round(es_categories$prop[es_categories$es_cat=="Positive effect (g > 0.2)" & es_categories$Environmental_condition=="Temperature"],2)*100,"%")` of studies (n=`r round(es_categories$n[es_categories$es_cat=="Positive effect (g > 0.2)" & es_categories$Environmental_condition=="Temperature"],2)`) had a value of Hedges g greater than 0.2 (Fig. 2). Nearly half the studies showed no effect of precipitation (`r paste0(round(es_categories$prop[es_categories$es_cat=="No effect" & es_categories$Environmental_condition=="Precipitation"],3)*100,"%")`; n=`r es_categories$n[es_categories$es_cat=="No effect" & es_categories$Environmental_condition=="Precipitation"]`) or humidity (`r paste0(round(es_categories$prop[es_categories$es_cat=="No effect" & es_categories$Environmental_condition=="Humidity"],3)*100,"%")`; n=`r es_categories$n[es_categories$es_cat=="No effect" & es_categories$Environmental_condition=="Humidity"]`) on disease risk. Most subcategories of the data followed the same effect distribution of the full dataset for the measured climate factors, with similar numbers of negative and positive effects.
+To compare measured climate effects between studies and disease groups, Hedge's g effect size was calculated for each extracted statistic from the studies. Hedge's g was able to be calculated for a total of `r sum(!is.na(df$es))` statistics (`r paste0(round(sum(!is.na(df$es))/sum(!is.na(df$Value)),2)*100,"%")` of the extracted statistics). Confidence intervals around Hedge's g were able to be calculated for `r df %>% filter(!is.na(ci.lo) & !is.na(ci.hi)) %>% count() %>% pull()` effect sizes. Temperature showed the highest proportion of positive effects on measures of disease risk, as `r paste0(round(es_categories$prop[es_categories$es_cat=="Positive effect (g > 0.2)" & es_categories$Environmental_condition=="Temperature"],2)*100,"%")` of studies (n=`r round(es_categories$n[es_categories$es_cat=="Positive effect (g > 0.2)" & es_categories$Environmental_condition=="Temperature"],2)`) had a value of Hedge's g greater than 0.2 (Fig. 2). Nearly half the studies showed no effect of precipitation (`r paste0(round(es_categories$prop[es_categories$es_cat=="No effect" & es_categories$Environmental_condition=="Precipitation"],3)*100,"%")`; n=`r es_categories$n[es_categories$es_cat=="No effect" & es_categories$Environmental_condition=="Precipitation"]`) or humidity (`r paste0(round(es_categories$prop[es_categories$es_cat=="No effect" & es_categories$Environmental_condition=="Humidity"],3)*100,"%")`; n=`r es_categories$n[es_categories$es_cat=="No effect" & es_categories$Environmental_condition=="Humidity"]`) on disease risk. Most subcategories of the data followed the same effect distribution of the full dataset for the measured climate factors, with similar numbers of negative and positive effects.
 
 However, the effect size distributions for vector-borne diseases and diseases vectored by mosquitoes significantly differed from the overall effect size distribution for temperature ***(Anderson-Darling Test: vector borne disease: AD = 2.53; p=0.045; mosquito vectored disease: AD = 5.15; p=0.011).*** Additionally, the effect size distribution for diseases with a livestock principal reservoir differed from the overall humidity effect size distribution ***(Anderson-Darling Test: AD = 2.74; p=0.04).*** When the subsets were compared to the full distributions with the subset removed, ***a few more categories were significantly different:*** non-vectored diseases and diseases with a rodent reservoir significantly differed from the overall temperature distribution, and diseases with a livestock principal reservoir differed from the overall precipitation distribution (Supp. Table SX).
 
