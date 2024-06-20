@@ -396,7 +396,8 @@ expect_equal(round(actual_sds,2), round(expected_sds,2))
 R<- subset(zooALL, zooALL$Statistical_method %in% c("Spearman rank correlation", "Pearson correlation")) #pearson and spearmans
 B.1<-subset(B,!B$Error %in% c("95% Confidence", "Std. error")) #correlation coefficients without error values
 R.1<-rbind(R, B.1)
-R_d<-cohens_d(R.1$Value) #calculate cohen's effect size
+R_d<-cohens_d(R.1$Value) # calculate cohen's effect size #ARTUR COMMENT: shouldnt it be cohens_d(r = R.1$Value) instead?
+                         # this function takes f as default, but we have r (correlation coefficient)
 
 R.1$N.value<-as.numeric(R.1$N.value) 
 R.2<-cbind(R.1,R_d) #Bind Dataframe and Cohen's D effect size calculation
