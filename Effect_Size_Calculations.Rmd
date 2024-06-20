@@ -3,6 +3,8 @@ title: "Quicker coding"
 author: "Lewis Gourlay"
 date: "2023-04-03"
 output: html_document
+editor_options: 
+  chunk_output_type: console
 ---
 
 #### Set-up of packages & Data
@@ -426,6 +428,7 @@ R_comp_scatter<-R_comp_scatter+ geom_point(data = outliers, aes(x=outliers$Corre
 
 R_comp_scatter
 ```
+
 ```{r Effect sizes for Ratios, include=TRUE}
 
 Ratios<-subset(zooALL,zooALL$Type %in% c("Relative risk", "Risk ratio","Incidence rate ratio","Prevelance ratio","Hospitilisation rate ratio")) #subset
@@ -476,12 +479,15 @@ z$N.value[is.na(z$N.value)]<-median(z$N.value,na.rm=TRUE)
 
 
 Hedge_z<-convert_z2r(z$Value)
-Hedge_z<-cohens_d(Hedge_z)
+Hedge_z<-cohens_d(Hedge_z) # ARTUR: SHOULDN'T IT BE cohens_d(r = Hedge_z)?
+                           # by default that function takes f.
 Hedge_z<-as.data.frame(hedges_g(d=Hedge_z, totaln = z$N.value))
+Hedge_z
 
 Hedge_z<-cbind(z$study, Hedge_z)
 names(Hedge_z)[names(Hedge_z)=="z$study"]<-"study"
 names(Hedge_z)[names(Hedge_z)=="hedges_g(d = Hedge_z, totaln = z$N.value)"]<-"es"
+Hedge_z
 
 #Unit scaling and Sanity checks
 z_comp<-merge(z,Hedge_z, by = "study")
@@ -497,6 +503,7 @@ z_comp_scatter<-z_comp_scatter +geom_point(data = outliers, aes(x=outliers$Value
 
 z_comp_scatter
 ```
+
 ```{r Effect sizes for T-test, include=TRUE}
 t<-(subset(zooALL, zooALL$Type %in% c("T-value")))
 Hedge_t<-as.data.frame(esc_t(t=2.24, p=0.05, totaln = 8917, es.type = c("g"), study = t$study))
