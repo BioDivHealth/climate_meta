@@ -518,23 +518,35 @@ pub1 %<>% dplyr::select(es, Journal_5yr_Impact, Environmental_condition)
 dat_pub1 = pub1
 dat_pub1$es = abs(dat_pub1$es)
 
+#mypal = pal_npg(alpha = 1)(9)
+#scales::show_col(mypal)
+#colours_journals = c("#3C5488FF","#E64B35FF", "#175149")
+
 # Scatter plot with regression line
 p1 <- ggplot(dat_pub1, aes(x = Journal_5yr_Impact, y = es)) +
-  geom_point(color = "forestgreen", alpha = 0.5) +
-  geom_smooth(method = "lm", color = "black", se = TRUE, alpha = 0.5) +
-  ggtitle("Effect Size vs Journal Impact Factor") +
+  geom_point(color = colours_journals[2], alpha = 0.5) +
+  geom_smooth(method = "lm", color = colours_journals[3], se = TRUE, alpha = 0.17) +
+  #ggtitle("Effect Size vs Journal Impact Factor") +
   xlab("Journal 5-year Impact Factor") +
   ylab("Effect Size (Hedge's g)") +
+  scale_x_continuous(breaks = seq(0, max(dat_pub1$Journal_5yr_Impact), by = 2.5))+
   theme_minimal()
 
 # Calculate Pearson correlation coefficient
 correlation1 <- cor.test(dat_pub1$es, dat_pub1$Journal_5yr_Impact)
 
 # Annotate the scatter plot with the correlation coefficient
-p1 <- p1 + annotate("text", x = max(dat_pub1$Journal_5yr_Impact) * 0.6, y = max(dat_pub1$es) * 0.8,
+p1 <- p1 + annotate("text", x = max(dat_pub1$Journal_5yr_Impact) * 0.7, y = max(dat_pub1$es) * 0.9,
                     label = paste("Pearson r:", round(correlation1$estimate, 2),
                                   "\nP-value:", format(correlation1$p.value, digits = 3)),
-                    color = "black", size = 5, hjust = 0)
+                    color = "black", size = 4, hjust = 0)
+p1 = p1 + labs(tag = "A")+
+    theme(plot.tag = element_text(face = "bold",size = 14),
+          plot.tag.position = c(0.0,1),
+          axis.title.x = element_text(size = 14),
+          axis.title.y = element_text(size = 14),
+          axis.text=element_text(size=12))  # Bold y-axis text)
+p1
 #------------------------------------------------------------------------------
 
 # Data filtering and preparation for the second plot
@@ -545,21 +557,28 @@ dat_pub2$P.value_specific = abs(dat_pub2$P.value_specific)
 
 # Scatter plot with regression line
 p2 <- ggplot(dat_pub2, aes(x = Journal_5yr_Impact, y = P.value_specific)) +
-  geom_point(color = "cornflowerblue", alpha = 0.5) +
-  geom_smooth(method = "lm", color = "black", se = TRUE) +
-  ggtitle("Reported P-value vs Journal Impact Factor") +
+  geom_point(color = colours_journals[1], alpha = 0.5) +
+  geom_smooth(method = "lm", color = colours_journals[3], se = TRUE, alpha=0.17) +
+  #ggtitle("Reported p-value vs Journal Impact Factor") +
   xlab("Journal 5-year Impact Factor") +
-  ylab("P-value reported") +
+  ylab("p-value reported") +
   theme_minimal()
 
 # Calculate Pearson correlation coefficient
 correlation2 <- cor.test(dat_pub2$Journal_5yr_Impact, dat_pub2$P.value_specific)
 
 # Annotate the scatter plot with the correlation coefficient
-p2 <- p2 + annotate("text", x = max(dat_pub2$Journal_5yr_Impact) * 0.6, y = max(dat_pub2$P.value_specific) * 0.8,
+p2 <- p2 + annotate("text", x = max(dat_pub2$Journal_5yr_Impact) * 0.7, y = max(dat_pub2$P.value_specific) * 0.9,
                     label = paste("Pearson r:", round(correlation2$estimate, 2),
                                   "\nP-value:", format(correlation2$p.value, digits = 3)),
-                    color = "black", size = 5, hjust = 0)
+                    color = "black", size = 4, hjust = 0)
+
+p2 = p2 + labs(tag = "B")+
+    theme(plot.tag = element_text(face = "bold",size = 14),
+          plot.tag.position = c(0,1),
+          axis.title.x = element_text(size = 14),
+          axis.title.y = element_text(size = 14),
+          axis.text=element_text(size=12))
 ```
 
 #### **Publication bias**
@@ -646,7 +665,9 @@ Vector-mediated zoonotic diseases had significantly more positive effects ***(me
 ------------------------------------------------------------------------
 
 ```{r fig.show='hold', include=TRUE, fig.width = 10, fig.height = 4, echo=FALSE, fig.cap='Fig. S2: Distribution of reported P-values and effect sizes against Journal Impact Factors'}
-ggarrange(p1, p2, ncol = 2, nrow = 1)
+p3 = ggarrange(p1, p2, ncol = 2, nrow = 1)
+p3 = p3  + theme(plot.margin = unit(c(0.5,0,0,0.2),"cm"))
+ggsave(p3, file="outputs/FigureS2.png", device="png", units="in", width=9.3, height=4, dpi=1000, scale=1)
 ```
 
 ------------------------------------------------------------------------
@@ -687,23 +708,24 @@ create_funnel_plot <- function(tmp, point_color, title_plot, subplot_tag, positi
 }
 
 f1 <- df %>% filter(!is.na(se) & !is.na(es))
-funnel_plot_1 <- create_funnel_plot(f1, "forestgreen", "All env. measures",
+funnel_plot_1 <- create_funnel_plot(f1, "forestgreen", "Overall dataset",
                                     subplot_tag="A", positions = c(0.01,1.05)) + ylab("Standard Error") + xlab("")
 
 f2 <- df %>% filter(!is.na(se) & !is.na(es)) %>% filter(Environmental_condition == "Temperature")
-funnel_plot_2 <- create_funnel_plot(f2, "cyan4", "Temperature",
+funnel_plot_2 <- create_funnel_plot(f2, "#352A87", "Temperature",
                                     subplot_tag="B", positions = c(0.01,1.05)) + xlab("") + ylab("")
 
 f3 <- df %>% filter(!is.na(se) & !is.na(es)) %>% filter(Environmental_condition == "Precipitation")
-funnel_plot_3 <- create_funnel_plot(f3, "cyan4", "Precipitation" ,
+funnel_plot_3 <- create_funnel_plot(f3, "#0FAEB8", "Precipitation" ,
                                     subplot_tag="C", positions = c(0.01,1.05)) + xlab("Effect Size (Hedge's g)") + ylab("Standard Error")
 
 f4 <- df %>% filter(!is.na(se) & !is.na(es)) %>% filter(Environmental_condition == "Humidity")
-funnel_plot_4 <- create_funnel_plot(f4, "cyan4", "Humidity",
-                                    subplot_tag="D", positions = c(0.01,1.05)) + xlab("Effect Size (Hedge's g)") + ylab("")
+funnel_plot_4 <- create_funnel_plot(f4, "#FCC237", "Humidity",
+                                    subplot_tag="D", positions = c(0.01,1.05)) + xlab("Effect Size (Hedge's g)") + ylab("") + geom_point(shape = 1, color = "#FFA237")   # Scatter plot of effect sizes vs. standard errors
 
 abc = ggarrange(funnel_plot_1, funnel_plot_2, funnel_plot_3, funnel_plot_4, nrow = 2, ncol = 2)
 abc = abc + theme(plot.margin = unit(c(0.7,0,0,0.3),"cm"))
 print(abc)
-ggsave(abc, file="outputs/FigureS2.png", device="png", units="in", width=8.5, height=5, dpi=1000, scale=1)
+abc
+ggsave(abc, file="outputs/FigureS3.png", device="png", units="in", width=8.5, height=5, dpi=1000, scale=1)
 ```
