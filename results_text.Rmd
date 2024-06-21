@@ -721,7 +721,7 @@ funnel_plot_3 <- create_funnel_plot(f3, "#0FAEB8", "Precipitation" ,
 
 f4 <- df %>% filter(!is.na(se) & !is.na(es)) %>% filter(Environmental_condition == "Humidity")
 funnel_plot_4 <- create_funnel_plot(f4, "#FCC237", "Humidity",
-                                    subplot_tag="D", positions = c(0.01,1.05)) + xlab("Effect Size (Hedge's g)") + ylab("") + geom_point(shape = 1, color = "#FFA237")   # Scatter plot of effect sizes vs. standard errors
+                                    subplot_tag="D", positions = c(0.01,1.05)) + xlab("Effect Size (Hedge's g)") + ylab("") + geom_point(shape = 1, color = "#FAA209")   # Scatter plot of effect sizes vs. standard errors
 
 abc = ggarrange(funnel_plot_1, funnel_plot_2, funnel_plot_3, funnel_plot_4, nrow = 2, ncol = 2)
 abc = abc + theme(plot.margin = unit(c(0.7,0,0,0.3),"cm"))
