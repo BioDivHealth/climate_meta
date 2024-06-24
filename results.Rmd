@@ -1,6 +1,8 @@
 ---
 title: "Climate impacts on zoonotic disease meta-analysis results"
 output: html_document
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{r setup, include=FALSE, results='asis'}
@@ -704,31 +706,29 @@ barplot(prop.table(table(tmp$P.value_general)))
 
 #P-VALUP.value_specific SPECIFIC-----------------------------
 
-tmp %<>% filter(!is.na(P.value_specific))
+tmp %<>% filter(!is.na(P.value_specific)) %>% filter(P.value_specific<=0.06)
 
-# Plot the frequency of P.value_specific
-## HISTOGRAM
-ggplot(data = data.frame(p_value = tmp$P.value_specific), aes(x = p_value)) +
-  geom_histogram(binwidth = 0.005, fill = "skyblue", color = "black") +
-  labs(x = "P-value", y = "Frequency", title = "Frequency of P.value_specific") +
-  geom_vline(xintercept = 0.05, linetype = "dashed", color = "red") +  # Add vertical line at x = 0.05
+pv = as.data.frame(tmp$P.value_specific)
+# Histogram with kernel density
+ggplot(pv, aes(x = tmp$P.value_specific, y = after_stat(density))) + 
+  geom_histogram(colour = 1, fill = "skyblue4", binwidth = 0.005, boundary = 0, alpha = 0.7) +
+  geom_density(fill = "pink", alpha = 0.5) +
+  geom_vline(xintercept = 0.05, linetype = "dashed", color = "red")+
+  labs(x = "p-value", y = "Density", title = "Density Plot of P.value_specific") +
   theme_minimal()
 
-## DENSITY PLOT
-ggplot(data = data.frame(p_value = tmp$P.value_specific), aes(x = p_value)) +
-  geom_density(fill = "skyblue", color = "black") +
-  labs(x = "P-value", y = "Density", title = "Density Plot of P.value_specific") +
-  geom_vline(xintercept = 0.05, linetype = "dashed", color = "red") +  # Add vertical line at x = 0.05+
-  theme_minimal()
+# Create the data frame
+pv <- as.data.frame(tmp$P.value_specific)
+colnames(pv) <- "P_value_specific"
 
-# Plot the density of P.value_specific focusing on the area around 0.05
-tmp = df %>% filter(!is.na(P.value_specific)) %>% filter(P.value_specific<=0.10)
-# DENSITY PLOT
-ggplot(data = data.frame(p_value = tmp$P.value_specific), aes(x = p_value)) +
-  geom_density(fill = "skyblue", color = "black") +
-  labs(x = "P-value", y = "Density", title = "Density Plot of P.value_specific (Zoomed In)") +
-  xlim(0, 0.1) +  # Zoom in on the area around 0.05
-  geom_vline(xintercept = 0.05, linetype = "dashed", color = "red") +  # Add vertical line at x = 0.05
+# Histogram with kernel density
+ggplot(pv, aes(x = P_value_specific, y = ..density..)) + 
+  geom_histogram(aes(fill = "Histogram"), colour = "black", binwidth = 0.005, boundary = 0, alpha = 0.7) +
+  geom_density(aes(fill = "Density"), alpha = 0.5) +
+  geom_vline(xintercept = 0.05, linetype = "dashed", color = "red", aes(color = "Threshold")) +
+  labs(x = "p-value", y = "Density", title = "Density Plot of P.value_specific") +
+  scale_fill_manual(name = "Legend", values = c("Histogram" = "skyblue4", "Density" = "pink")) +
+  scale_color_manual(name = "Legend", values = c("Threshold" = "red")) +
   theme_minimal()
 ```
 
@@ -744,7 +744,7 @@ if (!require(dmetar, quietly = TRUE)) {
 }
 
 tmp = df %>% filter(!is.na(se) & !is.na(es) & !is.na(Reference_ID)) %>% filter(P.value_general!=">0.05" & !is.na(P.value_general))
-tmp %<>% dplyr::select(.,se, es, Reference_ID, es)
+tmp %<>% dplyr::select(.,se, es, Reference_ID)
 
 names(tmp) = c("seTE", "TE","studlab")
 pcurve_results = pcurve(tmp, effect.estimation = FALSE)
