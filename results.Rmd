@@ -714,9 +714,9 @@ colnames(pv2) <- "P_value_specific"
 
 # Create the zoomed-in plot (pl1)
 pl1 = ggplot(pv1, aes(x = P_value_specific, y = after_stat(density))) + 
-  geom_histogram(aes(y = after_stat(density)), colour = 1, fill = "skyblue4", binwidth = 0.005, boundary = 0, alpha = 0.7) +
+  geom_histogram(aes(y = after_stat(density)), colour = 1, fill = "#3C5488FF", binwidth = 0.005, boundary = 0, alpha = 0.8) +
   geom_density(fill = "pink", alpha = 0.4) +
-  geom_vline(xintercept = 0.05, linetype = "dashed", color = "red") +
+  geom_vline(xintercept = 0.05, linetype = "dashed", color = "#E64B35FF") +
   labs(x = "p-value", y = "Density", title = "Density Plot of p-val < 0.07") +
   theme_linedraw()+
   theme(axis.text.y = element_text(size = 8),  # Bold y-axis text
@@ -728,9 +728,9 @@ pl1 = ggplot(pv1, aes(x = P_value_specific, y = after_stat(density))) +
 
 # Create the full range plot (pl2)
 pl2 = ggplot(pv2, aes(x = P_value_specific, y = after_stat(density))) + 
-  geom_histogram(aes(y = after_stat(density)), colour = 1, fill = "skyblue4", binwidth = 0.04, boundary = 0, alpha = 0.7) +
+  geom_histogram(aes(y = after_stat(density)), colour = 1, fill = "#3C5488FF", binwidth = 0.04, boundary = 0, alpha = 0.8) +
   geom_density(fill = "pink", alpha = 0.4) +
-  geom_vline(xintercept = 0.05, linetype = "dashed", color = "red") +
+  geom_vline(xintercept = 0.05, linetype = "dashed", color = "#E64B35FF") +
   labs(x = "p-value", y = "Density", title = "Density Plot of p-values") +
   theme_minimal() +
   xlim(0, 1)   # Adjust the x-axis limit based on your data range
