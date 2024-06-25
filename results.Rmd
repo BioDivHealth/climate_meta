@@ -898,7 +898,7 @@ source('FigureS4.R')
 combined_plot <- ggdraw() +
   draw_plot(pl2) +
   draw_plot(pl1, x = 0.43, y = 0.34, width = 0.49, height = 0.53) +
-  draw_plot_label(label = "Zoomed-in View", x = 0.55, y = 0.925, size = 9)
+  draw_plot_label(label = "Zoomed-in view", x = 0.55, y = 0.925, size = 9)
 
 combined_plot
 
