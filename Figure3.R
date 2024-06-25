@@ -79,8 +79,11 @@ createFig3  = function(df, colors){
     #scale_y_continuous(expand = c(0,0))+
     #scale_x_continuous(expand = c(0,0))+
     plot_theme+
+    labs(tag = "A")+
     theme(axis.title.x=element_text(vjust=-2),
           axis.ticks.y=element_blank(),
+          plot.tag.position = c(0.055, 0.95),
+          plot.tag = element_text(face = "bold", size = 14),
           strip.text = ggtext::element_markdown(size=14, hjust=0.5, margin=margin(b=10), face="bold"))
   
   
@@ -105,10 +108,13 @@ createFig3  = function(df, colors){
     scale_x_continuous(position="top", limits=c(-2.5, 2.5))+
     scale_y_reverse()+
     plot_theme+
+    labs(tag = "B")+
     theme(axis.text.y = element_blank(),
           axis.ticks.y = element_blank(),
           strip.text = element_blank(),
+          plot.tag.position = c(0.05, 0.95),
           strip.background = element_blank(),
+          plot.tag = element_text(face = "bold", size = 14),
           axis.title.y=element_text(vjust=-10))
   
   
