@@ -691,46 +691,61 @@ write.csv(results_regtests, 'outputs/tables/eggers_funnel_tests.csv', row.names 
 
 ### P-value distribution
 
-```{r}
-print(unique(df$P.value_general))
+```{r pvals_combined_plot}
+library(ggplot2)
+library(dplyr)
+library(cowplot)
 
-#P-VALUES GENERAL--------------------------------------------
-#filter out records without P values
-tmp = df %>% filter(P.value_general!="")
+# Filter and unify P-values
+tmp = df %>% filter(P.value_general != "")
 
-#unify P-values
-tmp$P.value_general[tmp$P.value_general=="<.0.05" |
-                    tmp$P.value_general=="<0..05"] = "<0.05"
+# Unify P-values
+tmp$P.value_general[tmp$P.value_general %in% c("<.0.05", "<0..05")] <- "<0.05"
 
-barplot(prop.table(table(tmp$P.value_general)))
+# Filter specific P-values for the plots
+tmp1 = tmp %>% filter(!is.na(P.value_specific)) %>% filter(P.value_specific <= 0.07)
+tmp2 = tmp %>% filter(!is.na(P.value_specific))
 
-#P-VALUP.value_specific SPECIFIC-----------------------------
+# Create data frames for the plots
+pv1 = as.data.frame(tmp1$P.value_specific)
+pv2 = as.data.frame(tmp2$P.value_specific)
+colnames(pv1) <- "P_value_specific"
+colnames(pv2) <- "P_value_specific"
 
-tmp %<>% filter(!is.na(P.value_specific)) %>% filter(P.value_specific<=0.06)
+# Create the zoomed-in plot (pl1)
+pl1 = ggplot(pv1, aes(x = P_value_specific, y = after_stat(density))) + 
+  geom_histogram(aes(y = after_stat(density)), colour = 1, fill = "skyblue4", binwidth = 0.005, boundary = 0, alpha = 0.7) +
+  geom_density(fill = "pink", alpha = 0.4) +
+  geom_vline(xintercept = 0.05, linetype = "dashed", color = "red") +
+  labs(x = "p-value", y = "Density", title = "Density Plot of p-val < 0.07") +
+  theme_linedraw()+
+  theme(axis.text.y = element_text(size = 8),  # Bold y-axis text
+        axis.title.x = element_text(size = 9),
+        axis.title.y = element_text(size = 9),
+        axis.text.x = element_text(size = 8),
+        title = element_text(size=8))+  # Bold x-axis title)
+  xlim(0, 0.07)
 
-pv = as.data.frame(tmp$P.value_specific)
-# Histogram with kernel density
-ggplot(pv, aes(x = tmp$P.value_specific, y = after_stat(density))) + 
-  geom_histogram(colour = 1, fill = "skyblue4", binwidth = 0.005, boundary = 0, alpha = 0.7) +
-  geom_density(fill = "pink", alpha = 0.5) +
-  geom_vline(xintercept = 0.05, linetype = "dashed", color = "red")+
-  labs(x = "p-value", y = "Density", title = "Density Plot of P.value_specific") +
-  theme_minimal()
+# Create the full range plot (pl2)
+pl2 = ggplot(pv2, aes(x = P_value_specific, y = after_stat(density))) + 
+  geom_histogram(aes(y = after_stat(density)), colour = 1, fill = "skyblue4", binwidth = 0.04, boundary = 0, alpha = 0.7) +
+  geom_density(fill = "pink", alpha = 0.4) +
+  geom_vline(xintercept = 0.05, linetype = "dashed", color = "red") +
+  labs(x = "p-value", y = "Density", title = "Density Plot of p-values") +
+  theme_minimal() +
+  xlim(0, 1)   # Adjust the x-axis limit based on your data range
 
-# Create the data frame
-pv <- as.data.frame(tmp$P.value_specific)
-colnames(pv) <- "P_value_specific"
+# Combine the two plots with an inset
+combined_plot <- ggdraw() +
+  draw_plot(pl2) +
+  draw_plot(pl1, x = 0.43, y = 0.34, width = 0.49, height = 0.53) +
+  draw_plot_label(label = "Zoomed-in View", x = 0.55, y = 0.925, size = 9)
 
-# Histogram with kernel density
-ggplot(pv, aes(x = P_value_specific, y = ..density..)) + 
-  geom_histogram(aes(fill = "Histogram"), colour = "black", binwidth = 0.005, boundary = 0, alpha = 0.7) +
-  geom_density(aes(fill = "Density"), alpha = 0.5) +
-  geom_vline(xintercept = 0.05, linetype = "dashed", color = "red", aes(color = "Threshold")) +
-  labs(x = "p-value", y = "Density", title = "Density Plot of P.value_specific") +
-  scale_fill_manual(name = "Legend", values = c("Histogram" = "skyblue4", "Density" = "pink")) +
-  scale_color_manual(name = "Legend", values = c("Threshold" = "red")) +
-  theme_minimal()
+combined_plot
+# Display the combined plot
+ggsave(combined_plot, file="outputs/FigS4.png", device="png", units="in", width=6.3, height=3.8, dpi=1000, scale=0.95)
 ```
+
 
 ### P-CURVE
 
