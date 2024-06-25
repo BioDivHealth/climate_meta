@@ -535,117 +535,6 @@ print(pvals_linear)
 print(pvals_nonlinear)
 ```
 
-
-### Journals IF vs Effect Sizes/Pvals
-
-```{r journals, echo=TRUE, message=TRUE, warning=TRUE, fig.show='hold',fig.width = 10, fig.height = 4}
-#-----ES.   ------------------------------------------------------------------
-library(patchwork)
-library(ggplot2)
-library(dplyr)
-
-# Data filtering and preparation
-pub1 = df %>% filter(!is.na(es) & !is.na(Journal_5yr_Impact))
-pub1 %<>% dplyr::select(es, Journal_5yr_Impact, Environmental_condition)
-dat_pub1 = pub1
-dat_pub1$es = abs(dat_pub1$es)
-
-# Scatter plot with regression line
-p1 <- ggplot(dat_pub1, aes(x = Journal_5yr_Impact, y = es)) +
-  geom_point(color = "forestgreen", alpha = 0.5) +
-  geom_smooth(method = "lm", color = "black", se = TRUE, alpha = 0.5) +
-  ggtitle("Effect Size vs Journal Impact Factor") +
-  xlab("Journal 5-year Impact Factor") +
-  ylab("Effect Size (Hedge's g)") +
-  theme_minimal()
-
-# Calculate Pearson correlation coefficient
-correlation1 <- cor.test(dat_pub1$es, dat_pub1$Journal_5yr_Impact)
-
-# Annotate the scatter plot with the correlation coefficient
-p1 <- p1 + annotate("text", x = max(dat_pub1$Journal_5yr_Impact) * 0.6, y = max(dat_pub1$es) * 0.8,
-                    label = paste("Pearson r:", round(correlation1$estimate, 2),
-                                  "\nP-value:", format(correlation1$p.value, digits = 3)),
-                    color = "black", size = 5, hjust = 0)
-#------------------------------------------------------------------------------
-
-# Data filtering and preparation for the second plot
-pub2 = df %>% filter(!is.na(P.value_specific) & !is.na(Journal_5yr_Impact))
-pub2 %<>% dplyr::select(P.value_specific, Journal_5yr_Impact, Environmental_condition)
-dat_pub2 = pub2
-dat_pub2$P.value_specific = abs(dat_pub2$P.value_specific)
-
-# Scatter plot with regression line
-p2 <- ggplot(dat_pub2, aes(x = Journal_5yr_Impact, y = P.value_specific)) +
-  geom_point(color = "cornflowerblue", alpha = 0.5) +
-  geom_smooth(method = "lm", color = "black", se = TRUE) +
-  ggtitle("Reported P-value vs Journal Impact Factor") +
-  xlab("Journal 5-year Impact Factor") +
-  ylab("P-value reported") +
-  theme_minimal()
-
-# Calculate Pearson correlation coefficient
-correlation2 <- cor.test(dat_pub2$Journal_5yr_Impact, dat_pub2$P.value_specific)
-
-# Annotate the scatter plot with the correlation coefficient
-p2 <- p2 + annotate("text", x = max(dat_pub2$Journal_5yr_Impact) * 0.6, y = max(dat_pub2$P.value_specific) * 0.8,
-                    label = paste("Pearson r:", round(correlation2$estimate, 2),
-                                  "\nP-value:", format(correlation2$p.value, digits = 3)),
-                    color = "black", size = 5, hjust = 0)
-
-ggarrange(p1, p2, ncol = 2, nrow = 1)
-```
-
-### Funnel plots of SE vs ES
-
-```{r funnelplots, echo=FALSE, fig.height=5, fig.show='hold', fig.width=8.5, include=TRUE, fig.cap='Fig. S3: Funnel plots of standard errors against effect sizes'}
-# Define the function to create the funnel plot
-create_funnel_plot <- function(tmp, point_color, title_plot) {
-  
-  # Calculate the mean effect size
-  mean_es <- mean(tmp$es, na.rm = TRUE)
-  
-  # Calculate the limits for the funnel regions
-  max_se <- max(tmp$se, na.rm = TRUE)
-  
-  # Calculate the x-axis limits based on the maximum absolute value of effect size
-  max_abs_es <- max(abs(tmp$es), na.rm = TRUE)
-  xlim_range <- c(-max_abs_es, max_abs_es)
-  
-  # Create the funnel plot 
-  funnel_plot <- ggplot(tmp, aes(x = es, y = se)) +
-    geom_polygon(data = data.frame(
-      x = c(mean_es - 1.96 * max_se, mean_es + 1.96 * max_se, mean_es),
-      y = c(max_se, max_se, 0)
-    ), aes(x = x, y = y), fill = point_color, alpha = 0.1) +  # Add 95% confidence region
-    geom_point(shape = 1, color = point_color) +  # Scatter plot of effect sizes vs. standard errors
-    geom_vline(xintercept = mean_es, linetype = "dashed") +  # Vertical line at overall effect size
-    scale_x_continuous(limits = xlim_range) +  # Set x-axis limits to ensure zero is centered
-    scale_y_reverse() +  # Reverse the y-axis to have standard errors decreasing upwards
-    xlab("Effect Size (Hedge's g)") +
-    ylab("Standard Error") +
-    ggtitle(title_plot) +
-    theme_minimal()
-
-  return(funnel_plot)
-}
-
-f1 <- df %>% filter(!is.na(se) & !is.na(es))
-funnel_plot_1 <- create_funnel_plot(f1, "forestgreen", "All env. measures")
-
-f2 <- df %>% filter(!is.na(se) & !is.na(es)) %>% filter(Environmental_condition == "Temperature")
-funnel_plot_2 <- create_funnel_plot(f2, "cyan4", "Temperature")
-
-f3 <- df %>% filter(!is.na(se) & !is.na(es)) %>% filter(Environmental_condition == "Precipitation")
-funnel_plot_3 <- create_funnel_plot(f3, "cyan4", "Precipitation")
-
-f4 <- df %>% filter(!is.na(se) & !is.na(es)) %>% filter(Environmental_condition == "Humidity")
-funnel_plot_4 <- create_funnel_plot(f4, "cyan4", "Humidity")
-
-comb = ggarrange(funnel_plot_1, funnel_plot_2, funnel_plot_3, funnel_plot_4, nrow = 2, ncol = 2)
-print(comb)
-```
-
 ### Eggers test
 
 ```{r eggers_tests}
@@ -689,312 +578,10 @@ results_regtests <- data.frame(
 write.csv(results_regtests, 'outputs/tables/eggers_funnel_tests.csv', row.names = F)
 ```
 
-### P-value distribution
-
-```{r pvals_combined_plot}
-library(ggplot2)
-library(dplyr)
-library(cowplot)
-
-# Filter and unify P-values
-tmp = df %>% filter(P.value_general != "")
-
-# Unify P-values
-tmp$P.value_general[tmp$P.value_general %in% c("<.0.05", "<0..05")] <- "<0.05"
-
-# Filter specific P-values for the plots
-tmp1 = tmp %>% filter(!is.na(P.value_specific)) %>% filter(P.value_specific <= 0.07)
-tmp2 = tmp %>% filter(!is.na(P.value_specific))
-
-# Create data frames for the plots
-pv1 = as.data.frame(tmp1$P.value_specific)
-pv2 = as.data.frame(tmp2$P.value_specific)
-colnames(pv1) <- "P_value_specific"
-colnames(pv2) <- "P_value_specific"
-
-# Create the zoomed-in plot (pl1)
-pl1 = ggplot(pv1, aes(x = P_value_specific, y = after_stat(density))) + 
-  geom_histogram(aes(y = after_stat(density)), colour = 1, fill = "#3C5488FF", binwidth = 0.005, boundary = 0, alpha = 0.8) +
-  geom_density(fill = "pink", alpha = 0.4) +
-  geom_vline(xintercept = 0.05, linetype = "dashed", color = "#E64B35FF") +
-  labs(x = "p-value", y = "Density", title = "Density Plot of p-val < 0.07") +
-  theme_linedraw()+
-  theme(axis.text.y = element_text(size = 8),  # Bold y-axis text
-        axis.title.x = element_text(size = 9),
-        axis.title.y = element_text(size = 9),
-        axis.text.x = element_text(size = 8),
-        title = element_text(size=8))+  # Bold x-axis title)
-  xlim(0, 0.07)
-
-# Create the full range plot (pl2)
-pl2 = ggplot(pv2, aes(x = P_value_specific, y = after_stat(density))) + 
-  geom_histogram(aes(y = after_stat(density)), colour = 1, fill = "#3C5488FF", binwidth = 0.04, boundary = 0, alpha = 0.8) +
-  geom_density(fill = "pink", alpha = 0.4) +
-  geom_vline(xintercept = 0.05, linetype = "dashed", color = "#E64B35FF") +
-  labs(x = "p-value", y = "Density", title = "Density Plot of p-values") +
-  theme_minimal() +
-  xlim(0, 1)   # Adjust the x-axis limit based on your data range
-
-# Combine the two plots with an inset
-combined_plot <- ggdraw() +
-  draw_plot(pl2) +
-  draw_plot(pl1, x = 0.43, y = 0.34, width = 0.49, height = 0.53) +
-  draw_plot_label(label = "Zoomed-in View", x = 0.55, y = 0.925, size = 9)
-
-combined_plot
-# Display the combined plot
-#ggsave(combined_plot, file="outputs/FigS4.png", device="png", units="in", width=6.3, height=3.8, dpi=1000, scale=0.95)
-```
-
-```{r pvals_scaled}
-library(ggplot2)
-library(dplyr)
-library(cowplot)
-
-# Filter and unify P-values
-tmp = df %>% filter(P.value_general != "")
-
-# Unify P-values
-tmp$P.value_general[tmp$P.value_general %in% c("<.0.05", "<0..05")] <- "<0.05"
-
-# Filter specific P-values for the plots
-tmp1 = tmp %>% filter(!is.na(P.value_specific)) %>% filter(P.value_specific <= 0.07 & P.value_specific>=0.03)
-tmp2 = tmp %>% filter(!is.na(P.value_specific))
-
-# Create data frames for the plots
-pv1 = as.data.frame(tmp1$P.value_specific)
-pv2 = as.data.frame(tmp2$P.value_specific)
-colnames(pv1) <- "P_value_specific"
-colnames(pv2) <- "P_value_specific"
-
-# Create the zoomed-in plot (pl1)
-pl1 = ggplot(pv1, aes(x = P_value_specific, y = after_stat(count))) + 
-  geom_histogram(aes(y = ..ndensity..), colour = 1, fill = "#3C5488FF", binwidth = 0.005, boundary = 0, alpha = 0.8) +
-  geom_density(aes(y = ..scaled..),fill = "pink", alpha = 0.4) +
-  geom_vline(xintercept = 0.05, linetype = "dashed", color = "#E64B35FF") +
-  labs(x = "p-value", y = "Density", title = "Density Plot of p-val < 0.07") +
-  theme_linedraw()+
-  theme(axis.text.y = element_text(size = 8),  # Bold y-axis text
-        axis.title.x = element_text(size = 9),
-        axis.title.y = element_text(size = 9),
-        axis.text.x = element_text(size = 8),
-        title = element_text(size=8))+  # Bold x-axis title)
-  xlim(0.03, 0.07)
-
-# Create the full range plot (pl2)
-pl2 = ggplot(pv2, aes(x = P_value_specific)) + 
-  geom_histogram(aes(y = (..ndensity..)), colour = 1, fill = "#3C5488FF", binwidth = 0.04, boundary = 0, alpha = 0.8) +
-  geom_density(aes(y = (..scaled..)),fill = "pink", alpha = 0.4) +
-  geom_vline(xintercept = 0.05, linetype = "dashed", color = "#E64B35FF") +
-  labs(x = "p-value", y = "Density", title = "Density Plot of p-values") +
-  theme_minimal() +
-  xlim(0, 1)   # Adjust the x-axis limit based on your data range
-
-# Combine the two plots with an inset
-combined_plot <- ggdraw() +
-  draw_plot(pl2) +
-  draw_plot(pl1, x = 0.43, y = 0.34, width = 0.49, height = 0.53) +
-  draw_plot_label(label = "Zoomed-in View", x = 0.55, y = 0.925, size = 9)
-
-combined_plot
-```
-
-```{r pvals_histograms}
-library(ggplot2)
-library(dplyr)
-library(cowplot)
-
-# Filter and unify P-values
-tmp = df %>% filter(P.value_general != "")
-
-# Unify P-values
-tmp$P.value_general[tmp$P.value_general %in% c("<.0.05", "<0..05")] <- "<0.05"
-
-# Filter specific P-values for the plots
-tmp1 = tmp %>% filter(!is.na(P.value_specific)) %>% filter(P.value_specific <= 0.07 & P.value_specific >= 0.03)
-tmp2 = tmp %>% filter(!is.na(P.value_specific))
-
-# Create data frames for the plots
-pv1 = as.data.frame(tmp1$P.value_specific)
-pv2 = as.data.frame(tmp2$P.value_specific)
-colnames(pv1) <- "P_value_specific"
-colnames(pv2) <- "P_value_specific"
-
-# Create the zoomed-in plot (pl1)
-pl1 = ggplot(pv1, aes(x = P_value_specific, y = after_stat(count))) + 
-  geom_histogram(colour = 1, fill = "#3C5488FF",
-                 binwidth = 0.005, boundary = 0, alpha = 0.5) +
-  geom_vline(xintercept = 0.05, linetype = "dashed", color = "#E64B35FF") +
-  labs(x = "p-value", y = "Count", title = "Histogram of p-vals around 0.05") +
-  theme_linedraw()+
-  theme(axis.text.y = element_text(size = 8),  # Bold y-axis text
-        axis.title.x = element_text(size = 9),
-        axis.title.y = element_text(size = 9),
-        axis.text.x = element_text(size = 8),
-        title = element_text(size=8))+  # Bold x-axis title)
-  xlim(0.03, 0.07)
-
-# Create the full range plot (pl2)
-pl2 = ggplot(pv2, aes(x = P_value_specific, y = after_stat(count))) + 
-  geom_histogram(colour = 1, fill = "#3C5488FF", binwidth = 0.025, boundary = 0, alpha = 0.8) +
-  geom_vline(xintercept = 0.05, linetype = "dashed", color = "#E64B35FF") +
-  labs(x = "p-value", y = "Count", title = "Histogram of p-values") +
-  theme_minimal() +
-  xlim(0, 1)   # Adjust the x-axis limit based on your data range
-
-# Combine the two plots with an inset
-combined_plot <- ggdraw() +
-  draw_plot(pl2) +
-  draw_plot(pl1, x = 0.43, y = 0.34, width = 0.49, height = 0.53) +
-  draw_plot_label(label = "Zoomed-in View", x = 0.55, y = 0.925, size = 9)
-
-combined_plot
-
-ggsave(combined_plot, file="outputs/FigS4.png", device="png", units="in", width=6.3, height=3.8, dpi=1000, scale=0.95)
-```
-
-### P-CURVE
-
-Using <https://rdrr.io/github/MathiasHarrer/dmetar/man/pcurve.html>.
-
-```{r PCURVE}
-#Using <https://rdrr.io/github/MathiasHarrer/dmetar/man/pcurve.html>.
-if (!require(dmetar, quietly = TRUE)) {
-  install.packages("dmetar")
-  library(dmetar)
-}
-
-tmp = df %>% filter(!is.na(se) & !is.na(es) & !is.na(Reference_ID)) %>% filter(P.value_general!=">0.05" & !is.na(P.value_general))
-tmp %<>% dplyr::select(.,se, es, Reference_ID)
-
-names(tmp) = c("seTE", "TE","studlab")
-pcurve_results = pcurve(tmp, effect.estimation = FALSE)
-
-#Right skewness test for Full curve & Half curve has p = 0 (p<0.001)
-#Which suggests no P-hacking
-```
-
-### Journal IF vs Effect Size
-
-```{r journal_vs_pval}
-library(patchwork)
-tmp = df %>% filter(!is.na(es) & !is.na(Journal_5yr_Impact))
-tmp %<>% dplyr::select(es, Journal_5yr_Impact, Environmental_condition)
-#tmp %<>% filter(Environmental_condition=="Precipitation")
-data=tmp
-
-data$es = abs(data$es)
-
-# Histogram for es
-p1 <- ggplot(data, aes(x = es)) +
-  geom_histogram(bins = 30, color = "black", fill = "blue", alpha = 0.5) +
-  #geom_density(color = "red", size = 1) +
-  ggtitle("Distribution of es") +
-  xlab("es") +
-  theme_minimal()
-
-# Histogram for Journal_5yr_Impact
-p2 <- ggplot(data, aes(x = Journal_5yr_Impact)) +
-  geom_histogram(bins = 30, color = "black", fill = "forestgreen", alpha = 0.7) +
-  #geom_density(color = "red", size = 1) +
-  ggtitle("Distribution of Journal_5yr_Impact") +
-  xlab("Journal_5yr_Impact") +
-  theme_minimal()
-
-# Scatter plot with regression line
-p3 <- ggplot(data, aes(x = es, y = Journal_5yr_Impact)) +
-  geom_point(color = "blue", alpha = 0.5) +
-  geom_smooth(method = "lm", color = "red", se = FALSE) +
-  ggtitle("es vs Journal_5yr_Impact") +
-  xlab("es") +
-  ylab("Journal_5yr_Impact") +
-  theme_minimal()
-
-# Calculate Pearson correlation coefficient
-correlation <- cor.test(data$es, data$Journal_5yr_Impact)
-
-# Annotate the scatter plot with the correlation coefficient
-p3 <- p3 + annotate("text", x = 0.5, y = max(data$Journal_5yr_Impact), 
-                    label = paste("Pearson r:", round(correlation$estimate, 2),
-                                  "\nP-value:", format(correlation$p.value)),
-                    color = "black", size = 5, hjust = 0)
-
-
-# Improved Boxplot with Jitter for es by Journal_5yr_Impact
-p4 <- ggplot(data, aes(x = as.factor(round((Journal_5yr_Impact))), y = es)) +
-  geom_boxplot(fill = "orange", color = "black", alpha = 0.7) +
-  geom_jitter(width = 0.1, alpha = 0.5, color = "blue") +
-  ggtitle("Boxplot and Jitter of es by Journal_5yr_Impact") +
-  xlab("Journal_5yr_Impact") +
-  ylab("es") +
-  theme_minimal()
-
-# Arrange all plots in a grid
-ggarrange(p1, p2, p3, p4, ncol = 2, nrow = 2)
-
-```
-
-### Journal IF vs P-value
-
-```{r journal_vs_es}
-
-tmp = df %>% filter(!is.na(P.value_specific) & !is.na(Journal_5yr_Impact))
-tmp %<>% dplyr::select(P.value_specific, Journal_5yr_Impact, Environmental_condition)
-#tmp %<>% filter(Environmental_condition=="Temperature")
-data = tmp; data$P.value_specific = abs(data$P.value_specific)
-
-# Histogram for P.value_specific
-p1 <- ggplot(data, aes(x = P.value_specific)) +
-  geom_histogram(bins = 30, color = "black", fill = "blue", alpha = 0.5) +
-  #geom_density(color = "red", size = 1) +
-  ggtitle("Distribution of P.value_specific") +
-  xlab("P.value_specific") +
-  theme_minimal()
-
-# Histogram for Journal_5yr_Impact
-p2 <- ggplot(data, aes(x = Journal_5yr_Impact)) +
-  geom_histogram(binwidth = 0.5, color = "black", fill = "forestgreen", alpha = 0.7) +
-  #geom_density(color = "red", size = 1) +
-  ggtitle("Distribution of Journal_5yr_Impact") +
-  xlab("Journal_5yr_Impact") +
-  theme_minimal()
-
-# Scatter plot with regression line
-p3 <- ggplot(data, aes(x = Journal_5yr_Impact, y = P.value_specific)) +
-  geom_point(color = "blue", alpha = 0.5) +
-  geom_smooth(method = "lm", color = "red", se = FALSE) +
-  ggtitle("P.value_specific vs Journal_5yr_Impact") +
-  xlab("Journal_5yr_Impact") +
-  ylab("P.value_specific") +
-  theme_minimal()
-
-# Calculate Pearson correlation coefficient
-correlation <- cor.test(data$Journal_5yr_Impact, data$P.value_specific)
-
-# Annotate the scatter plot with the correlation coefficient
-p3 <- p3 + annotate("text", x = 0.5, y = max(data$P.value_specific), 
-                    label = paste("Pearson r:", round(correlation$estimate, 2),
-                                  "\nP-value:", format(correlation$p.value)),
-                    color = "black", size = 5, hjust = 0)
-
-
-# Improved Boxplot with Jitter for P.value_specific by Journal_5yr_Impact
-p4 <- ggplot(data, aes(x = as.factor(round((Journal_5yr_Impact))), y = P.value_specific)) +
-  geom_boxplot(fill = "orange", color = "black", alpha = 0.7) +
-  geom_jitter(width = 0.1, alpha = 0.3, color = "blue") +
-  ggtitle("Boxplot and Jitter of P.value_specific by Journal_5yr_Impact") +
-  xlab("Journal_5yr_Impact") +
-  ylab("P.value_specific") +
-  theme_minimal()
-
-# Arrange all plots in a grid
-ggarrange(p1, p2, p3, p4, ncol = 2, nrow = 2)
-
-```
 
 # Results Section 3: Strength of climate effects of zoonotic diseases
 
-**Effect Size Category Grouping**
+##Effect Size Category Grouping 
 
 ```{r numpergroup}
 
@@ -1024,7 +611,7 @@ df%>%#
 
 ## Determining how category distributions differ from full dataset
 
-## Defining statistical test
+### Defining statistical test
 
 ```{r}
 ad2_stat <- function(x, y) {
@@ -1203,17 +790,6 @@ results_df
 write.csv(results_df, 'outputs/tables/DistributionADTest_Results.csv', row.names = F)
 ```
 
-## 3.2 Reported direction vs calculated
-
-```{r rep_vs_calc}
-# Filter only P-val <0.05 & no missing directions/es_cats
-tmp = df  %>% 
-       filter(!is.na(Direction) & !is.na(es_cat) & Direction!="") %>% 
-       filter(P.value_general != "" & P.value_general != ">0.05") %>%
-       select(Direction, es, es_cat, P.value_general)
-
-
-```
 
 ## Results Section: Comparison of Vector and Non-vector borne disease
 
@@ -1288,3 +864,44 @@ f3 = createFig3(df, colors)
 
 ggsave(f3, file="outputs/Figure3.png", device="png", units="in", width=8, height=6, dpi=300, scale=1.25)
 ```
+
+
+# Supplementary figures
+
+## Figure S2 
+```{r FigS2}
+source('FigureS2.R')
+
+p3 = ggarrange(p1, p2, ncol = 2, nrow = 1)
+p3 = p3  + theme(plot.margin = unit(c(0.5,0,0,0.2),"cm"))
+ggsave(p3, file="outputs/FigureS2.png", device="png", units="in", width=9.3, height=4, dpi=1000, scale=1)
+```
+
+## Figure S3 
+
+```{r FigS3}
+
+source('FigureS3.R')
+
+s3 = ggarrange(funnel_plot_1, funnel_plot_2, funnel_plot_3, funnel_plot_4, nrow = 2, ncol = 2)
+s3 = s3 + theme(plot.margin = unit(c(0.7,0,0,0.3),"cm"))
+print(s3)
+
+ggsave(s3, file="outputs/FigureS3.png", device="png", units="in", width=8.5, height=5, dpi=1000, scale=1)
+```
+
+## Figure S4
+
+```{r FigS4}
+source('FigureS4.R')
+
+combined_plot <- ggdraw() +
+  draw_plot(pl2) +
+  draw_plot(pl1, x = 0.43, y = 0.34, width = 0.49, height = 0.53) +
+  draw_plot_label(label = "Zoomed-in View", x = 0.55, y = 0.925, size = 9)
+
+combined_plot
+
+ggsave(combined_plot, file="outputs/FigureS4.png", device="png", units="in", width=6.3, height=3.8, dpi=1000, scale=0.95)
+```
+
