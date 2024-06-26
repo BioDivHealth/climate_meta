@@ -1,0 +1,31 @@
+"Environmental_condition","Category","Group","p_val","stat","p_val_removed","stat_removed"
+"Temperature","Transmission_type","Vectored",0.045,2.53365374668377,0.001,6.13043098679637
+"Temperature","Transmission_type","Non-vectored",0.166,1.60059174660185,0.003,6.13043098679638
+"Temperature","Principal_reservoir","Rodents",0.247,1.23806013357438,0.048,2.61130883744676
+"Temperature","Principal_reservoir","Mammals (multispecies)",0.333,1.1265150851913,0.09,2.09180588043855
+"Temperature","Principal_reservoir","Livestock",0.134,1.66876494455465,0.07,2.25168896076413
+"Temperature","Pathogen","Virus",0.989,0.204122255425172,0.504,0.773689531569162
+"Temperature","Pathogen","Bacteria",0.993,0.19215108268438,0.826,0.406368727785867
+"Temperature","vector","Mosquito",0.008,4.15034672623946,0,5.88177854427918
+"Temperature","vector","Tick",0.171,1.53415582453946,0.077,2.08565061464057
+"Temperature","vector","Mite",0.287,1.09647373114839,0.257,1.29626548139945
+"Precipitation","Transmission_type","Vectored",0.778,0.496369048493581,0.341,1.03921112908872
+"Precipitation","Transmission_type","Non-vectored",0.984,0.234295938160617,0.335,1.03921112908872
+"Precipitation","Principal_reservoir","Rodents",0.885,0.373175097591144,0.395,0.948702586170387
+"Precipitation","Principal_reservoir","Mammals (multispecies)",1,0.0959539396362341,1,0.154186599151255
+"Precipitation","Principal_reservoir","Livestock",0.058,2.23630378221168,0.025,3.10730389746228
+"Precipitation","Pathogen","Virus",0.608,0.632902126385385,0.122,1.8903241348871
+"Precipitation","Pathogen","Bacteria",0.745,0.497425921968995,0.239,1.2974366400843
+"Precipitation","vector","Mosquito",0.519,0.765356757695315,0.331,1.03071171846558
+"Precipitation","vector","Tick",0.358,0.980329977714082,0.302,1.13694420049484
+"Precipitation","vector","Mite",0.474,0.796273647223874,0.396,0.941632322993922
+"Humidity","Transmission_type","Vectored",0.898,0.35258485127934,0.408,0.881969663946043
+"Humidity","Transmission_type","Non-vectored",0.974,0.235758926885572,0.411,0.881969663946042
+"Humidity","Principal_reservoir","Rodents",0.799,0.442721765554926,0.412,0.876656803734988
+"Humidity","Principal_reservoir","Mammals (multispecies)",0.409,0.891568476692317,0.137,1.64064487164335
+"Humidity","Principal_reservoir","Livestock",0.03,2.7361700608215,0.002,4.7480570263988
+"Humidity","Pathogen","Virus",0.977,0.263825762835332,0.634,0.610570422069972
+"Humidity","Pathogen","Bacteria",0.979,0.241401156809557,0.445,0.829191437417288
+"Humidity","vector","Mosquito",0.402,0.922526133227634,0.246,1.20407057915629
+"Humidity","vector","Tick",0.585,0.673497103466667,0.441,0.863589959013698
+"Humidity","vector","Mite",0.743,0.499502397005357,0.582,0.677125907281219
