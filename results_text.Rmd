@@ -520,7 +520,7 @@ dat_pub1$es = abs(dat_pub1$es)
 
 #mypal = pal_npg(alpha = 1)(9)
 #scales::show_col(mypal)
-#colours_journals = c("#3C5488FF","#E64B35FF", "#175149")
+colours_journals = c("#3C5488FF","#E64B35FF", "#175149")
 
 # Scatter plot with regression line
 p1 <- ggplot(dat_pub1, aes(x = Journal_5yr_Impact, y = es)) +
