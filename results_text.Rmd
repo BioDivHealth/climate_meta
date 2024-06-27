@@ -276,15 +276,13 @@ After subsetting the data to examine environmental categories individually (Temp
 tmp_samples = df %>%
     filter(Direction != "" & P.value_general != "" &
              P.value_general != ">0.05" & Environmental_condition=="Temperature") 
-tmp_samples %>%
-  summarize(percentage = mean(General_Disease == "Hantaviral diseases") * 100) %>% round(1)
 
 prec_samples = df %>%
     filter(Direction != "" & P.value_general != "" &
              P.value_general != ">0.05" & Environmental_condition=="Precipitation")
-prec_samples = prop.table(table(prec_samples$General_Disease))
-```
 
+#prec_samples = prop.table(table(prec_samples$General_Disease))
+```
 When dropping groups from the subsets examining environmental categories individually, levels of significance of some proportions within temperature and precipitation subsets also changed. Temperature subset showed significantly more increases than decreases in disease risk after removal of Hantaviral diseases (n = `r  sum(tmp_samples$General_Disease == "Hantaviral diseases")`; `r paste0(tmp_samples %>% summarize(percentage = mean(General_Disease == "Hantaviral diseases") * 100) %>% round(1), "%")` of the subset), rodents as a reservoir (n = `r  sum(tmp_samples$Principal_reservoir == "Rodents")`; `r paste0(tmp_samples %>% summarize(percentage = mean(Principal_reservoir == "Rodents") * 100) %>% round(1), "%")` of the subset), livestock as a reservoir (n = `r  sum(tmp_samples$Principal_reservoir == "Livestock")`; `r paste0(tmp_samples %>% summarize(percentage = mean(Principal_reservoir == "Livestock") * 100) %>% round(1), "%")` of the subset), or when including only vectored diseases (n = `r  sum(tmp_samples$Transmission_type == "Vectored")`; `r paste0(tmp_samples %>% summarize(percentage = mean(Transmission_type == "Vectored") * 100) %>% round(1) %>% pull(), "%")` of the subset). Simultaneously, precipitation subset no longer had significantly more increases than decreases in disease risk when rodents as a reservoir (n = `r  sum(tmp_samples$Principal_reservoir == "Rodents")`; `r paste0(prec_samples %>% summarize(percentage = mean(Principal_reservoir == "Rodents") * 100) %>% round(1), "%")` of the subset) or non-vectored diseases (n = `r  sum(tmp_samples$Transmission_type == "Non-vectored")`; `r paste0(tmp_samples %>% summarize(percentage = mean(Transmission_type == "Non-vectored") * 100) %>% round(1), "%")` of the subset) were removed.
 
 ```{r journals, echo=TRUE, message=TRUE, warning=TRUE}
@@ -448,7 +446,6 @@ Vector-mediated zoonotic diseases had significantly more positive effects ***(me
 ```{r fig.show='hold', include=TRUE, fig.width = 10, fig.height = 4, echo=FALSE, fig.cap='Fig. S2: Distribution of reported P-values and effect sizes against Journal Impact Factors'}
 p3 = ggarrange(p1, p2, ncol = 2, nrow = 1)
 p3 = p3  + theme(plot.margin = unit(c(0.5,0,0,0.2),"cm"))
-ggsave(p3, file="outputs/FigureS2.png", device="png", units="in", width=9.3, height=4, dpi=1000, scale=1)
 ```
 
 ------------------------------------------------------------------------
@@ -507,6 +504,4 @@ funnel_plot_4 <- create_funnel_plot(f4, "#FCC237", "Humidity",
 abc = ggarrange(funnel_plot_1, funnel_plot_2, funnel_plot_3, funnel_plot_4, nrow = 2, ncol = 2)
 abc = abc + theme(plot.margin = unit(c(0.7,0,0,0.3),"cm"))
 print(abc)
-abc
-ggsave(abc, file="outputs/FigureS3.png", device="png", units="in", width=8.5, height=5, dpi=1000, scale=1)
 ```
