@@ -610,7 +610,7 @@ pub1 %<>% dplyr::select(es, Journal_5yr_Impact, Environmental_condition)
 dat_pub1 = pub1
 dat_pub1$es = abs(dat_pub1$es)
 
-correlation1 <- cor.test(dat_pub1$es, dat_pub1$Journal_5yr_Impact)
+correlation1 <- cor.test(dat_pub1$es, dat_pub1$Journal_5yr_Impact, method = "pearson")
 cat("Impact Factors vs Effect Sizes:",
     "\nPearson r:", round(correlation1$estimate, 2),
     "\nP-value:", format(correlation1$p.value, digits = 3))
@@ -624,11 +624,63 @@ dat_pub2 = pub2
 dat_pub2$P.value_specific = abs(dat_pub2$P.value_specific)
 
 # Calculate Pearson correlation coefficient
-correlation2 <- cor.test(dat_pub2$Journal_5yr_Impact, dat_pub2$P.value_specific)
+correlation2 <- cor.test(dat_pub2$Journal_5yr_Impact, dat_pub2$P.value_specific, method = "pearson")
 cat("Impact Factors vs reported p-values:",
     "\nPearson r:", round(correlation2$estimate, 2),
     "\nP-value:", format(correlation2$p.value, digits = 3))
 
+#-------------------------------------------------------------------------------
+# ES VS IF -----------------------------------
+# Perform Shapiro-Wilk test for normality
+shapiro_test_es <- shapiro.test(dat_pub1$es)
+shapiro_test_impact <- shapiro.test(dat_pub1$Journal_5yr_Impact)
+
+# Print the Shapiro-Wilk test results
+print(shapiro_test_es)
+print(shapiro_test_impact)
+
+# Calculate Spearman's rank correlation
+spearman_corr <- cor.test(dat_pub1$Journal_5yr_Impact, dat_pub1$es, method = "spearman", exact = FALSE)
+print(spearman_corr)
+
+# p-VALUE VS IF -----------------------------
+# Perform Shapiro-Wilk test for normality
+shapiro_test_es <- shapiro.test(dat_pub2$P.value_specific)
+shapiro_test_impact <- shapiro.test(dat_pub2$Journal_5yr_Impact)
+
+# Print the Shapiro-Wilk test results
+print(shapiro_test_es)
+print(shapiro_test_impact)
+
+# Calculate Spearman's rank correlation
+spearman_corr <- cor.test(dat_pub2$P.value_specific, dat_pub2$Journal_5yr_Impact, method = "spearman", exact = FALSE)
+print(spearman_corr)
+
+# Scatter plot with a trend line for dat_pub1
+ggplot(dat_pub1, aes(x = Journal_5yr_Impact, y = es)) +
+  geom_point() +
+  geom_smooth(method = "loess", se = TRUE, color = "blue") +
+  labs(title = "Scatter Plot of es vs Journal_5yr_Impact",
+       x = "Journal 5-year Impact",
+       y = "es") +
+  theme_minimal()
+
+ggplot(dat_pub2, aes(y = P.value_specific, x = Journal_5yr_Impact)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = TRUE, color = "blue") +
+  labs(title = "Scatter Plot of P.value_specific vs Journal_5yr_Impact",
+       x = "P.value_specific",
+       y = "Journal 5-year Impact") +
+  theme_minimal()
+
+# Scatter plot with a trend line for dat_pub1
+ggplot(dat_pub1, aes(x = Journal_5yr_Impact, y = es)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = TRUE, color = "blue") +
+  labs(title = "Scatter Plot of Journal 5-year Impact vs Effect Size",
+       x = "Journal 5-year Impact",
+       y = "Effect Size (es)") +
+  theme_minimal()
 ```
 
 
