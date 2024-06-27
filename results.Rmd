@@ -236,6 +236,11 @@ calculate_means <- function(results) {
 # Main analysis function (removing 1 group from the 3 biggest groups at a time)
 chisq_remove_groups <- function(df, grouping_factor, percentage = percentage, n_samples = 1000) {
   
+   df <- df %>%
+        filter(Direction != "") %>%
+        filter(P.value_general != "") %>%
+        filter(P.value_general != ">0.05")
+  
   # none_removed doesnt remove any groups and performs analysis for full dataset
   # and 3 climatic subsets
   if(grouping_factor!="none_removed"){
@@ -404,21 +409,21 @@ if(i=="Precipitation"){
 list_of_dfs <- list(Overall = df2_all_env, Humidity = df2_hum, Temperature = df2_temp, Precipitation = df2_prec)
 print(list_of_dfs)
 
-# Define the file name
-file_name <- "chisq_results.xlsx"
-library(openxlsx)
-# Create a new workbook
-wb <- createWorkbook()
-# Loop through each dataframe in the list and add it to a new sheet
-for (name in names(list_of_dfs)) {
-  addWorksheet(wb, name)
-  writeData(wb, name, list_of_dfs[[name]])
-}
+# # Define the file name
+# file_name <- "chisq_results.xlsx"
+# library(openxlsx)
+# # Create a new workbook
+# wb <- createWorkbook()
+# # Loop through each dataframe in the list and add it to a new sheet
+# for (name in names(list_of_dfs)) {
+#   addWorksheet(wb, name)
+#   writeData(wb, name, list_of_dfs[[name]])
+# }
 
-#write.csv(as.data.frame(list_of_dfs[["Overall"]]),'outputs/tables/chisq_results_overall.csv', row.names = F)
-#write.csv(as.data.frame(list_of_dfs[["Temperature"]]),'outputs/tables/chisq_results_temperature.csv', row.names = F)
-#write.csv(as.data.frame(list_of_dfs[["Humidity"]]),'outputs/tables/chisq_results_humidity.csv', row.names = F)
-#write.csv(as.data.frame(list_of_dfs[["Precipitation"]]),'outputs/tables/chisq_results_precipitation.csv', row.names = F)
+write.csv(as.data.frame(list_of_dfs[["Overall"]]),'outputs/tables/chisq_results_overall2.csv', row.names = F)
+write.csv(as.data.frame(list_of_dfs[["Temperature"]]),'outputs/tables/chisq_results_temperature2.csv', row.names = F)
+write.csv(as.data.frame(list_of_dfs[["Humidity"]]),'outputs/tables/chisq_results_humidity2.csv', row.names = F)
+write.csv(as.data.frame(list_of_dfs[["Precipitation"]]),'outputs/tables/chisq_results_precipitation2.csv', row.names = F)
 
 # Save the workbook
 #saveWorkbook(wb, file_name, overwrite = TRUE)
