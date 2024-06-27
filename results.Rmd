@@ -415,13 +415,13 @@ for (name in names(list_of_dfs)) {
   writeData(wb, name, list_of_dfs[[name]])
 }
 
-write.csv(as.data.frame(list_of_dfs[["Overall"]]),'outputs/tables/chisq_results_overall.csv', row.names = F)
-write.csv(as.data.frame(list_of_dfs[["Temperature"]]),'outputs/tables/chisq_results_temperature.csv', row.names = F)
-write.csv(as.data.frame(list_of_dfs[["Humidity"]]),'outputs/tables/chisq_results_humidity.csv', row.names = F)
-write.csv(as.data.frame(list_of_dfs[["Precipitation"]]),'outputs/tables/chisq_results_precipitation.csv', row.names = F)
+#write.csv(as.data.frame(list_of_dfs[["Overall"]]),'outputs/tables/chisq_results_overall.csv', row.names = F)
+#write.csv(as.data.frame(list_of_dfs[["Temperature"]]),'outputs/tables/chisq_results_temperature.csv', row.names = F)
+#write.csv(as.data.frame(list_of_dfs[["Humidity"]]),'outputs/tables/chisq_results_humidity.csv', row.names = F)
+#write.csv(as.data.frame(list_of_dfs[["Precipitation"]]),'outputs/tables/chisq_results_precipitation.csv', row.names = F)
 
 # Save the workbook
-saveWorkbook(wb, file_name, overwrite = TRUE)
+#saveWorkbook(wb, file_name, overwrite = TRUE)
 ```
 
 ### Secondary reporting rates
@@ -588,7 +588,7 @@ results_regtests <- data.frame(
   P_value = c(pval_all, pval_temp, pval_prec, pval_hum)
 )
 
-write.csv(results_regtests, 'outputs/tables/eggers_funnel_tests.csv', row.names = F)
+#write.csv(results_regtests, 'outputs/tables/eggers_funnel_tests.csv', row.names = F)
 ```
 
 
