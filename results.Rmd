@@ -190,30 +190,34 @@ library(dplyr)
 # Function to perform chi-square tests on sampled data
 perform_chi_tests <- function(data, n_samples, percentage) {
   results <- data.frame(i = 1:n_samples)
-
+  data$Direction = as.factor(data$Direction)
   for (i in 1:n_samples) {
     #sample % of data
     smp <- data[sample(1:nrow(data), size = round(nrow(data) * percentage), replace = TRUE),]
-    smp$Direction = as.factor(smp$Direction)
+    #smp$Direction = as.factor(smp$Direction)
     #perform chi-tests
+    #print(table(smp$Direction))
     chi_test_all <- chisq.test(xtabs(data = smp, Dummy ~ Direction))
-    chi_test_hum <- chisq.test(xtabs(data = smp[smp$Environmental_condition == "Humidity",], Dummy ~ Direction))
-    chi_test_temp <- chisq.test(xtabs(data = smp[smp$Environmental_condition == "Temperature",], Dummy ~ Direction))
-    chi_test_prec <- chisq.test(xtabs(data = smp[smp$Environmental_condition == "Precipitation",], Dummy ~ Direction))
-    
+
+    if(length(unique(data$Environmental_condition))==3){
     #extract statistics and p-values
     results$chi_all[i] <- chi_test_all$statistic
     results$p_all[i] <- chi_test_all$p.value
-    
-    results$hum_chi[i] <- chi_test_hum$statistic
-    results$hum_p[i] <- chi_test_hum$p.value
-    
-    results$temp_chi[i] <- chi_test_temp$statistic
-    results$temp_p[i] <- chi_test_temp$p.value
-    
-    results$prec_chi[i] <- chi_test_prec$statistic
-    results$prec_p[i] <- chi_test_prec$p.value
+    } else {
+    if(unique(data$Environmental_condition)=="Humidity"){
+      results$chi_all[i] <- chi_test_all$statistic
+      results$p_all[i] <- chi_test_all$p.value
+    }
+    if(unique(data$Environmental_condition)=="Temperature"){
+      results$chi_all[i] <- chi_test_all$statistic
+      results$p_all[i] <- chi_test_all$p.value
+    }
+  if(unique(data$Environmental_condition)=="Precipitation"){
+    results$chi_all[i] <- chi_test_all$statistic
+    results$p_all[i] <- chi_test_all$p.value
   }
+ }
+}
   
   return(results)
 }
@@ -224,21 +228,8 @@ calculate_means <- function(results) {
     p_all = mean(results$p_all, na.rm = TRUE),
     chi_all = mean(results$chi_all, na.rm = TRUE),
     chi_ci_lower_all = t.test(results$chi_all, conf.level = 0.95)$conf.int[1], #Chi Ci Lower
-    chi_ci_upper_all = t.test(results$chi_all, conf.level = 0.95)$conf.int[2], #Chi Ci Upper
-    hum_p = mean(results$hum_p, na.rm = TRUE),
-    hum_chi = mean(results$hum_chi, na.rm = TRUE),
-    chi_ci_lower_hum = t.test(results$hum_chi, conf.level = 0.95)$conf.int[1], #Chi Ci Lower
-    chi_ci_upper_hum = t.test(results$hum_chi, conf.level = 0.95)$conf.int[2], #Chi Ci Upper
-    temp_p = mean(results$temp_p, na.rm = TRUE),
-    temp_chi = mean(results$temp_chi, na.rm = TRUE),
-    chi_ci_lower_temp = t.test(results$temp_chi, conf.level = 0.95)$conf.int[1], #Chi Ci Lower
-    chi_ci_upper_temp = t.test(results$temp_chi, conf.level = 0.95)$conf.int[2], #Chi Ci Upper
-    prec_p = mean(results$prec_p, na.rm = TRUE),
-    prec_chi = mean(results$prec_chi, na.rm = TRUE),
-    chi_ci_lower_prec = t.test(results$prec_chi, conf.level = 0.95)$conf.int[1], #Chi Ci Lower
-    chi_ci_upper_prec = t.test(results$prec_chi, conf.level = 0.95)$conf.int[2] #Chi Ci Upper
+    chi_ci_upper_all = t.test(results$chi_all, conf.level = 0.95)$conf.int[2] #Chi Ci Upper
   )
-  
   return(means)
 }
 
@@ -248,14 +239,15 @@ chisq_remove_groups <- function(df, grouping_factor, percentage = percentage, n_
   # none_removed doesnt remove any groups and performs analysis for full dataset
   # and 3 climatic subsets
   if(grouping_factor!="none_removed"){
-      group_summary <- df %>%
-        group_by(across(all_of(grouping_factor))) %>%
-        summarise(N = n_distinct(Reference_ID)) %>%
-        mutate(P = N / sum(N)) %>%
-        arrange(desc(N))
-      #identify top 3 groups per count
-        top_groups <- as.vector(unlist(group_summary[1:3, 1]))
-        top_groups = top_groups[!is.na(top_groups)]}
+    group_summary <- df %>%
+      group_by(across(all_of(grouping_factor))) %>%
+      summarise(N = n_distinct(Reference_ID)) %>%
+      mutate(P = N / sum(N)) %>%
+      arrange(desc(N))
+    print(group_summary)[1:3,1]
+    #identify top 3 groups per count
+    top_groups <- as.vector(unlist(group_summary[1:3, 1]))
+    top_groups = top_groups[!is.na(top_groups)]}
   
   means_df <- list()
   
@@ -271,15 +263,15 @@ chisq_remove_groups <- function(df, grouping_factor, percentage = percentage, n_
         results <- perform_chi_tests(tmp, n_samples, percentage)
         means <- calculate_means(results)
         means_df[[group_rm]] <- means
-        }
       }
-} else {
-   tmp <- df %>%
+    }
+  } else {
+    tmp <- df %>%
       filter(Direction != "") %>%
       filter(P.value_general != "") %>%
       filter(P.value_general != ">0.05")
-   
-   if (all(table(tmp$Environmental_condition) >= 10)) {
+    
+    if (all(table(tmp$Environmental_condition) >= 10)) {
       results <- perform_chi_tests(tmp, n_samples, percentage)
       means <- calculate_means(results)
       means_df[[grouping_factor]] <- means
@@ -315,30 +307,36 @@ chisq_remove_groups <- function(df, grouping_factor, percentage = percentage, n_
 ```{r full_chisq_and_groups_removed}
 #Set the percentage of data to use
 percentage = 0.8
+
+for(i in c("All","Temperature","Precipitation","Humidity")){
+
+if(i!="All"){
+  df2 = df %>% filter(Environmental_condition==i)
+} else {
+  df2 = df
+}
 #Run the chi-square tests on full dataset
-none_removed = chisq_remove_groups(df, grouping_factor = "none_removed",percentage = percentage, n_samples = 1000)
+none_removed = chisq_remove_groups(df2, grouping_factor = "none_removed",percentage = percentage, n_samples = 1000)
+
+#tmp = df2 %>% filter(Environmental_condition=="Temperature")
 #Run the chi-square tests on the dataset with 1 of 3 top categories from the grouping factor removed at a time
-disease_removed = chisq_remove_groups(df, grouping_factor = "General_Disease", percentage = percentage, n_samples = 1000)
-country_removed = chisq_remove_groups(df, grouping_factor = "Country", percentage = percentage, n_samples = 1000)
-princ_reservoir_removed = chisq_remove_groups(df, grouping_factor = "Principal_reservoir", percentage = percentage, n_samples = 1000)
-stat_method_removed = chisq_remove_groups(df, grouping_factor = "Statistical_method", percentage = percentage, n_samples = 1000)
-pathogen_group_removed = chisq_remove_groups(df, grouping_factor = "Pathogen", percentage = percentage, n_samples = 1000)
-transmission_type_removed = chisq_remove_groups(df, grouping_factor = "Transmission_type", percentage = percentage, n_samples = 1000)
+disease_removed = chisq_remove_groups(df2, grouping_factor = "General_Disease", percentage = percentage, n_samples = 1000)
+country_removed = chisq_remove_groups(df2, grouping_factor = "Country", percentage = percentage, n_samples = 1000)
+princ_reservoir_removed = chisq_remove_groups(df2, grouping_factor = "Principal_reservoir", percentage = percentage, n_samples = 1000)
+stat_method_removed = chisq_remove_groups(df2, grouping_factor = "Statistical_method", percentage = percentage, n_samples = 1000)
+pathogen_group_removed = chisq_remove_groups(df2, grouping_factor = "Pathogen", percentage = percentage, n_samples = 1000)
+transmission_type_removed = chisq_remove_groups(df2, grouping_factor = "Transmission_type", percentage = percentage, n_samples = 1000)
 
 combined_pvals = (cbind(none_removed$means_pval, disease_removed$means_pval,
                         country_removed$means_pval, princ_reservoir_removed$means_pval, 
-                        pathogen_group_removed$means_pval,
-                        stat_method_removed$means_pval, transmission_type_removed$means_pval))
+                        pathogen_group_removed$means_pval, stat_method_removed$means_pval, transmission_type_removed$means_pval))
 
 combined_levels = (cbind(none_removed$levels_means_pval, disease_removed$levels_means_pval,
                         country_removed$levels_means_pval, princ_reservoir_removed$levels_means_pval, 
-                        pathogen_group_removed$levels_means_pval,
-                        stat_method_removed$levels_means_pval, transmission_type_removed$levels_means_pval))
+                        pathogen_group_removed$levels_means_pval, stat_method_removed$levels_means_pval, transmission_type_removed$levels_means_pval))
 
-combined_chi = (cbind(none_removed$means_chi, disease_removed$means_chi,
-                        country_removed$means_chi, princ_reservoir_removed$means_chi, 
-                      pathogen_group_removed$means_chi,
-                        stat_method_removed$means_chi, transmission_type_removed$means_chi))
+combined_chi = (cbind(none_removed$means_chi, disease_removed$means_chi, country_removed$means_chi, princ_reservoir_removed$means_chi, 
+                      pathogen_group_removed$means_chi, stat_method_removed$means_chi, transmission_type_removed$means_chi))
 
 #Transform Chi values ----------------------
 chi_transformed <- combined_chi %>%
@@ -361,10 +359,12 @@ pvals_wide <- pval_transformed %>%
 pval_levels_transformed <- combined_levels %>%
   rownames_to_column(var = "Metric") %>%
   pivot_longer(cols = -Metric, names_to = "Group", values_to = "Value")
+
 # Convert to wide format with diseases as rows and metrics as columns
 pvals_levels_wide <- pval_levels_transformed %>%
   pivot_wider(names_from = Metric, values_from = Value)
-names(pvals_levels_wide) = c("Group","P_level_all", "P_level_hum", "P_level_temp", "P_level_prec")
+
+names(pvals_levels_wide) = c("Group","P_level")
 
 #Join dataframes
 full_results <- chi_wide %>%
@@ -372,43 +372,56 @@ full_results <- chi_wide %>%
   left_join(pvals_levels_wide, by = "Group")
 
 # Split the data frame into four separate data frames based on column names
-df_all <- full_results %>% select(Group, contains("all"))
-df_hum <- full_results %>% select(Group, contains("hum"))
-df_temp <- full_results %>% select(Group, contains("temp"))
-df_prec <- full_results %>% select(Group, contains("prec"))
-
+df2_all <- full_results #%>% select(Group, contains("all"))
 
 # Function to rename columns in each dataframe
-rename_columns <- function(df) {
-  df %>%
-    rename_with(~ str_replace(., "chi_all|prec_chi|temp_chi|hum_chi", "Chi_Square")) %>%
+rename_columns <- function(df2) {
+  df2 %>%
+    rename_with(~ str_replace(., "chi_all", "Chi_Square")) %>%
     rename_with(~ str_replace(., "chi_ci_lower_.*", "Chi_Lower_CI")) %>%
     rename_with(~ str_replace(., "chi_ci_upper_.*", "Chi_Upper_CI")) %>% 
-    rename_with(~ str_replace(., "p_all|temp_p|prec_p|hum_p", "P_value"))
+    rename_with(~ str_replace(., "p_all", "P_value"))
 }
 
 # Apply the renaming function to each dataframe
-df_all <- rename_columns(df_all)
-df_hum <- rename_columns(df_hum)
-df_temp <- rename_columns(df_temp)
-df_prec <- rename_columns(df_prec)
+df2_all <- rename_columns(df2_all)
+
+if(i=="All"){
+  df2_all_env = df2_all
+}
+if(i=="Temperature"){
+  df2_temp = df2_all
+}
+if(i=="Humidity"){
+  df2_hum = df2_all
+}
+if(i=="Precipitation"){
+  df2_prec = df2_all
+}
+}
 
 # Combine the data frames into a list
-list_of_dfs <- list(Overall = df_all, Humidity = df_hum, Temperature = df_temp, Precipitation = df_prec)
+list_of_dfs <- list(Overall = df2_all_env, Humidity = df2_hum, Temperature = df2_temp, Precipitation = df2_prec)
 print(list_of_dfs)
 
-# # Define the file name
-# file_name <- "chisq_results.xlsx"
-# library(openxlsx)
-# # Create a new workbook
-# wb <- createWorkbook()
-# # Loop through each dataframe in the list and add it to a new sheet
-# for (name in names(list_of_dfs)) {
-#   addWorksheet(wb, name)
-#   writeData(wb, name, list_of_dfs[[name]])
-# }
-# # Save the workbook
-# saveWorkbook(wb, file_name, overwrite = TRUE)
+# Define the file name
+file_name <- "chisq_results.xlsx"
+library(openxlsx)
+# Create a new workbook
+wb <- createWorkbook()
+# Loop through each dataframe in the list and add it to a new sheet
+for (name in names(list_of_dfs)) {
+  addWorksheet(wb, name)
+  writeData(wb, name, list_of_dfs[[name]])
+}
+
+write.csv(as.data.frame(list_of_dfs[["Overall"]]),'outputs/tables/chisq_results_overall.csv', row.names = F)
+write.csv(as.data.frame(list_of_dfs[["Temperature"]]),'outputs/tables/chisq_results_temperature.csv', row.names = F)
+write.csv(as.data.frame(list_of_dfs[["Humidity"]]),'outputs/tables/chisq_results_humidity.csv', row.names = F)
+write.csv(as.data.frame(list_of_dfs[["Precipitation"]]),'outputs/tables/chisq_results_precipitation.csv', row.names = F)
+
+# Save the workbook
+saveWorkbook(wb, file_name, overwrite = TRUE)
 ```
 
 ### Secondary reporting rates
