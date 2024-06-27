@@ -214,232 +214,6 @@ print(chi_square_test)
 # pvals_nonlinear %<>% mutate(P = freq/sum(freq)) %>% filter(pval!=">0.05") %>% summarise(total_sum = sum(P, na.rm = TRUE)) %>% pull(total_sum)
 ```
 
-```{r chisq_groups_removed_function}
-
-library(dplyr)
-
-# Function to perform chi-square tests on sampled data
-perform_chi_tests <- function(data, n_samples, percentage) {
-  results <- data.frame(i = 1:n_samples)
-
-  for (i in 1:n_samples) {
-    smp <- data[sample(1:nrow(data), size = round(nrow(data) * percentage), replace = TRUE),]
-    smp$Direction = as.factor(smp$Direction)
-    chi_test_all <- chisq.test(xtabs(data = smp, Dummy ~ Direction))
-    chi_test_hum <- chisq.test(xtabs(data = smp[smp$Environmental_condition == "Humidity",], Dummy ~ Direction))
-    chi_test_temp <- chisq.test(xtabs(data = smp[smp$Environmental_condition == "Temperature",], Dummy ~ Direction))
-    chi_test_prec <- chisq.test(xtabs(data = smp[smp$Environmental_condition == "Precipitation",], Dummy ~ Direction))
-    
-    results$chi_all[i] <- chi_test_all$statistic
-    results$p_all[i] <- chi_test_all$p.value
-    
-    results$hum_chi[i] <- chi_test_hum$statistic
-    results$hum_p[i] <- chi_test_hum$p.value
-    
-    results$temp_chi[i] <- chi_test_temp$statistic
-    results$temp_p[i] <- chi_test_temp$p.value
-    
-    results$prec_chi[i] <- chi_test_prec$statistic
-    results$prec_p[i] <- chi_test_prec$p.value
-  }
-  
-  return(results)
-}
-
-# Function to calculate summary statistics (P-values)
-calculate_means <- function(results) {
-  means <- c(
-    p_all = mean(results$p_all, na.rm = TRUE),
-    chi_all = mean(results$chi_all, na.rm = TRUE),
-    chi_ci_lower_all = t.test(results$chi_all, conf.level = 0.95)$conf.int[1], #Chi Ci Lower
-    chi_ci_upper_all = t.test(results$chi_all, conf.level = 0.95)$conf.int[2], #Chi Ci Upper
-    hum_p = mean(results$hum_p, na.rm = TRUE),
-    hum_chi = mean(results$hum_chi, na.rm = TRUE),
-    chi_ci_lower_hum = t.test(results$hum_chi, conf.level = 0.95)$conf.int[1], #Chi Ci Lower
-    chi_ci_upper_hum = t.test(results$hum_chi, conf.level = 0.95)$conf.int[2], #Chi Ci Upper
-    temp_p = mean(results$temp_p, na.rm = TRUE),
-    temp_chi = mean(results$temp_chi, na.rm = TRUE),
-    chi_ci_lower_temp = t.test(results$temp_chi, conf.level = 0.95)$conf.int[1], #Chi Ci Lower
-    chi_ci_upper_temp = t.test(results$temp_chi, conf.level = 0.95)$conf.int[2], #Chi Ci Upper
-    prec_p = mean(results$prec_p, na.rm = TRUE),
-    prec_chi = mean(results$prec_chi, na.rm = TRUE),
-    chi_ci_lower_prec = t.test(results$prec_chi, conf.level = 0.95)$conf.int[1], #Chi Ci Lower
-    chi_ci_upper_prec = t.test(results$prec_chi, conf.level = 0.95)$conf.int[2] #Chi Ci Upper
-  )
-  
-  return(means)
-}
-
-# Main analysis function (removing 1 group from the 3 biggest groups at a time)
-chisq_remove_groups <- function(df, grouping_factor, percentage = percentage, n_samples = 1000) {
-  
-  if(grouping_factor!="none_removed"){
-      group_summary <- df %>%
-        group_by(across(all_of(grouping_factor))) %>%
-        summarise(N = n_distinct(Reference_ID)) %>%
-        mutate(P = N / sum(N)) %>%
-        arrange(desc(N))
-      #identify top 3 groups per count
-        top_groups <- as.vector(unlist(group_summary[1:3, 1]))
-        top_groups = top_groups[!is.na(top_groups)]}
-  
-  means_df <- list()
-  
-  if(grouping_factor!="none_removed"){
-    for (group_rm in top_groups) {
-      tmp <- df %>%
-        filter(Direction != "") %>%
-        filter(P.value_general != "") %>%
-        filter(P.value_general != ">0.05") %>%
-        filter(across(all_of(grouping_factor)) != group_rm)
-      #check if all env. categories have mroe than 10 records
-      if (all(table(tmp$Environmental_condition) > 10)) {
-        results <- perform_chi_tests(tmp, n_samples, percentage)
-        means <- calculate_means(results)
-        means_df[[group_rm]] <- means
-        }
-      }
-} else {
-   tmp <- df %>%
-      filter(Direction != "") %>%
-      filter(P.value_general != "") %>%
-      filter(P.value_general != ">0.05")
-   
-   if (all(table(tmp$Environmental_condition) >= 10)) {
-      results <- perform_chi_tests(tmp, n_samples, percentage)
-      means <- calculate_means(results)
-      means_df[[grouping_factor]] <- means
-    }
-  }
-  
-  if(grouping_factor!="none_removed"){
-    means_chi = lapply(means_df, function(sublist) { sublist[grep("chi", names(sublist))]})
-    means_pval = lapply(means_df, function(sublist) { sublist[!grepl("chi", names(sublist))]})} 
-  else {
-    means_chi = list()
-    means_chi[[grouping_factor]] = means_df[[grouping_factor]][grep("chi",names(means_df[[grouping_factor]]))]
-    means_pval = list()
-    means_pval[[grouping_factor]] = means_df[[grouping_factor]][!grepl("chi",names(means_df[[grouping_factor]]))]
-  }
-  
-  #Transform P-values to simplified significance levels
-  levels_means_pval <- as.data.frame(lapply(means_pval, function(x) {
-    ifelse(x < 0.01, "**", ifelse(x < 0.05, "*", ">0.05"))
-  }))
-  means_pval = as.data.frame(means_pval)
-  rownames(levels_means_pval) <- rownames(means_pval)
-  means_chi = as.data.frame(means_chi)
-  
-  return(list(means_pval = means_pval, levels_means_pval = levels_means_pval,
-              means_chi = means_chi))
-  
-}
-```
-
-```{r chisq_groups_removed_function_results}
-percentage = 0.8
-none_removed = chisq_remove_groups(df, grouping_factor = "none_removed",percentage = percentage, n_samples = 1000)
-disease_removed = chisq_remove_groups(df, grouping_factor = "General_Disease", percentage = percentage, n_samples = 1000)
-country_removed = chisq_remove_groups(df, grouping_factor = "Country", percentage = percentage, n_samples = 1000)
-princ_reservoir_removed = chisq_remove_groups(df, grouping_factor = "Principal_reservoir", percentage = percentage, n_samples = 1000)
-stat_method_removed = chisq_remove_groups(df, grouping_factor = "Statistical_method", percentage = percentage, n_samples = 1000)
-pathogen_group_removed = chisq_remove_groups(df, grouping_factor = "Pathogen", percentage = percentage, n_samples = 1000)
-transmission_type_removed = chisq_remove_groups(df, grouping_factor = "Transmission_type", percentage = percentage, n_samples = 1000)
-
-combined_pvals = (cbind(none_removed$means_pval, disease_removed$means_pval,
-                        country_removed$means_pval, princ_reservoir_removed$means_pval, 
-                        pathogen_group_removed$means_pval,
-                        stat_method_removed$means_pval, transmission_type_removed$means_pval))
-
-combined_levels = (cbind(none_removed$levels_means_pval, disease_removed$levels_means_pval,
-                        country_removed$levels_means_pval, princ_reservoir_removed$levels_means_pval, 
-                        pathogen_group_removed$levels_means_pval,
-                        stat_method_removed$levels_means_pval, transmission_type_removed$levels_means_pval))
-
-combined_chi = (cbind(none_removed$means_chi, disease_removed$means_chi,
-                        country_removed$means_chi, princ_reservoir_removed$means_chi, 
-                      pathogen_group_removed$means_chi,
-                        stat_method_removed$means_chi, transmission_type_removed$means_chi))
-
-#Transform Chi values ----------------------
-chi_transformed <- combined_chi %>%
-  rownames_to_column(var = "Metric") %>%
-  pivot_longer(cols = -Metric, names_to = "Group", values_to = "Value")
-
-chi_wide <- chi_transformed %>% # Convert to wide format with diseases as rows and metrics as columns
-  pivot_wider(names_from = Metric, values_from = Value)
-
-#Transform P values ----------------------
-pval_transformed <- combined_pvals %>%
-  rownames_to_column(var = "Metric") %>%
-  pivot_longer(cols = -Metric, names_to = "Group", values_to = "Value")
-
-# Convert to wide format with diseases as rows and metrics as columns
-pvals_wide <- pval_transformed %>%
-  pivot_wider(names_from = Metric, values_from = Value)
-
-#Transform P levels ----------------------
-pval_levels_transformed <- combined_levels %>%
-  rownames_to_column(var = "Metric") %>%
-  pivot_longer(cols = -Metric, names_to = "Group", values_to = "Value")
-# Convert to wide format with diseases as rows and metrics as columns
-pvals_levels_wide <- pval_levels_transformed %>%
-  pivot_wider(names_from = Metric, values_from = Value)
-names(pvals_levels_wide) = c("Group","P_level_all", "P_level_hum", "P_level_temp", "P_level_prec")
-
-#Join dataframes
-full_results <- chi_wide %>%
-  left_join(pvals_wide, by = "Group") %>%
-  left_join(pvals_levels_wide, by = "Group")
-
-# Split the data frame into four separate data frames based on column names
-df_all <- full_results %>% select(Group, contains("all"))
-df_hum <- full_results %>% select(Group, contains("hum"))
-df_temp <- full_results %>% select(Group, contains("temp"))
-df_prec <- full_results %>% select(Group, contains("prec"))
-
-
-# Function to rename columns in each dataframe
-rename_columns <- function(df) {
-  df %>%
-    rename_with(~ str_replace(., "chi_all|prec_chi|temp_chi|hum_chi", "Chi_Square")) %>%
-    rename_with(~ str_replace(., "chi_ci_lower_.*", "Chi_Lower_CI")) %>%
-    rename_with(~ str_replace(., "chi_ci_upper_.*", "Chi_Upper_CI")) %>% 
-    rename_with(~ str_replace(., "p_all|temp_p|prec_p|hum_p", "P_value"))
-}
-
-# Apply the renaming function to each dataframe
-df_all <- rename_columns(df_all)
-df_hum <- rename_columns(df_hum)
-df_temp <- rename_columns(df_temp)
-df_prec <- rename_columns(df_prec)
-
-# Combine the data frames into a list
-list_of_dfs <- list(Overall = df_all, Humidity = df_hum, Temperature = df_temp, Precipitation = df_prec)
-
-#Convert the transposed matrix back to a dataframe
-transposed_combined_levels <- as.data.frame(t(combined_levels))
-colnames(transposed_combined_levels) <- rownames(combined_levels)
-list_of_dfs
-
-library(openxlsx)
-# Define the file name
-file_name <- "chisq_results.xlsx"
-
-# Create a new workbook
-wb <- createWorkbook()
-
-# Loop through each dataframe in the list and add it to a new sheet
-for (name in names(list_of_dfs)) {
-  addWorksheet(wb, name)
-  writeData(wb, name, list_of_dfs[[name]])
-}
-
-# Save the workbook
-saveWorkbook(wb, file_name, overwrite = TRUE)
-
-```
-
 ```{r secondary_reporting}
 # Filter out records without P values
 second <- df %>% 
@@ -485,11 +259,18 @@ sum(studies_with_secondary$two_or_more_significant[studies_with_secondary$second
 paste0(round(sum(studies_with_secondary$two_or_more_significant[studies_with_secondary$secondary==TRUE])/sum(studies_with_secondary$any_significant[studies_with_secondary$secondary==TRUE]),2)*100,"%")
 ```
 
+```{r}
+chi_overall = read.csv('outputs/tables/chisq_results_overall.csv')
+chi_temp = read.csv('outputs/tables/chisq_results_temperature.csv')
+chi_prec = read.csv('outputs/tables/chisq_results_precipitation.csv')
+chi_hum =  read.csv('outputs/tables/chisq_results_humidity.csv')
+```
+
 The majority of studies assessed reported a significant relationship between climate measures and some index of zoonotic disease risk (`r paste0(round(alfa_005_p,3)*100, "%")` significant at α=0.05, `r paste0(round(alfa_001_p,2)*100, "%")` at α=0.01, `r paste0(round(alfa_0001_p,2)*100, "%")` at α=0.001). Out of `r length(unique(df$Reference_ID))` studies, `r sum(studies_with_secondary$secondary)` (`r paste0(round(sum(studies_with_secondary$secondary)/length(unique(df$Reference_ID)),2)*100,"%")`) reported more than one statistic with an associated p-value. Among these `r sum(studies_with_secondary$secondary)` studies, `r sum(studies_with_secondary$any_significant[studies_with_secondary$secondary==TRUE])` (`r paste0(round(sum(studies_with_secondary$any_significant[studies_with_secondary$secondary==TRUE])/sum(studies_with_secondary$secondary),2)*100, "%")`) had at least one significant result. Furthermore, `r sum(studies_with_secondary$two_or_more_significant[studies_with_secondary$secondary==TRUE])` of these `r sum(studies_with_secondary$any_significant[studies_with_secondary$secondary==TRUE])` studies (`r paste0(round(sum(studies_with_secondary$two_or_more_significant[studies_with_secondary$secondary==TRUE])/sum(studies_with_secondary$any_significant[studies_with_secondary$secondary==TRUE]),2)*100,"%")`) reported two or more significant relationships.
 
-There were significantly more increases in a measure of risk (`r round((table(signif$Direction))[["increase"]]/(table(signif$Direction))[["decrease"]],1)` times more) reported than decreases ($\overline{\chi^2}$ = `r round(none_removed$means_chi["chi_all", "none_removed"],2)`, df = 1, 95% CI = `r round(none_removed$means_chi["chi_ci_lower_all", "none_removed"],2)` -- `r round(none_removed$means_chi["chi_ci_upper_all", "none_removed"],2)`, p = `r round(none_removed$means_pval["p_all", "none_removed"],3)`), from 1000 bootstraps of 80% of the data). The proportions seen within the overall dataset were robust to dropping most major regions, disease groups, pathogen types, statistical methods and hosts from the calculations (Table S2). However, when dividing the dataset into vectored and non-vectored diseases, only the subset containing vectored diseases showed significantly more increases than decreases in a measure of disease risk (Non-vectored diseases: $\overline{\chi^2}$ = `r round(df_all$Chi_Square[df_all$Group=="Vectored"],2)`, df=1, p= `r round(df_all$P_value[df_all$Group=="Vectored"],3)`; Vectored diseases: $\overline{\chi^2}$ = `r round(df_all$Chi_Square[df_all$Group=="Non.vectored"],2)`, df=1, p= `r round(df_all$P_value[df_all$Group=="Non.vectored"],5)`, Table S2).
+There were significantly more increases in a measure of risk (`r round((table(signif$Direction))[["increase"]]/(table(signif$Direction))[["decrease"]],1)` times more) reported than decreases ($\overline{\chi^2}$ = `r round(subset(chi_overall, Group == "none_removed")$Chi_Square,2)`, df = 1, 95% CI = `r round(subset(chi_overall, Group == "none_removed")$Chi_Lower_CI,2)` -- `r round(subset(chi_overall, Group == "none_removed")$Chi_Upper_CI,2)`, p = `r round(subset(chi_overall, Group == "none_removed")$P_value,3)`), from 1000 bootstraps of 80% of the data). The proportions seen within the overall dataset were robust to dropping most major regions, disease groups, pathogen types, statistical methods and hosts from the calculations (Table S2). However, when dividing the dataset into vectored and non-vectored diseases, only the subset containing vectored diseases showed significantly more increases than decreases in a measure of disease risk (Non-vectored diseases: $\overline{\chi^2}$ = `r round(subset(chi_overall, Group == "Vectored")$Chi_Square,2)`, df=1, p= `r round(subset(chi_overall, Group == "Vectored")$P_value,3)`; Vectored diseases: $\overline{\chi^2}$ = `r round(subset(chi_overall, Group == "Non.vectored")$Chi_Square,2)`, df=1, p= `r round(subset(chi_overall, Group == "Non.vectored")$P_value,5)`, Table S2).
 
-After subsetting the data to examine environmental categories individually (Temperature, Precipitation and Humidity data separately), only the Precipitation subset showed significantly more increases than decreases in a measure of disease risk (Temperature: $\overline{\chi^2}$ = `r round(none_removed$means_chi["temp_chi", "none_removed"],2)`, df=1, p= `r round(none_removed$means_pval["temp_p", "none_removed"],3)`; Precipitation: $\overline{\chi^2}$ = `r round(none_removed$means_chi["prec_chi", "none_removed"],2)`, df=1, p= `r round(none_removed$means_pval["prec_p", "none_removed"],3)`; Humidity: $\overline{\chi^2}$ = `r round(none_removed$means_chi["hum_chi", "none_removed"],2)`, df=1, p= `r round(none_removed$means_pval["hum_p", "none_removed"],3)`; Tables S3 - 5).
+After subsetting the data to examine environmental categories individually (Temperature, Precipitation and Humidity data separately), only the Precipitation subset showed significantly more increases than decreases in a measure of disease risk (Temperature: $\overline{\chi^2}$ = `r round(subset(chi_temp, Group == "none_removed")$Chi_Square,2)`, df=1, p= `r round(subset(chi_temp, Group == "none_removed")$P_value,3)`; Precipitation: $\overline{\chi^2}$ = `r round(subset(chi_prec, Group == "none_removed")$Chi_Square,2)`, df=1, p= `r round(subset(chi_prec, Group == "none_removed")$P_value,3)`; Humidity: $\overline{\chi^2}$ = `r round(subset(chi_hum, Group == "none_removed")$Chi_Square,2)`, df=1, p= `r round(subset(chi_hum, Group == "none_removed")$P_value,3)`; Tables S3 - 5).
 
 ```{r sample_sizes_groups}
 tmp_samples = df %>%
