@@ -632,7 +632,8 @@ cat("Impact Factors vs reported p-values:",
 #-------------------------------------------------------------------------------
 # ES VS IF -----------------------------------
 # Perform Shapiro-Wilk test for normality
-shapiro_test_es <- shapiro.test(dat_pub1$es)
+
+shapiro_test_es <- shapiro.test(abs(dat_pub1$es))
 shapiro_test_impact <- shapiro.test(dat_pub1$Journal_5yr_Impact)
 
 # Print the Shapiro-Wilk test results
@@ -640,12 +641,13 @@ print(shapiro_test_es)
 print(shapiro_test_impact)
 
 # Calculate Spearman's rank correlation
-spearman_corr <- cor.test(dat_pub1$Journal_5yr_Impact, dat_pub1$es, method = "spearman", exact = FALSE)
+spearman_corr <- cor.test(dat_pub1$Journal_5yr_Impact, abs(dat_pub1$es), method = "spearman", exact = FALSE)
 print(spearman_corr)
 
 # p-VALUE VS IF -----------------------------
 # Perform Shapiro-Wilk test for normality
-shapiro_test_es <- shapiro.test(dat_pub2$P.value_specific)
+#dat_pub2 %<>% filter(P.value_specific!=0)
+shapiro_test_es <- shapiro.test((dat_pub2$P.value_specific))
 shapiro_test_impact <- shapiro.test(dat_pub2$Journal_5yr_Impact)
 
 # Print the Shapiro-Wilk test results
@@ -653,7 +655,7 @@ print(shapiro_test_es)
 print(shapiro_test_impact)
 
 # Calculate Spearman's rank correlation
-spearman_corr <- cor.test(dat_pub2$P.value_specific, dat_pub2$Journal_5yr_Impact, method = "spearman", exact = FALSE)
+spearman_corr <- cor.test(dat_pub2$P.value_specific, dat_pub2$Journal_5yr_Impact, method = "kendall", exact = FALSE)
 print(spearman_corr)
 
 # Scatter plot with a trend line for dat_pub1
@@ -935,6 +937,41 @@ for(condition in unique(df$Environmental_condition)){
 }
 ```
 
+## Original vs transformed stats
+```{r}
+
+new_stats = df%>% filter(Direction!="" & es_cat!="" & 
+                     !is.na(Direction) & !is.na(es_cat)) #filter(P.value_general!=">0.05")
+
+# Set the number of bootstrap samples
+num_bootstrap_samples <- 1000
+
+# Initialize vectors to store p-values
+p_values <- numeric(num_bootstrap_samples)
+
+# Perform bootstrapping with 80% of the data
+set.seed(123)  # For reproducibility
+for (i in 1:num_bootstrap_samples) {
+  # Resample 80% of the data with replacement
+  resampled_data <- new_stats %>% sample_frac(size = 0.8, replace = TRUE)
+  
+  # Create a contingency table
+  contingency_table <- table(resampled_data$Direction, resampled_data$es_cat)
+  
+  # Perform Fisher's exact test with increased workspace
+  fisher_test <- fisher.test(contingency_table, workspace = 2e8)
+  
+  # Store the p-value
+  p_values[i] <- fisher_test$p.value
+}
+
+# Summarize the results
+p_value_summary <- summary(p_values)
+p_value_summary
+mean(p_values)
+```
+
+
 # Main figures
 
 ## Figure 1
@@ -979,7 +1016,7 @@ source('FigureS2.R')
 
 p3 = ggarrange(p1, p2, ncol = 2, nrow = 1)
 p3 = p3  + theme(plot.margin = unit(c(0.5,0,0,0.2),"cm"))
-ggsave(p3, file="outputs/FigureS2.png", device="png", units="in", width=9.3, height=4, dpi=1000, scale=1)
+ggsave(p3, file="outputs/FigureS2_spearman.png", device="png", units="in", width=9.3, height=4, dpi=1000, scale=1)
 ```
 
 ## Figure S3: Funnel plots 
