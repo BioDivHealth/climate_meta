@@ -6,6 +6,8 @@ library(ggplot2)
 library(dplyr)
 
 # Data filtering and preparation-----
+s2_method = "spearman"
+stats_label = ifelse(s2_method=="spearman","Spearman’s rank\ncorrelation coefficient:", "Pearson r")
 
 pub1 = df %>% filter(!is.na(es) & !is.na(Journal_5yr_Impact))
 pub1 %<>% dplyr::select(es, Journal_5yr_Impact, Environmental_condition)
@@ -26,11 +28,11 @@ p1 <- ggplot(dat_pub1, aes(x = Journal_5yr_Impact, y = es)) +
   theme_minimal()
 
 # Calculate Pearson correlation coefficient
-correlation1 <- cor.test(dat_pub1$es, dat_pub1$Journal_5yr_Impact)
+correlation1 <- cor.test(dat_pub1$es, dat_pub1$Journal_5yr_Impact, method = s2_method)
 
 # Annotate the scatter plot with the correlation coefficient
-p1 <- p1 + annotate("text", x = max(dat_pub1$Journal_5yr_Impact) * 0.7, y = max(dat_pub1$es) * 0.9,
-                    label = paste("Pearson r:", round(correlation1$estimate, 2),
+p1 <- p1 + annotate("text", x = max(dat_pub1$Journal_5yr_Impact) * 0.6, y = max(dat_pub1$es) * 0.9,
+                    label = paste(stats_label, round(correlation1$estimate, 2),
                                   "\nP-value:", format(correlation1$p.value, digits = 3)),
                     color = "black", size = 4, hjust = 0)
 p1 = p1 + labs(tag = "A")+
@@ -58,11 +60,11 @@ p2 <- ggplot(dat_pub2, aes(x = Journal_5yr_Impact, y = P.value_specific)) +
   theme_minimal()
 
 # Calculate Pearson correlation coefficient
-correlation2 <- cor.test(dat_pub2$Journal_5yr_Impact, dat_pub2$P.value_specific)
+correlation2 <- cor.test(dat_pub2$Journal_5yr_Impact, dat_pub2$P.value_specific, method = s2_method)
 
 # Annotate the scatter plot with the correlation coefficient
-p2 <- p2 + annotate("text", x = max(dat_pub2$Journal_5yr_Impact) * 0.7, y = max(dat_pub2$P.value_specific) * 0.9,
-                    label = paste("Pearson r:", round(correlation2$estimate, 2),
+p2 <- p2 + annotate("text", x = max(dat_pub2$Journal_5yr_Impact) * 0.6, y = max(dat_pub2$P.value_specific) * 0.9,
+                    label = paste(stats_label, round(correlation2$estimate, 2),
                                   "\nP-value:", format(correlation2$p.value, digits = 3)),
                     color = "black", size = 4, hjust = 0)
 
@@ -72,3 +74,4 @@ p2 = p2 + labs(tag = "B")+
         axis.title.x = element_text(size = 14),
         axis.title.y = element_text(size = 14),
         axis.text=element_text(size=12))
+p2
