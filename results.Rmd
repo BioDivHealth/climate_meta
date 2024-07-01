@@ -596,57 +596,94 @@ results_regtests <- data.frame(
 #write.csv(results_regtests, 'outputs/tables/eggers_funnel_tests.csv', row.names = F)
 ```
 
-## Impact factors vs Effect Size/p-value
+## IF vs Effect Size
 
 ```{r journals, echo=TRUE, message=TRUE, warning=TRUE}
-# ----- Effect Sizes -----
-library(patchwork)
+
 library(ggplot2)
 library(dplyr)
 
-# Data filtering and preparation
+# ES VS IF ---
+
+## Prepare data
 pub1 = df %>% filter(!is.na(es) & !is.na(Journal_5yr_Impact))
 pub1 %<>% dplyr::select(es, Journal_5yr_Impact, Environmental_condition)
 dat_pub1 = pub1
 dat_pub1$es = abs(dat_pub1$es)
 
-correlation1 <- cor.test(dat_pub1$es, dat_pub1$Journal_5yr_Impact, method = "pearson")
-cat("Impact Factors vs Effect Sizes:",
-    "\nPearson r:", round(correlation1$estimate, 2),
-    "\nP-value:", format(correlation1$p.value, digits = 3))
+## Perform Shapiro-Wilk test for normality ----
+print(shapiro.test(abs(dat_pub1$es)))
+print(shapiro.test((dat_pub1$Journal_5yr_Impact)))
 
-# ----- p-values --------
+# Do correlation test for all data points
+spearman_corr <- cor.test(dat_pub1$Journal_5yr_Impact, 
+                          abs(dat_pub1$es), 
+                          method = "spearman", 
+                          exact = FALSE)
+print(spearman_corr)
 
-# Data filtering and preparation for the second plot
+## Check outliers-------------
+# IF 
+# Calculate IQR
+Q1 <- quantile(dat_pub1$Journal_5yr_Impact, 0.25)
+Q3 <- quantile(dat_pub1$Journal_5yr_Impact, 0.75)
+IQR <- Q3 - Q1
+
+# Check outliers using IQR
+lower_bound <- Q1 - 1.5 * IQR
+upper_bound <- Q3 + 1.5 * IQR
+iqr_outliers <- dat_pub1 %>% filter(Journal_5yr_Impact < lower_bound |
+                                     Journal_5yr_Impact > upper_bound)
+# Print the number of outliers among Impact Factors
+cat("Number of outliers detected by IQR method:", nrow(iqr_outliers), "\n")
+
+# Print the outliers detected
+cat("Outliers detected by IQR method:\n")
+print(unique(iqr_outliers$Journal_5yr_Impact))
+
+# Remove outliers
+dat_pub1 %<>% filter(!Journal_5yr_Impact %in% unique(iqr_outliers1$Journal_5yr_Impact))
+
+# ES ! ----
+# Calculate IQR
+Q1 <- quantile(dat_pub1$es, 0.25)
+Q3 <- quantile(dat_pub1$es, 0.75)
+IQR <- Q3 - Q1
+
+# Check outliers using IQR
+lower_bound <- Q1 - 1.5 * IQR
+upper_bound <- Q3 + 1.5 * IQR
+iqr_outliers1 <- dat_pub1 %>% filter(es < lower_bound | es > upper_bound)
+
+# Print the number of outliers
+cat("Number of outliers detected by IQR method:", nrow(iqr_outliers1), "\n")
+
+# Print the outliers detected
+cat("Outliers detected by IQR method:\n")
+print(unique(iqr_outliers1$es))
+
+dat_pub1 %<>% filter(!es %in% unique(iqr_outliers1$es))
+
+# Calculate Spearman's rank correlation --
+
+spearman_corr <- cor.test(dat_pub1$Journal_5yr_Impact, 
+                          abs(dat_pub1$es), 
+                          method = "spearman", 
+                          exact = FALSE)
+print(spearman_corr)
+```
+
+## IF vs p-value
+
+```{r}
+# p-VALUE VS IF ------------------------------------------------
+## Prepare data
 pub2 = df %>% filter(!is.na(P.value_specific) & !is.na(Journal_5yr_Impact))
 pub2 %<>% dplyr::select(P.value_specific, Journal_5yr_Impact, Environmental_condition)
 dat_pub2 = pub2
 dat_pub2$P.value_specific = abs(dat_pub2$P.value_specific)
 
-# Calculate Pearson correlation coefficient
-correlation2 <- cor.test(dat_pub2$Journal_5yr_Impact, dat_pub2$P.value_specific, method = "pearson")
-cat("Impact Factors vs reported p-values:",
-    "\nPearson r:", round(correlation2$estimate, 2),
-    "\nP-value:", format(correlation2$p.value, digits = 3))
-
-#-------------------------------------------------------------------------------
-# ES VS IF -----------------------------------
 # Perform Shapiro-Wilk test for normality
-
-shapiro_test_es <- shapiro.test(abs(dat_pub1$es))
-shapiro_test_impact <- shapiro.test(dat_pub1$Journal_5yr_Impact)
-
-# Print the Shapiro-Wilk test results
-print(shapiro_test_es)
-print(shapiro_test_impact)
-
-# Calculate Spearman's rank correlation
-spearman_corr <- cor.test(dat_pub1$Journal_5yr_Impact, abs(dat_pub1$es), method = "spearman", exact = FALSE)
-print(spearman_corr)
-
-# p-VALUE VS IF -----------------------------
-# Perform Shapiro-Wilk test for normality
-#dat_pub2 %<>% filter(P.value_specific!=0)
 shapiro_test_es <- shapiro.test((dat_pub2$P.value_specific))
 shapiro_test_impact <- shapiro.test(dat_pub2$Journal_5yr_Impact)
 
@@ -654,36 +691,57 @@ shapiro_test_impact <- shapiro.test(dat_pub2$Journal_5yr_Impact)
 print(shapiro_test_es)
 print(shapiro_test_impact)
 
-# Calculate Spearman's rank correlation
-spearman_corr <- cor.test(dat_pub2$P.value_specific, dat_pub2$Journal_5yr_Impact, method = "kendall", exact = FALSE)
+# Calculate Spearman's rank correlation with outliers
+spearman_corr <- cor.test(dat_pub2$P.value_specific, dat_pub2$Journal_5yr_Impact, method = "spearman", exact = FALSE)
 print(spearman_corr)
 
-# Scatter plot with a trend line for dat_pub1
-ggplot(dat_pub1, aes(x = Journal_5yr_Impact, y = es)) +
-  geom_point() +
-  geom_smooth(method = "loess", se = TRUE, color = "blue") +
-  labs(title = "Scatter Plot of es vs Journal_5yr_Impact",
-       x = "Journal 5-year Impact",
-       y = "es") +
-  theme_minimal()
+## Check outliers ---------------------------------------------
+# IF ! ----|
+# Calculate IQR
+Q1 <- quantile(dat_pub2$Journal_5yr_Impact, 0.25)
+Q3 <- quantile(dat_pub2$Journal_5yr_Impact, 0.75)
+IQR <- Q3 - Q1
 
-ggplot(dat_pub2, aes(y = P.value_specific, x = Journal_5yr_Impact)) +
-  geom_point() +
-  geom_smooth(method = "lm", se = TRUE, color = "blue") +
-  labs(title = "Scatter Plot of P.value_specific vs Journal_5yr_Impact",
-       x = "P.value_specific",
-       y = "Journal 5-year Impact") +
-  theme_minimal()
+# Check outliers using IQR
+lower_bound <- Q1 - 1.5 * IQR
+upper_bound <- Q3 + 1.5 * IQR
+iqr_outliers2 <- dat_pub2 %>% filter(Journal_5yr_Impact < lower_bound | Journal_5yr_Impact > upper_bound)
 
-# Scatter plot with a trend line for dat_pub1
-ggplot(dat_pub1, aes(x = Journal_5yr_Impact, y = es)) +
-  geom_point() +
-  geom_smooth(method = "lm", se = TRUE, color = "blue") +
-  labs(title = "Scatter Plot of Journal 5-year Impact vs Effect Size",
-       x = "Journal 5-year Impact",
-       y = "Effect Size (es)") +
-  theme_minimal()
+# Print the number of outliers
+cat("Number of outliers detected by IQR method:", nrow(iqr_outliers2), "\n")
+
+# Print the outliers detected
+cat("Outliers detected by IQR method:\n")
+print(unique(iqr_outliers2$Journal_5yr_Impact))
+
+dat_pub2 %<>% filter(!Journal_5yr_Impact %in% unique(iqr_outliers2$Journal_5yr_Impact))
+
+# P.value_specific ! ----|
+# Calculate IQR
+Q1 <- quantile(dat_pub2$P.value_specific, 0.25)
+Q3 <- quantile(dat_pub2$P.value_specific, 0.75)
+IQR <- Q3 - Q1
+
+# Check outliers using IQR
+lower_bound <- Q1 - 1.5 * IQR
+upper_bound <- Q3 + 1.5 * IQR
+iqr_outliers2 <- dat_pub2 %>% filter(P.value_specific < lower_bound | P.value_specific > upper_bound)
+
+# Print the number of outliers
+cat("Number of outliers detected by IQR method:", nrow(iqr_outliers2), "\n")
+
+# Print the outliers detected
+cat("Outliers detected by IQR method:\n")
+print(unique(iqr_outliers2$P.value_specific))
+
+dat_pub2 %<>% filter(!P.value_specific %in% unique(iqr_outliers2$P.value_specific))
+
+# Calculate Spearman's rank correlation without outliers
+spearman_corr <- cor.test(dat_pub2$P.value_specific, dat_pub2$Journal_5yr_Impact, method = "spearman", exact = FALSE)
+print(spearman_corr)
 ```
+
+
 
 
 # Results Section 3: Strength of climate effects of zoonotic diseases
@@ -1012,11 +1070,18 @@ ggsave(f3, file="outputs/Figure3.png", device="png", units="in", width=8, height
 
 ## Figure S2: Impact Factors
 ```{r FigS2}
+
 source('FigureS2.R')
 
 p3 = ggarrange(p1, p2, ncol = 2, nrow = 1)
 p3 = p3  + theme(plot.margin = unit(c(0.5,0,0,0.2),"cm"))
-ggsave(p3, file="outputs/FigureS2_spearman.png", device="png", units="in", width=9.3, height=4, dpi=1000, scale=1)
+
+p3_rm = ggarrange(p1_rm, p2_rm, ncol = 2, nrow = 1)
+p3_rm = p3_rm  + theme(plot.margin = unit(c(0.5,0,0,0.2),"cm"))
+p3
+p3_rm
+ggsave(p3, file="outputs/FigureS2_AB.png", device="png", units="in", width=9.3, height=4, dpi=1000, scale=1)
+ggsave(p3_rm, file="outputs/FigureS2_CD.png", device="png", units="in", width=9.3, height=4, dpi=1000, scale=1)
 ```
 
 ## Figure S3: Funnel plots 
