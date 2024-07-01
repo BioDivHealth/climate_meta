@@ -313,7 +313,9 @@ p1 <- ggplot(dat_pub1, aes(x = Journal_5yr_Impact, y = es)) +
   theme_minimal()
 
 # Calculate Pearson correlation coefficient
-correlation1 <- cor.test(dat_pub1$es, dat_pub1$Journal_5yr_Impact)
+correlation1 <- cor.test(dat_pub1$es, dat_pub1$Journal_5yr_Impact,
+                         method = "spearman", 
+                         exact = FALSE)
 
 # Annotate the scatter plot with the correlation coefficient
 p1 <- p1 + annotate("text", x = max(dat_pub1$Journal_5yr_Impact) * 0.7, y = max(dat_pub1$es) * 0.9,
@@ -345,7 +347,8 @@ p2 <- ggplot(dat_pub2, aes(x = Journal_5yr_Impact, y = P.value_specific)) +
   theme_minimal()
 
 # Calculate Pearson correlation coefficient
-correlation2 <- cor.test(dat_pub2$Journal_5yr_Impact, dat_pub2$P.value_specific)
+correlation2 <- cor.test(dat_pub2$Journal_5yr_Impact, dat_pub2$P.value_specific,
+                         method = "spearman", exact = FALSE)
 
 # Annotate the scatter plot with the correlation coefficient
 p2 <- p2 + annotate("text", x = max(dat_pub2$Journal_5yr_Impact) * 0.7, y = max(dat_pub2$P.value_specific) * 0.9,
@@ -361,9 +364,9 @@ p2 = p2 + labs(tag = "B")+
           axis.text=element_text(size=12))
 ```
 
-#### **Publication bias**
 
-When comparing high and low impact factor journals, there was no significant correlation between journal impact factors and reported P-values (Fig. S2, PCC = `r round(correlation2$estimate, 2)[[1]]`, p = `r round(correlation2$p.value,3)`) or effect sizes (Fig. S2, PCC = `r round(correlation1$estimate, 2)[[1]]`, p = `r round(correlation1$p.value,3)`).
+
+#### **Publication bias**
 
 ```{r eggers_tests}
 f1 <- df %>% filter(!is.na(se) & !is.na(es))
@@ -395,7 +398,11 @@ pcurve_results = pcurve(tmp, effect.estimation = FALSE)
 #Right skewness test for Full curve & Half curve has p = 0 (p<0.001)
 ```
 
-There was limited evidence of publication bias inferred from funnel plots made by plotting standard errors against respective effect sizes (Fig. S3). Egger's regression tests for funnel plot asymmetry showed significant asymmetry of funnel plots for the overall dataset (P-value = `r round(list_regtest$All,3)`) and precipitation data (P-value = `r round(list_regtest$Precipitation,3)`), but no significant asymmetry was identified within humidity and temperature data (Fig. S3/Table SX). Furthermore, P-values extracted from the studies were examined to check for potential evidence of "p-hacking". Visual inspection of the distribution of P-values surrounding p = 0.05 did not find evidence of p-hacking. This was further supported by P-curve analysis and a significant result of a right-skewness test for the distribution of P-values (p \< 0.001).
+Spearman’s rank correlation analysis detected a weak negative correlation between 5-Year Journal Impact Factors and Effect Sizes (Spearman's 𝜌 = `r round(correlation1$estimate, 2)[[1]]`, p = `r round(correlation1$p.value,4)`, Fig. S2A) but no significant correlation between Impact Factors and reported p-value (Spearman's 𝜌  = `r round(correlation2$estimate, 2)[[1]]`, p = `r round(correlation2$p.value,3)`, Fig. S2B). 
+
+There was limited evidence of publication bias inferred from funnel plots made by plotting standard errors against respective effect sizes (Fig. S3). Egger's regression tests for funnel plot asymmetry showed significant asymmetry of funnel plots for the overall dataset (p = `r round(list_regtest$All,3)`) and precipitation data (P-value = `r round(list_regtest$Precipitation,3)`), but no asymmetry was identified within humidity and temperature data (Fig. S3, Table S7). 
+
+Furthermore, p-values extracted from the studies were examined to check for potential evidence of “p-hacking”. Visual inspection of the distribution of p-values surrounding p = 0.05 found limited evidence of p-hacking, with a small spike in the number of studies with p-values just under p = 0.05 (Fig. S4). 
 
 ## Direction of climate effects on measures of disease risk
 
