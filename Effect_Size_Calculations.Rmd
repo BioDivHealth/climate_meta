@@ -178,6 +178,32 @@ Hedge_OR$study <- unlist(Hedge_OR$study)
 
 # Join the original and Hedge's g dataframes by 'study'
 OR_comp <- left_join(OR, Hedge_OR, by = "study")
+
+# Plotting graph
+OR_comp$es = unlist(OR_comp$es); OR_comp$Value = unlist(OR_comp$Value)
+OR_comp_scatter <- ggplot(data = OR_comp, aes(x = Value, y = es)) +
+  geom_point() +
+  xlab("Odds Ratio") +
+  ylab("Effect size (g)") +
+  theme_classic() +
+  geom_line() +
+  geom_text(aes(label = study), vjust = 1) +
+  geom_smooth(method = "lm", se = FALSE)
+
+# Assess outliers using residuals
+OR_comp$es = unlist(OR_comp$es)
+model <- lm(es ~ Value, data = OR_comp)
+
+residuals <- model$residuals
+outliers <- OR_comp[abs(residuals) > 2 * sd(residuals), ]
+
+# Add outliers to scatter plot
+OR_comp_scatter <- OR_comp_scatter + 
+  geom_point(data = outliers, aes(x = Value, y = es, color = "red", size = 3))
+
+# Display scatter plot
+print(OR_comp_scatter)
+
 ```
 
 ### Beta coefficient
@@ -286,6 +312,51 @@ Beta_t_comp_scatter <- ggplot(data = Beta_t_comp, aes(x = Value, y = es, label =
 
 # Display scatter plot
 print(Beta_t_comp_scatter)
+
+# Test for Standard error
+Beta_test_se <- subset(Beta_comp, Beta_comp$Error %in% c("Std. error"))
+Beta_test_se <- sample_n(Beta_test_se, 5)
+
+# Ensure columns are numeric
+Beta_test_se$Std._error <- as.numeric(Beta_test_se$Std._error)
+Beta_test_se$N.value <- as.numeric(Beta_test_se$N.value)
+Beta_test_se$Std_dev <- as.numeric(Beta_test_se$Std_dev)
+
+# Define the test for se_to_sd function
+test_that("se_to_sd returns correct standard deviation for all rows in a dataframe", {
+  Beta_test_se_df <- data.frame(
+    se = Beta_test_se$Std._error,
+    n = Beta_test_se$N.value,
+    sd = Beta_test_se$Std_dev
+  )
+  
+  expected_sds <- Beta_test_se_df$sd
+  actual_sds <- apply(Beta_test_se_df, 1, function(x) se_to_sd(x[1], x[2]))
+  
+  expect_equal(round(actual_sds, 3), round(expected_sds, 3))
+})
+
+# Test for 95% CI
+Beta_test_ci <- subset(Beta_comp, Error %in% c("95% Confidence"))
+Beta_test_ci <- sample_n(Beta_test_ci, 5)
+
+# Define the test for ci_to_sd function
+test_that("ci_to_sd returns correct standard deviation for all rows", {
+  # Create the data frame
+  data <- data.frame(
+    ci_lower = Beta_test_ci$Lower,
+    ci_upper = Beta_test_ci$Upper,
+    sd = Beta_test_ci$Std_dev,
+    n = Beta_test_ci$N.value
+  )
+  
+  # Calculate the expected and actual standard deviations
+  expected_sds <- data$sd
+  actual_sds <- apply(data, 1, function(x) ci_to_sd(x[1], x[2], x[4]))
+  
+  # Compare the expected and actual standard deviations
+  expect_equal(actual_sds, expected_sds, tolerance = 1e-4)
+})
 ```
 
 ### Unstandardized coefficients
@@ -675,6 +746,28 @@ p_comp_scatter <- p_comp_scatter +
 
 # Display scatter plot
 print(p_comp_scatter)
+
+# Test for 95% CI
+p_test_ci <- subset(p_comp, Error %in% c("95% Confidence"))
+p_test_ci <- sample_n(p_test_ci, 5)
+
+# Define the test for ci_to_sd function
+test_that("ci_to_sd returns correct standard deviation for all rows", {
+  # Create the data frame
+  data <- data.frame(
+    ci_L = p_test_ci$L,
+    ci_U = p_test_ci$U,
+    sd = p_test_ci$Std_dev,
+    n = p_test_ci$N.value
+  )
+  
+  # Calculate the expected and actual standard deviations
+  expected_sds <- data$sd
+  actual_sds <- apply(data, 1, function(x) ci_to_sd(x[1], x[2], x[4]))
+  
+  # Compare the expected and actual standard deviations
+  expect_equal(actual_sds, expected_sds, tolerance = 1e-5)
+})
 ```
 
 ### R-squared
