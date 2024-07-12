@@ -16,7 +16,7 @@ knitr::opts_chunk$set(echo = FALSE)
 
 # load dataset
 df = read.csv('data/dataset_final.csv')
-
+df = unique(df)
 # change vector names
 df = df%>%
   mutate(Transmission_type = ifelse(Transmission_type == 'HVH', 'Vectored', 'Non-vectored'))
@@ -312,7 +312,7 @@ chisq_remove_groups <- function(df, grouping_factor, percentage = percentage, n_
 ```{r full_chisq_and_groups_removed}
 #Set the percentage of data to use
 percentage = 0.8
-
+set.seed(123)
 for(i in c("All","Temperature","Precipitation","Humidity")){
 
 if(i!="All"){
@@ -320,6 +320,7 @@ if(i!="All"){
 } else {
   df2 = df
 }
+
 #Run the chi-square tests on full dataset
 none_removed = chisq_remove_groups(df2, grouping_factor = "none_removed",percentage = percentage, n_samples = 1000)
 
@@ -409,24 +410,24 @@ if(i=="Precipitation"){
 list_of_dfs <- list(Overall = df2_all_env, Humidity = df2_hum, Temperature = df2_temp, Precipitation = df2_prec)
 print(list_of_dfs)
 
-# # Define the file name
-# file_name <- "chisq_results.xlsx"
-# library(openxlsx)
-# # Create a new workbook
-# wb <- createWorkbook()
-# # Loop through each dataframe in the list and add it to a new sheet
-# for (name in names(list_of_dfs)) {
-#   addWorksheet(wb, name)
-#   writeData(wb, name, list_of_dfs[[name]])
-# }
+# Define the file name
+file_name <- "chisq_results.xlsx"
+library(openxlsx)
+# Create a new workbook
+wb <- createWorkbook()
+# Loop through each dataframe in the list and add it to a new sheet
+for (name in names(list_of_dfs)) {
+  addWorksheet(wb, name)
+  writeData(wb, name, list_of_dfs[[name]])
+}
 
 # write.csv(as.data.frame(list_of_dfs[["Overall"]]),'outputs/tables/chisq_results_overall2.csv', row.names = F)
 # write.csv(as.data.frame(list_of_dfs[["Temperature"]]),'outputs/tables/chisq_results_temperature2.csv', row.names = F)
 # write.csv(as.data.frame(list_of_dfs[["Humidity"]]),'outputs/tables/chisq_results_humidity2.csv', row.names = F)
 # write.csv(as.data.frame(list_of_dfs[["Precipitation"]]),'outputs/tables/chisq_results_precipitation2.csv', row.names = F)
-
-# Save the workbook
-#saveWorkbook(wb, file_name, overwrite = TRUE)
+# 
+# # Save the workbook
+# saveWorkbook(wb, file_name, overwrite = TRUE)
 ```
 
 ### Secondary reporting rates
@@ -858,7 +859,7 @@ categories = list(Transmission_type = c('Vectored', 'Non-vectored'),
                   )
 
 # random number seed
-set.seed(42)
+set.seed(123)
 ```
 
 **Anderson Darling Test: without subset removal**
