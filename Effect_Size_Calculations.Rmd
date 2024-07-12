@@ -1,5 +1,5 @@
 ---
-title: "Quicker coding"
+title: "Effect Size Transformation"
 author: "Lewis Gourlay"
 date: "2023-04-03"
 output: html_document
@@ -7,10 +7,8 @@ editor_options:
   chunk_output_type: console
 ---
 
-#### Set-up of packages & Data
-
+# Set-up of packages
 ```{r Loading libraries, include=FALSE}
-#set work directory
 library(plyr)
 library(dplyr)
 library(ggplot2)
@@ -26,32 +24,27 @@ library(tidyquant)
 library(tidyr)
 library(metafor)
 library(maps)
-library(ggstance)
-library(summarytools)
 ```
 
-
+# Data preparation 
 ```{r setting directory, include=FALSE}
-# read-in data
-zooALL<-read.csv("./data/dataset_final.csv",header=T, stringsAsFactors=FALSE, fileEncoding="latin1")
-zooALL %<>% select(-es, -se, -weight, -sample.size, -var, -ci.lo, -ci.hi) 
-#rename Data_ID to Study for merging datasets
-names(zooALL)[names(zooALL)=="Data_ID"]<-"study" 
 
-#keep unedited version of the dataset
-zooALL_copy = zooALL
+# Read in the data
+zooALL <- read.csv("./data/dataset_final.csv", header = TRUE, stringsAsFactors = FALSE, fileEncoding = "latin1")
 
-#keep only unique rows
-zooALL = unique(zooALL) 
-zooALL_copy = unique(zooALL_copy)
+# Select relevant columns and rename 'Data_ID' to 'study' for merging datasets
+zooALL <- zooALL %>%
+  select(-es, -se, -weight, -sample.size, -var, -ci.lo, -ci.hi) %>%
+  dplyr::rename(study = Data_ID)
 
-# #rename columns
-# zooALL %<>% dplyr::rename(es_old = "es")
-# zooALL %<>% dplyr::rename(se_old = "se")
+# Keep an unedited version of the dataset, keep only unique rows
+zooALL_copy <- unique(zooALL)
+zooALL = unique(zooALL)
 
-# remove datapoints
-zooALL<-zooALL[!is.na(zooALL$Value), ] # remove missing data
-zooALL<-zooALL[zooALL$Value<25 & zooALL$Value>(-25), ]
+# Remove datapoints with missing or extreme values
+zooALL <- zooALL %>%
+  filter(!is.na(Value)) %>%
+  filter(Value < 25 & Value > -25)
 ```
 
 ```{r Convert environmental variables to the same scale, include=FALSE}
@@ -59,49 +52,52 @@ zooALL<-zooALL[zooALL$Value<25 & zooALL$Value>(-25), ]
 zooALL2<-zooALL #create copy dataset
 zooALL2$Specific_scale[zooALL2$Specific_scale==""]<-1
 
-zooALL2$Specific_scale <- as.factor(zooALL2$Specific_scale) #convert type to factor variables
-zooALL2 <- subset(zooALL2,! zooALL2$Specific_scale  %in% c("ln(mm)","Log(degrees)","Log(mm)","mm^3/yr")) #remove non-numerical values
+# Convert 'Specific_scale' to factor and remove non-numerical values
+zooALL2$Specific_scale <- as.factor(zooALL2$Specific_scale)
+zooALL2 <- subset(zooALL2, !Specific_scale %in% c("ln(mm)", "Log(degrees)", "Log(mm)", "mm^3/yr"))
+
+# Summary of 'Specific_scale'
 summary(zooALL2$Specific_scale)
 
-zooALL3<-data.frame(Factorial = zooALL2$Specific_scale , Value = zooALL2$Value,Lower = zooALL2$Lower, Upper = zooALL2$Upper)
-zooALL3$Upper<-as.numeric(zooALL3$Upper)
-zooALL3$Lower<-as.numeric(zooALL3$Lower)
+# Create a new data frame for calculations
+zooALL3 <- data.frame(Factorial = zooALL2$Specific_scale, Value = zooALL2$Value, Lower = zooALL2$Lower, Upper = zooALL2$Upper)
 
-# write function for Value
-convert_calculation_value <- function(factorial,value) {
-  
-  if(!is.na(factorial)) {
-    return(value/as.numeric(as.character(factorial)))} else {value}
+# Convert 'Upper' and 'Lower' to numeric
+zooALL3$Upper <- as.numeric(zooALL3$Upper)
+zooALL3$Lower <- as.numeric(zooALL3$Lower)
+
+# Function to apply conversion
+convert_calculation_value <- function(factorial, value) {
+  if (!is.na(factorial)) {
+    return(value / as.numeric(as.character(factorial)))
+  } else {
+    return(value)
+  }
 }
 
-# Apply conversions
-zooALL3$value_new<-(mapply(convert_calculation_value, zooALL3$Factorial,zooALL3$Value))
-zooALL3$Upper_new<-mapply(convert_calculation_value,zooALL3$Factorial,zooALL3$Upper)
-zooALL3$Lower_new<-mapply(convert_calculation_value,zooALL3$Factorial,zooALL3$Lower)
+# Apply conversions to 'Value', 'Upper', and 'Lower'
+zooALL3$value_new <- mapply(convert_calculation_value, zooALL3$Factorial, zooALL3$Value)
+zooALL3$Upper_new <- mapply(convert_calculation_value, zooALL3$Factorial, zooALL3$Upper)
+zooALL3$Lower_new <- mapply(convert_calculation_value, zooALL3$Factorial, zooALL3$Lower)
 
-length(mapply(convert_calculation_value, zooALL3$Factorial,zooALL3$Value)) 
-length(mapply(convert_calculation_value,zooALL3$Factorial,zooALL3$Upper)) 
-length(mapply(convert_calculation_value,zooALL3$Factorial,zooALL3$Lower)) 
-
-length(zooALL3$value_new) 
-length(zooALL3$Upper_new) 
-length(zooALL3$Lower_new) 
-
-##unlist and add on
-### unlist 2 to deal with NULL
-unlist2<-function(a.list) {
-  
-  return(do.call(c, lapply(a.list, (function(x) {
-  if (is.null(x) | length(x) == 0) {NA} else { x } 
-}))))
-  
+# Function to unlist and handle NULL values
+unlist2 <- function(a.list) {
+  return(do.call(c, lapply(a.list, function(x) {
+    if (is.null(x) | length(x) == 0) {
+      NA
+    } else {
+      x
+    }
+  })))
 }
-  
+
+# Update 'Value', 'Upper', and 'Lower' in zooALL2  
 zooALL2$Value<-unlist2(zooALL3$value_new)
 zooALL2$Upper<-unlist2(zooALL3$Upper_new)
 zooALL2$Lower<-unlist2(zooALL3$Lower_new)
 
-zooALL<-zooALL2 #use dataset which contains data using scales stated numerically
+# Use the dataset with numerical scales
+zooALL <- zooALL2
 ```
 
 ```{r composition of final dataset}
@@ -117,41 +113,50 @@ cat("Number of independent studies:",num_studies$num_studies, "\n")
 ```
 
 ```{r Function to convert standard error to standard deviation, include = TRUE}
-# define the function to test
+
+# Define the function to convert standard error to standard deviation
 se_to_sd <- function(se, n) {
   se * sqrt(n)
 }
+
 ```
 
 ```{r Function to convert 95% Confidence interval to Standard deviation, include = TRUE}
-# define the function to test
-ci_to_sd<-function(ci_lower, ci_upper, n, conf_level = 0.95) {
+
+# Define the function to convert confidence interval bounds to standard deviation
+ci_to_sd <- function(ci_lower, ci_upper, n, conf_level = 0.95) {
+  # Calculate the critical value from the normal distribution
   crit_val <- qnorm((1 + conf_level) / 2)
-  sqrt(n) * (ci_upper - ci_lower) / (2 * crit_val)
+  # Convert confidence interval to standard deviation
+  sd <- sqrt(n) * (ci_upper - ci_lower) / (2 * crit_val)
+  return(sd)
 }
+
 ```
 
-#### Effect sizes
+# Effect sizes
 
+### Odds ratio
 ```{r Effect sizes for Odds Ratio, include = TRUE}
-#Subset data
-OR.1<-subset(zooALL, zooALL$Type %in% c("Odds ratio"))
-OR<-subset(OR.1, OR.1$Error %in% c("95% Confidence"))
 
-#Change character columns to numeric
-OR$Std._error<-as.numeric(OR$Std._error)
-OR$Value<-as.numeric(OR$Value) 
-OR$N.value<-as.numeric(OR$N.value) 
-OR$Upper<-as.numeric(OR$Upper)
-OR$Lower<-as.numeric(OR$Lower) 
+# Subset data for Odds Ratio and 95% Confidence intervals
+OR.1 <- subset(zooALL, Type %in% c("Odds ratio"))
+OR <- subset(OR.1, Error %in% c("95% Confidence"))
 
-#Conversion from  95% Confidence interval to Standard error
-OR$Std._error<-(OR$Upper - OR$Lower) / (2 * 1.96)
+# Change character columns to numeric
+OR$Std._error <- as.numeric(OR$Std._error)
+OR$Value <- as.numeric(OR$Value)
+OR$N.value <- as.numeric(OR$N.value)
+OR$Upper <- as.numeric(OR$Upper)
+OR$Lower <- as.numeric(OR$Lower)
 
-#Calculate effect sizes
-OR$N.value[is.na(OR$N.value)]<-median(OR$N.value,na.rm=TRUE) #assign median N.value to missing datapoints
+# Conversion from 95% Confidence interval to Standard error
+OR$Std._error <- (OR$Upper - OR$Lower) / (2 * 1.96)
 
-# Calculating Hedge's g
+# Assign median N.value to missing data points
+OR$N.value[is.na(OR$N.value)] <- median(OR$N.value, na.rm = TRUE)
+
+# Calculate Hedge's g for each row
 Hedge_OR <- do.call(rbind, lapply(1:nrow(OR), function(i) {
   convert_or2d(
     or = OR$Value[i], 
@@ -162,178 +167,208 @@ Hedge_OR <- do.call(rbind, lapply(1:nrow(OR), function(i) {
   )
 }))
 
-# Converting to a dataframe
+# Convert to a dataframe
 Hedge_OR <- as.data.frame(Hedge_OR)
 
-Hedge_OR<-Hedge_OR[!is.na(Hedge_OR$se),]#Hedge's g for logistic regression models
-Hedge_OR$study = unlist(Hedge_OR$study)
-OR_comp<-left_join(OR,Hedge_OR, by = "study")
+# Remove rows with missing standard error
+Hedge_OR <- Hedge_OR[!is.na(Hedge_OR$se), ]
+
+# Ensure 'study' is correctly formatted
+Hedge_OR$study <- unlist(Hedge_OR$study)
+
+# Join the original and Hedge's g dataframes by 'study'
+OR_comp <- left_join(OR, Hedge_OR, by = "study")
 ```
 
-
-
+### Beta coefficient
 ```{r Effect sizes for Beta coefficient, include=TRUE, error=TRUE}
-Beta<-subset(zooALL,zooALL$Type %in% c("Beta coefficient")) #subset data
+# Subset data to include only Beta coefficients
+Beta <- subset(zooALL, zooALL$Type %in% c("Beta coefficient"))
 
-#Convert 95% Confidence interval to Standard deviation
-Beta_95<-subset(Beta, Beta$Error %in% c("95% Confidence","95% Credible"))
+# Convert 95% Confidence interval to Standard deviation
+Beta_95 <- subset(Beta, Beta$Error %in% c("95% Confidence", "95% Credible"))
 
-Beta$Value<-as.numeric(Beta$Value) #converting type to numeric
-Beta_95$Upper<-as.numeric(Beta_95$Upper) #converting type to numeric
-Beta_95$Lower<-as.numeric(Beta_95$Lower) #converting type to numeric
-Beta_95$N.value<-as.numeric(Beta_95$N.value) #converting type to numeric
-Beta$Std._error<-as.numeric(Beta$Std._error) #converting type to numeric
-Beta_95_sd<-as.data.frame((sqrt(Beta_95$N.value) * (Beta_95$Upper - Beta_95$Lower))/3.92) #Std. deviation from 95% CI
-Beta_95<-cbind(Beta_95,Beta_95_sd)
-names(Beta_95)[names(Beta_95)=="(sqrt(Beta_95$N.value) * (Beta_95$Upper - Beta_95$Lower))/3.92"]<-"Std_dev"
+# Convert relevant columns to numeric
+Beta$Value <- as.numeric(Beta$Value)
+Beta_95$Upper <- as.numeric(Beta_95$Upper)
+Beta_95$Lower <- as.numeric(Beta_95$Lower)
+Beta_95$N.value <- as.numeric(Beta_95$N.value)
+Beta$Std._error <- as.numeric(Beta$Std._error)
 
-#Convert Standard error to Standard Deviation
-Beta_SE<-(subset(Beta,Beta$Error %in% ("Std. error")))
+# Calculate standard deviation from 95% CI
+Beta_95_sd <- as.data.frame((sqrt(Beta_95$N.value) * (Beta_95$Upper - Beta_95$Lower)) / 3.92)
+Beta_95 <- cbind(Beta_95, Beta_95_sd)
+names(Beta_95)[names(Beta_95) == "(sqrt(Beta_95$N.value) * (Beta_95$Upper - Beta_95$Lower))/3.92"] <- "Std_dev"
 
-Beta_SE$Upper<-as.numeric(Beta_SE$Upper) #change character to numeric
-Beta_SE$Lower<-as.numeric(Beta_SE$Lower)#change character to numeric
-Beta_SE$N.value<-as.numeric(Beta_SE$N.value) #change character to numeric
-Beta_SE$Std._error<-as.numeric(Beta_SE$Std._error)
-Beta_SE.1<-as.data.frame(Beta_SE$Std._error * sqrt(Beta_SE$N.value)) #Std. deviation from Std. error
-Beta_SE<-cbind(Beta_SE,Beta_SE.1)
-names(Beta_SE)[names(Beta_SE)=="Beta_SE$Std._error * sqrt(Beta_SE$N.value)"]<-"Std_dev"
 
-#Calculate Hedge's G effect size
-Beta_Stdev <-rbind(Beta_95, Beta_SE)
+# Convert Standard error to Standard Deviation
+Beta_SE <- subset(Beta, Beta$Error %in% "Std. error")
 
-Hedge_Beta<-data.frame(esc_beta(beta = Beta_Stdev$Value, sdy = Beta_Stdev$Std_dev,
-                                grp1n = Beta_Stdev$N.value/2, grp2n = Beta_Stdev$N.value/2,
-                                es.type = ("g"),study = Beta_Stdev$study)) 
-Hedge_Beta<-Hedge_Beta[!is.na(Hedge_Beta$se),]
+# Convert relevant columns to numeric
+Beta_SE$Upper <- as.numeric(Beta_SE$Upper)
+Beta_SE$Lower <- as.numeric(Beta_SE$Lower)
+Beta_SE$N.value <- as.numeric(Beta_SE$N.value)
+Beta_SE$Std._error <- as.numeric(Beta_SE$Std._error)
 
-#Calculating the Hedge's G of beta coefficients without error to see if they are outliers or can be used
+# Calculate standard deviation from Standard error
+Beta_SE_sd <- as.data.frame(Beta_SE$Std._error * sqrt(Beta_SE$N.value))
+Beta_SE <- cbind(Beta_SE, Beta_SE_sd)
+names(Beta_SE)[names(Beta_SE) == "Beta_SE$Std._error * sqrt(Beta_SE$N.value)"] <- "Std_dev"
+
+# Combine Beta_95 and Beta_SE dataframes
+Beta_Stdev <- rbind(Beta_95, Beta_SE)
+
+# Calculate Hedge's G effect size
+Hedge_Beta <- data.frame(
+  esc_beta(
+    beta = Beta_Stdev$Value, 
+    sdy = Beta_Stdev$Std_dev,
+    grp1n = Beta_Stdev$N.value / 2, 
+    grp2n = Beta_Stdev$N.value / 2,
+    es.type = "g", 
+    study = Beta_Stdev$study
+  ))
+Hedge_Beta <- Hedge_Beta[!is.na(Hedge_Beta$se), ]
+
+# Calculate Cohen's D effect size for Beta coefficients without error
 Beta_t<-subset(Beta, !Beta$Error %in% c("95% Confidence", "Std. error", "95% Credible"))
-Beta_t = Beta
 Beta_d<-as.data.frame(cohens_d(Beta_t$Value)) #calculate cohen's effect size
 
+# Bind Dataframe and Cohen's D effect size calculation
+Beta_t1 <- cbind(Beta_t, Beta_d)
+names(Beta_t1)[names(Beta_t1) == "cohens_d(Beta_t$Value)"] <- "d"
 
-Beta_t1<-cbind(Beta_t, Beta_d) #Bind Dataframe and Cohen's D effect size calculation
-summary(Beta_t1)
-names(Beta_t1)[names(Beta_t1)=="cohens_d(Beta_t$Value)"]<-"d"
+# Calculate Hedge's G from Cohen's D
+Hedge_Beta_t <- as.data.frame(hedges_g(d = Beta_t1$d, totaln = Beta_t1$N.value))
+names(Hedge_Beta_t)[names(Hedge_Beta_t) == "hedges_g(d = Beta_t1$d, totaln = Beta_t1$N.value)"] <- "es"
 
-Hedge_Beta_t<-as.data.frame(hedges_g(d=Beta_t1$d, totaln =Beta_t1$N.value)) #Calculate hedge G from Cohen's D
-
-summary(Hedge_Beta_t)
-names(Hedge_Beta_t)[names(Hedge_Beta_t)=="hedges_g(d = Beta_t1$d, totaln = Beta_t1$N.value)"]<-"es" #change name to 'es'
-Beta_t2<-cbind(Beta_t$study, Hedge_Beta_t)
-names(Beta_t2)[names(Beta_t2)=="Beta_t$study"]<-"study" #change name to 'es'
-
+# Combine study and Hedge's G effect size
+Beta_t2 <- cbind(Beta_t$study, Hedge_Beta_t)
+names(Beta_t2)[names(Beta_t2) == "Beta_t$study"] <- "study"
 Hedge_Beta_t<-Beta_t2
 
-#Unit scaling and Sanity checks
-Beta_comp<-left_join(Beta_Stdev, Hedge_Beta, by="study")
-names(Beta_comp)[names(Beta_SE)=="Value"]<-"Correlation"
+# Unit scaling and sanity checks
+Beta_comp <- left_join(Beta_Stdev, Hedge_Beta, by = "study")
+names(Beta_comp)[names(Beta_SE) == "Value"] <- "Correlation"
 
-Beta_comp_scatter<-ggplot(data = Beta_comp, aes(x=Correlation, y=es))+
-  geom_point()+
-  xlab("Correlation coefficient (β)")+
-  ylab("Effect size (g)")+
-  theme_classic()+
-  geom_line()+
-  geom_text(aes(label = study),vjust = 1)+
+# Scatter plot showing the relationship between correlation coefficient and effect size
+Beta_comp_scatter <- ggplot(data = Beta_comp, aes(x = Correlation, y = es)) +
+  geom_point() +
+  xlab("Correlation coefficient (β)") +
+  ylab("Effect size (g)") +
+  theme_classic() +
+  geom_line() +
+  geom_text(aes(label = study), vjust = 1) +
   geom_smooth(method = "lm", se = FALSE)
 
-# Assess outlier using residuals
-model <- lm(es~Correlation, data = Beta_comp)
+# Assess outliers using residuals
+model <- lm(es ~ Correlation, data = Beta_comp)
 residuals <- model$residuals
-outliers <- Beta_comp[abs(residuals) > 2*sd(residuals), ]
+outliers <- Beta_comp[abs(residuals) > 2 * sd(residuals), ]
 
-Beta_comp_scatter<-Beta_comp_scatter+ geom_point(data = outliers, aes(x=Correlation, y=es,color="red",size =3)) #scatter showing linear relationship between correlation coefficient and effect size
+# Add outliers to scatter plot
+Beta_comp_scatter <- Beta_comp_scatter + 
+  geom_point(data = outliers, aes(x = Correlation, y = es, color = "red", size = 3))
 
-Beta_comp_scatter
+# Display scatter plot
+print(Beta_comp_scatter)
 
-#graphing Beta coefficients which don't have errors
-Beta_t_comp<-merge(Beta_t, Beta_t2, by="study")
-Beta_t_comp_scatter<-ggplot(data = Beta_t_comp, aes(x=Value, y=es,label=study))+geom_point()+
-  xlab("Correlation coefficient (β)")+ylab("Effect size (g)")+theme_classic()+geom_line()+geom_text(aes(label = study),vjust = 1)+
+# Graphing Beta coefficients which don't have errors
+Beta_t_comp <- merge(Beta_t, Beta_t2, by = "study")
+Beta_t_comp_scatter <- ggplot(data = Beta_t_comp, aes(x = Value, y = es, label = study)) +
+  geom_point() +
+  xlab("Correlation coefficient (β)") +
+  ylab("Effect size (g)") +
+  theme_classic() +
+  geom_line() +
+  geom_text(aes(label = study), vjust = 1) +
   geom_smooth(method = "lm", se = FALSE)
 
-Beta_t_comp_scatter
+# Display scatter plot
+print(Beta_t_comp_scatter)
 ```
 
-
+### Unstandardized coefficients
 ```{r Effect sizes for Unstandardised coefficients, include=TRUE}
-B<-(subset(zooALL, zooALL$Type %in% c("Correlation coefficient"))) #subset
-B<-(subset(B,!B$Statistical_method %in% c("Spearman rank correlation", "Pearson correlation"))) #remove rank correlations
 
-#95% Confidence interval conversion
-B_95<-(subset(B,B$Error %in% c("95% Confidence", "95% Credible")))
-B_95$Upper<-as.numeric(B_95$Upper) #converting type to numeric
-B_95$Lower<-as.numeric(B_95$Lower) #converting type to numeric
-B_95$N.value<-as.numeric(B_95$N.value) #converting type to numeric
-B$Std._error<-as.numeric(B$Std._error) #converting type to numeric
-B_95_sd<-as.data.frame((sqrt(B_95$N.value) * (B_95$Upper - B_95$Lower))/3.92) #Std. deviation from 95% CI
-B_95<-cbind(B_95,B_95_sd)
-names(B_95)[names(B_95)=="(sqrt(B_95$N.value) * (B_95$Upper - B_95$Lower))/3.92"]<-"Std_dev"
+# Subset data to include only correlation coefficients
+B <- subset(zooALL, zooALL$Type %in% c("Correlation coefficient"))
+B <- subset(B, !B$Statistical_method %in% c("Spearman rank correlation", "Pearson correlation")) # Remove rank correlations
 
-#Standard error conversion
-B_SE<-(subset(B,B$Error %in% ("Std. error"))) #subset data to those with a SE
-B_SE$Upper<-as.numeric(B_SE$Upper) #change character to numeric
-B_SE$Lower<-as.numeric(B_SE$Lower)#change character to numeric
-B_SE$N.value<-as.numeric(B_SE$N.value) #change character to numeric
-B_SE$Std._error<-as.numeric(B_SE$Std._error)
-B_SE.1<-as.data.frame(B_SE$Std._error * sqrt(B_SE$N.value)) #Std. deviation from Std. error
-B_SE<-cbind(B_SE,B_SE.1)
-names(B_SE)[names(B_SE)=="B_SE$Std._error * sqrt(B_SE$N.value)"]<-"Std_dev"
+# 95% Confidence interval conversion
+B_95 <- subset(B, B$Error %in% c("95% Confidence", "95% Credible"))
+B_95$Upper <- as.numeric(B_95$Upper) # Convert type to numeric
+B_95$Lower <- as.numeric(B_95$Lower) # Convert type to numeric
+B_95$N.value <- as.numeric(B_95$N.value) # Convert type to numeric
+B$Std._error <- as.numeric(B$Std._error) # Convert type to numeric
+B_95_sd <- as.data.frame((sqrt(B_95$N.value) * (B_95$Upper - B_95$Lower)) / 3.92) # Std. deviation from 95% CI
+B_95 <- cbind(B_95, B_95_sd)
+names(B_95)[names(B_95) == "(sqrt(B_95$N.value) * (B_95$Upper - B_95$Lower))/3.92"] <- "Std_dev"
 
+# Standard error conversion
+B_SE <- subset(B, B$Error %in% "Std. error") # Subset data to those with a SE
+B_SE$Upper <- as.numeric(B_SE$Upper) # Convert type to numeric
+B_SE$Lower <- as.numeric(B_SE$Lower) # Convert type to numeric
+B_SE$N.value <- as.numeric(B_SE$N.value) # Convert type to numeric
+B_SE$Std._error <- as.numeric(B_SE$Std._error) # Convert type to numeric
+B_SE_sd <- as.data.frame(B_SE$Std._error * sqrt(B_SE$N.value)) # Std. deviation from Std. error
+B_SE <- cbind(B_SE, B_SE_sd)
+names(B_SE)[names(B_SE) == "B_SE$Std._error * sqrt(B_SE$N.value)"] <- "Std_dev"
 
+# Calculate Hedge's G effect size
+B_Stdev <- rbind(B_95, B_SE)
+B_Stdev$N.value[is.na(B_Stdev$N.value)] <- mean(B_Stdev$N.value, na.rm = TRUE)
+Hedge_B <- as.data.frame(esc_B(b = B_Stdev$Value, sdy = B_Stdev$Std_dev, grp1n = B_Stdev$N.value / 2, grp2n = B_Stdev$N.value / 2, es.type = "g", study = B_Stdev$study)) # Calculate Hedge's g
 
-#Calculate hedge's G effect size
-B_Stdev<-rbind(B_95, B_SE)
-B_Stdev$N.value[is.na(B_Stdev$N.value)]<-mean(B_Stdev$N.value,na.rm=TRUE)
-Hedge_B<-as.data.frame(esc_B(b = B_Stdev$Value, sdy = B_Stdev$Std_dev, grp1n = B_Stdev$N.value/2, grp2n = B_Stdev$N.value/2, es.type =c("g"),study = B_Stdev$study)) #calculate hedge g
+# Unit scaling and sanity checks
+B_comp <- as.data.frame(left_join(B_Stdev, Hedge_B, by = "study"))
+names(B_comp)[names(B_SE) == "Value"] <- "Correlation"
 
-#Unit scaling and Sanity checks
-B_comp<-as.data.frame(left_join(B_Stdev, Hedge_B, by="study"))
-names(B_comp)[names(B_SE)=="Value"]<-"Correlation"
-B_comp_scatter<-ggplot(data = B_comp, aes(x=Correlation, y=es,label=as.character(N.value)))+
-  geom_point()+
-  xlab("Correlation coefficient")+
-  ylab("Effect size (g)")+
-  theme_classic()+
-  geom_line()+
-  geom_text(aes(label = study),vjust = 1)+
-  geom_smooth(method = "lm", se = FALSE) #scatter showing linear relationship between correlation coefficient and effect size
+# Scatter plot showing the relationship between correlation coefficient and effect size
+B_comp_scatter <- ggplot(data = B_comp, aes(x = Correlation, y = es, label = as.character(N.value))) +
+  geom_point() +
+  xlab("Correlation coefficient") +
+  ylab("Effect size (g)") +
+  theme_classic() +
+  geom_line() +
+  geom_text(aes(label = study), vjust = 1) +
+  geom_smooth(method = "lm", se = FALSE)
 
-# Assess outlier using residuals
-model <- lm(es~ Correlation, data = B_comp)
+# Assess outliers using residuals
+model <- lm(es ~ Correlation, data = B_comp)
 residuals <- model$residuals
-outliers <- B_comp[abs(residuals) > 2*sd(residuals), ]
+outliers <- B_comp[abs(residuals) > 2 * sd(residuals), ]
 
-B_comp_scatter<-B_comp_scatter+ geom_point(data = outliers, aes(x=Correlation, y=es,color="red",size =3)) #scatter showing linear relationship between correlation coefficient and effect size
+# Add outliers to scatter plot
+B_comp_scatter <- B_comp_scatter + 
+  geom_point(data = outliers, aes(x = Correlation, y = es, color = "red", size = 3))
 
-B_comp_scatter
+# Display scatter plot
+print(B_comp_scatter)
 
-### Test for Standard error
-B_test_se<-subset(B_comp,B_comp$Error %in% c("Std. error"))
+# Test for Standard error
+B_test_se <- subset(B_comp, B_comp$Error %in% c("Std. error"))
 B_test_se <- sample_n(B_test_se, 5)
 
-B_test_se$Std._error<-as.numeric(B_test_se$Std._error)
-B_test_se$N.value<-as.numeric(B_test_se$N.value)
-B_test_se$Std_dev<-as.numeric(B_test_se$Std_dev)
-
+B_test_se$Std._error <- as.numeric(B_test_se$Std._error)
+B_test_se$N.value <- as.numeric(B_test_se$N.value)
+B_test_se$Std_dev <- as.numeric(B_test_se$Std_dev)
 
 test_that("se_to_sd returns correct standard deviation for all rows in a dataframe", {
-  
-  B_test_se<-data.frame(se=B_test_se$Std._error,
-                           n=B_test_se$N.value,
-                           sd = B_test_se$Std_dev)
+  B_test_se <- data.frame(
+    se = B_test_se$Std._error,
+    n = B_test_se$N.value,
+    sd = B_test_se$Std_dev
+  )
   
   expected_sds <- B_test_se$sd
   actual_sds <- apply(B_test_se, 1, function(x) se_to_sd(x[1], x[2]))
-expect_equal(round(actual_sds,3), round(expected_sds,3))
+  expect_equal(round(actual_sds, 3), round(expected_sds, 3))
 })
 
-
-### Test for 95% CI
+# Test for 95% CI
 B_test_ci <- subset(B_comp, Error %in% c("95% Confidence"))
 
-# Test the function
 test_that("ci_to_sd returns correct standard deviation for all rows", {
   # Create the data frame
   data <- data.frame(
@@ -348,308 +383,383 @@ test_that("ci_to_sd returns correct standard deviation for all rows", {
   actual_sds <- apply(data, 1, function(x) ci_to_sd(x[1], x[2], x[4]))
   
   # Compare the expected and actual standard deviations
-expect_equal(round(actual_sds,2), round(expected_sds,2))
+  expect_equal(round(actual_sds, 2), round(expected_sds, 2))
 })
 ```
 
-
+### Spearman & Pearson correlaiton
 ```{r Effect sizes for Spearman & Pearson correlaiton, include=TRUE}
-R<- subset(zooALL, zooALL$Statistical_method %in% c("Spearman rank correlation", "Pearson correlation")) #pearson and spearmans
-B.1<-subset(B,!B$Error %in% c("95% Confidence", "Std. error")) #correlation coefficients without error values
-R.1<-rbind(R, B.1)
-R_d<-cohens_d(R.1$Value) 
-                         
-R.1$N.value<-as.numeric(R.1$N.value) 
-R.2<-cbind(R.1,R_d) #Bind Dataframe and Cohen's D effect size calculation
 
-Hedge_R<-as.data.frame(hedges_g(d=R.2$R_d, totaln = R.2$N.value)) #Calculate hedge G from Cohen's D
+# Subset data to include only Spearman and Pearson correlations
+R <- subset(zooALL, zooALL$Statistical_method %in% c("Spearman rank correlation", "Pearson correlation"))
 
-names(Hedge_R)[names(Hedge_R)=="hedges_g(d = R.2$R_d, totaln = R.2$N.value)"]<-"es" #change name to 'es'
-R_comp<-cbind(R.2, Hedge_R)
-names(Hedge_R)[names(Hedge_R)=="R$study"]<-"study" #change name to 'study' to allow datasets to be combined later 
+# Subset correlation coefficients without error values
+B.1 <- subset(B, !B$Error %in% c("95% Confidence", "Std. error"))
+R.1 <- rbind(R, B.1)
 
-Hedge_R<-cbind(R.2$study, Hedge_R)
-names(Hedge_R)[names(Hedge_R)=="R.2$study"]<-"study"
+# Calculate Cohen's D effect size
+R_d <- cohens_d(R.1$Value)
+R.1$N.value <- as.numeric(R.1$N.value) 
+R.2 <- cbind(R.1, R_d) # Bind Dataframe and Cohen's D effect size calculation
 
-#Unit scaling and Sanity checks
+# Calculate Hedge's G from Cohen's D
+Hedge_R <- as.data.frame(hedges_g(d = R.2$R_d, totaln = R.2$N.value))
+names(Hedge_R)[names(Hedge_R) == "hedges_g(d = R.2$R_d, totaln = R.2$N.value)"] <- "es" # Change name to 'es'
 
-names(R_comp)[names(R_comp)=="Value"]<-"Correlation"
-R_comp_scatter<-ggplot(data = R_comp,aes(x=Correlation, y=es))+geom_point()+xlab("Correlation coefficient (r)")+ylab("Effect size (g)")+
-  geom_line()+theme_classic()+
-geom_smooth(method = "lm", se = FALSE)
-R_comp_scatter #scatter showing linear relationship between correlation coefficient and effect size 
+# Combine dataframes
+R_comp <- cbind(R.2, Hedge_R)
+names(Hedge_R)[names(Hedge_R) == "R$study"] <- "study" # Change name to 'study' to allow datasets to be combined later
+Hedge_R <- cbind(R.2$study, Hedge_R)
+names(Hedge_R)[names(Hedge_R) == "R.2$study"] <- "study"
 
-# Assess outlier using residuals
-model <- lm(es~ Correlation, data = R_comp)
+# Unit scaling and sanity checks
+names(R_comp)[names(R_comp) == "Value"] <- "Correlation"
+
+# Scatter plot showing the relationship between correlation coefficient and effect size
+R_comp_scatter <- ggplot(data = R_comp, aes(x = Correlation, y = es)) +
+  geom_point() +
+  xlab("Correlation coefficient (r)") +
+  ylab("Effect size (g)") +
+  theme_classic() +
+  geom_line() +
+  geom_smooth(method = "lm", se = FALSE)
+
+# Assess outliers using residuals
+model <- lm(es ~ Correlation, data = R_comp)
 residuals <- model$residuals
-outliers <- R_comp[abs(residuals) > 2*sd(residuals), ]
+outliers <- R_comp[abs(residuals) > 2 * sd(residuals), ]
 
-R_comp_scatter<-R_comp_scatter+ geom_point(data = outliers, aes(x=Correlation, y=es,color="red",size =3)) #scatter showing linear relationship between correlation coefficient and effect size
+# Add outliers to scatter plot
+R_comp_scatter <- R_comp_scatter + 
+  geom_point(data = outliers, aes(x = Correlation, y = es, color = "red", size = 3))
 
-R_comp_scatter
+# Display scatter plot
+print(R_comp_scatter)
 ```
 
+### Ratios
 ```{r Effect sizes for Ratios, include=TRUE}
 
-Ratios<-subset(zooALL,zooALL$Type %in% c("Relative risk", "Risk ratio","Incidence rate ratio","Prevelance ratio","Hospitilisation rate ratio")) #subset
+# Subset data to include only ratios
+Ratios <- subset(zooALL, zooALL$Type %in% c("Relative risk", "Risk ratio", "Incidence rate ratio", "Prevalence ratio", "Hospitalisation rate ratio"))
 
-#convert 95% confidence intervals to Standard error
-Ratios<-(subset(Ratios, Ratios$Error %in% c("95% Confidence","95% Credible")))
+# Convert 95% confidence intervals to Standard error
+Ratios <- subset(Ratios, Ratios$Error %in% c("95% Confidence", "95% Credible"))
 
-Ratios$Value<-as.numeric(Ratios$Value) #convert to numeric
-Ratios$N.value<-as.numeric(Ratios$N.value) #convert to numeric
-Ratios$Upper<-as.numeric(Ratios$Upper) #convert to numeric
-Ratios$Lower<-as.numeric(Ratios$Lower) #convert to numeric
+# Convert to numeric
+Ratios$Value <- as.numeric(Ratios$Value)
+Ratios$N.value <- as.numeric(Ratios$N.value)
+Ratios$Upper <- as.numeric(Ratios$Upper)
+Ratios$Lower <- as.numeric(Ratios$Lower)
 
-Ratios$Std._error<-(Ratios$Upper - Ratios$Value)/3.92 #finding SE
-names(Ratios)[names(Ratios)=="Ratios_SE"]<-"SE"
-Ratios<-Ratios[complete.cases(Ratios$Upper), ]
+# Calculate Standard error
+Ratios$Std._error <- (Ratios$Upper - Ratios$Value) / 3.92
+Ratios <- Ratios[complete.cases(Ratios$Upper), ]
 
-##reasonable?
-Ratios$N.value[is.na(Ratios$N.value)]<-median(Ratios$N.value,na.rm=TRUE)
+# Replace NA values in N.value with the median
+Ratios$N.value[is.na(Ratios$N.value)] <- median(Ratios$N.value, na.rm = TRUE)
 
-#Hedge_Ratios<-as.data.frame(convert_or2d(or =Ratios$Value, se = Ratios$Std._error, totaln = Ratios$N.value, es.type = c("g"), study = Ratios$study))
-Hedge_Ratios<- do.call(rbind, lapply(1:nrow(Ratios), function(i) {
+# Convert odds ratios to Hedge's G effect size
+Hedge_Ratios <- do.call(rbind, lapply(1:nrow(Ratios), function(i) {
   convert_or2d(
-    or = Ratios$Value[i], 
-    se = Ratios$Std._error[i], 
-    totaln = Ratios$N.value[i], 
-    es.type = "g", 
+    or = Ratios$Value[i],
+    se = Ratios$Std._error[i],
+    totaln = Ratios$N.value[i],
+    es.type = "g",
     study = Ratios$study[i]
   )
 }))
 
-# Converting to a dataframe
+# Convert to a dataframe and remove errors
 Hedge_Ratios <- as.data.frame(Hedge_Ratios)
+Hedge_Ratios <- Hedge_Ratios[Hedge_Ratios$se != 0, ]
 
-#remove errors
-Hedge_Ratios<-Hedge_Ratios[Hedge_Ratios$se!=0,]
+# Unit scaling and sanity checks
+Ratios_comp <- merge(Ratios, Hedge_Ratios, by = "study")
+Ratios_comp$es <- unlist(Ratios_comp$es)
 
-#Unit scaling and Sanity checks
-Ratios_comp<-merge(Ratios,Hedge_Ratios, by = "study")
-Ratios_comp$es = unlist(Ratios_comp$es)
-
-Ratios_comp_scatter<-ggplot(data = Ratios_comp, aes(x=Value, y=es))+
-  geom_point()+
-  xlab("Ratios")+
-  ylab("Effect size (g)")+
-  theme_classic()+
-  geom_line()+
+# Scatter plot showing the relationship between ratios and effect size
+Ratios_comp_scatter <- ggplot(data = Ratios_comp, aes(x = Value, y = es)) +
+  geom_point() +
+  xlab("Ratios") +
+  ylab("Effect size (g)") +
+  theme_classic() +
+  geom_line() +
   geom_smooth(method = "lm", se = FALSE)
 
-Ratios_comp_scatter #scatter showing linear relationship between correlation coefficient and effect size  
+# Display scatter plot
+print(Ratios_comp_scatter)
 
-# Assess outlier using residuals
-model <- lm(es~ Value, data = Ratios_comp)
+# Assess outliers using residuals
+model <- lm(es ~ Value, data = Ratios_comp)
 residuals <- model$residuals
-outliers <- Ratios_comp[abs(residuals) > 2*sd(residuals), ]
+outliers <- Ratios_comp[abs(residuals) > 2 * sd(residuals), ]
 
-Ratios_comp_scatter<-Ratios_comp_scatter +
-  geom_point(data = outliers, aes(x=outliers$Value, y=outliers$es,color="red",size =3)) #scatter showing linear relationship
-                                                                                #between correlation coefficient and effect size
+# Add outliers to scatter plot
+Ratios_comp_scatter <- Ratios_comp_scatter +
+  geom_point(data = outliers, aes(x = Value, y = es, color = "red", size = 3))
 
-Ratios_comp_scatter
+# Display scatter plot with outliers
+print(Ratios_comp_scatter)
 ```
 
-
+### Z-scores
 ```{r Effect sizes for Z-scores, include=TRUE}
-z<-(subset(zooALL, zooALL$Type %in% c("Z-score")))
-z$N.value<-as.numeric(z$N.value)
 
-Hedge_z<-convert_z2r(z$Value)
-Hedge_z<-cohens_d(Hedge_z) 
-                           
-Hedge_z<-as.data.frame(hedges_g(d=Hedge_z, totaln = z$N.value))
-Hedge_z
+# Subset data to include only Z-scores
+z <- subset(zooALL, zooALL$Type %in% c("Z-score"))
+z$N.value <- as.numeric(z$N.value) # Convert to numeric
 
-Hedge_z<-cbind(z$study, Hedge_z)
-names(Hedge_z)[names(Hedge_z)=="z$study"]<-"study"
-names(Hedge_z)[names(Hedge_z)=="hedges_g(d = Hedge_z, totaln = z$N.value)"]<-"es"
-Hedge_z
+# Convert Z-scores to Cohen's D and then to Hedge's G
+Hedge_z <- convert_z2r(z$Value)
+Hedge_z <- cohens_d(Hedge_z)
+Hedge_z <- as.data.frame(hedges_g(d = Hedge_z, totaln = z$N.value))
 
-#Unit scaling and Sanity checks
-z_comp<-merge(z,Hedge_z, by = "study")
-z_comp_scatter<-ggplot(data = z_comp, aes(x=Value, y=es))+
-  geom_point()+
-  xlab("Z-score")+
-  ylab("Effect size (g)")+
-  theme_classic()+
-  geom_line()+
-  geom_smooth(method = "lm", se = FALSE) #scatter showing linear relationship between correlation coefficient and effect size
+# Rename columns for consistency
+Hedge_z <- cbind(z$study, Hedge_z)
+names(Hedge_z)[names(Hedge_z) == "z$study"] <- "study"
+names(Hedge_z)[names(Hedge_z) == "hedges_g(d = Hedge_z, totaln = z$N.value)"] <- "es"
 
-#Assess outlier using residuals
-model <- lm(es~ Value, data = z_comp)
+# Unit scaling and sanity checks
+z_comp <- merge(z, Hedge_z, by = "study")
+
+# Scatter plot showing the relationship between Z-score and effect size
+z_comp_scatter <- ggplot(data = z_comp, aes(x = Value, y = es)) +
+  geom_point() +
+  xlab("Z-score") +
+  ylab("Effect size (g)") +
+  theme_classic() +
+  geom_line() +
+  geom_smooth(method = "lm", se = FALSE)
+
+# Assess outliers using residuals
+model <- lm(es ~ Value, data = z_comp)
 residuals <- model$residuals
-outliers <- z_comp[abs(residuals) > 2*sd(residuals), ]
+outliers <- z_comp[abs(residuals) > 2 * sd(residuals), ]
 
-#scatter showing linear relationship between correlation coefficient and effect size
-z_comp_scatter<-z_comp_scatter +
-  geom_point(data = outliers, aes(x=Value, y=es,color="red",size =3)) 
-z_comp_scatter
+# Add outliers to scatter plot
+z_comp_scatter <- z_comp_scatter +
+  geom_point(data = outliers, aes(x = Value, y = es, color = "red", size = 3))
 
+# Display scatter plot
+print(z_comp_scatter)
 ```
 
+### T-test
 ```{r Effect sizes for T-test, include=TRUE}
-t<-(subset(zooALL, zooALL$Type %in% c("T-value")))
-Hedge_t<-as.data.frame(esc_t(t=2.24, p=0.05, totaln = 8917, es.type = c("g"), study = t$study))
+
+# Subset data to include only T-values
+t <- subset(zooALL, zooALL$Type %in% c("T-value"))
+Hedge_t<-as.data.frame(esc_t(t=t$Value, p=t$P.value_specific, totaln = 8917, es.type = c("g"), study = t$study))
 ```
 
+### Chi-square
 ```{r Effect sizes for Chi-square, include=TRUE}
-Chi<-subset(zooALL, zooALL$Type %in% ("Chi-square")) #Subset
-Hedge_chi<-as.data.frame(esc_chisq(chisq = 4.75, p = 0.03, totaln = 3006, es.type = c("g"), study = Chi$study)) # Effect size Hedge's g
+
+# Subset data to include only Chi-square values
+Chi <- subset(zooALL, zooALL$Type %in% c("Chi-square"))
+
+# Convert Chi-square values to Hedge's G effect size
+Hedge_chi<-as.data.frame(esc_chisq(chisq = Chi$Value, p = Chi$P.value_specific, totaln = Chi$N.value, es.type = c("g"), study = Chi$study)) 
 ```
 
-
+### F-statistic
 ```{r Effect sizes for  F-statistic, include=TRUE}
-FS<-subset(zooALL, zooALL$Type %in% ("F-statistic")) #subset f-statistics
 
-FS$Value<-as.numeric(FS$Value)
-FS$N.value<-as.numeric(FS$N.value)
+# Subset data to include only F-statistics
+FS <- subset(zooALL, zooALL$Type %in% c("F-statistic"))
 
-# Effect size Hedge's g
-Hedge_F<- do.call(rbind, lapply(1:nrow(FS), function(i) {
+# Convert columns to numeric
+FS$Value <- as.numeric(FS$Value)
+FS$N.value <- as.numeric(FS$N.value)
+
+# Convert F-statistics to Hedge's G effect size
+Hedge_F <- do.call(rbind, lapply(1:nrow(FS), function(i) {
   esc_f(
-    f = FS$Value[i], 
-    totaln = FS$N.value[i], 
-    es.type = "g", 
+    f = FS$Value[i],
+    totaln = FS$N.value[i],
+    es.type = "g",
     study = FS$study[i]
   )
 }))
 
-# Converting to a dataframe
+# Convert to a dataframe and unlist the effect size
 Hedge_F <- as.data.frame(Hedge_F)
-Hedge_F$es = unlist(Hedge_F$es)
+Hedge_F$es <- unlist(Hedge_F$es)
 
-#Unit scaling and Sanity checks
-F_comp<-merge(FS,Hedge_F, by = "study")
+# Unit scaling and sanity checks
+F_comp <- merge(FS, Hedge_F, by = "study")
 
-#scatter showing linear relationship between correlation coefficient and effect size
-F_comp_scatter<-ggplot(data = F_comp, aes(x=Value, y=es))+geom_point()+
-  xlab("F-statistic")+
-  ylab("Effect size (g)")+
-  theme_classic()+
-  geom_line()+
-  geom_smooth(method = "lm", se = FALSE) 
-
-F_comp_scatter
-```
-
-```{r Effect sizes for Percentage change, include=TRUE, error=TRUE}
-p<-subset(zooALL,zooALL$Type %in% "Percent change") #subset
-
-p$B<-(p$Value/100)#convert % change to a rough b coefficient
-p$L<-(p$Lower/100) #convert % change error to a rough L limit
-p$U<-(p$Upper/100) #convert % change error to a rough U limit
-
-#Convert 95% Confidence interval to Standard deviation
-p_95<-subset(p, p$Error %in% c("95% Confidence"))
-
-p$B<-as.numeric(p$B) #converting type to numeric
-p_95$U<-as.numeric(p_95$U) #converting type to numeric
-p_95$L<-as.numeric(p_95$L) #converting type to numeric
-p_95$N.value<-as.numeric(p_95$N.value) #converting type to numeric
-p$Std._error<-as.numeric(p$Std._error) #converting type to numeric
-p_95_sd<-as.data.frame((sqrt(p_95$N.value) * (p_95$U - p_95$L))/3.92) #Std. deviation from 95% CI
-p_95<-cbind(p_95,p_95_sd)
-summary(p_95)
-names(p_95)[names(p_95)=="(sqrt(p_95$N.value) * (p_95$U - p_95$L))/3.92"]<-"Std_dev"
-
-#Convert Standard error to Standard Deviation
-p_SE<-(subset(p,p$Error %in% ("Std. error")))
-
-p_SE$U<-as.numeric(p_SE$U) #change character to numeric
-p_SE$L<-as.numeric(p_SE$L)#change character to numeric
-p_SE$N.value<-as.numeric(p_SE$N.value)
-p_SE$Std._error<-as.numeric(p_SE$Std._error)
-
-p_SE.1<-as.data.frame(p_SE$Std._error * sqrt(p_SE$N.value)) #Std. deviation from Std. error
-p_SE<-cbind(p_SE,p_SE.1)
-summary(p_SE)
-names(p_SE)[names(p_SE)=="p_SE$Std._error * sqrt(p_SE$N.value)"]<-"Std_dev"
-
-#Calculate Hedge's G effect size
-p_Stdev <-rbind(p_95, p_SE)
-
-Hedge_p<-as.data.frame(esc_beta(beta = p_Stdev$B, sdy = p_Stdev$Std_dev, grp1n = p_Stdev$N.value/2, grp2n = p_Stdev$N.value/2, es.type = "g",study = p_Stdev$study))
-
-Hedge_p<-Hedge_p[!is.na(Hedge_p$se),]
-
-#Unit scaling and Sanity checks
-p_comp<-merge(p_Stdev, Hedge_p, by="study")
-names(p_comp)[names(p_SE)=="B"]<-"Correlation"
-p_comp_scatter <- ggplot(data = p_comp, aes(x=Correlation, y=es,label=study))+
-  geom_point()+
-  xlab("Correlation coefficient")+
-  ylab("Effect size (g)")+
-  theme_classic()+
-  geom_line()+
-  geom_text(aes(label = study),vjust = 1)+
+# Scatter plot showing the relationship between F-statistic and effect size
+F_comp_scatter <- ggplot(data = F_comp, aes(x = Value, y = es)) +
+  geom_point() +
+  xlab("F-statistic") +
+  ylab("Effect size (g)") +
+  theme_classic() +
+  geom_line() +
   geom_smooth(method = "lm", se = FALSE)
 
-# Assess outlier using residuals
-model <- lm(es~ p_comp$Correlation, data = p_comp)
-residuals <- model$residuals
-outliers <- p_comp[abs(residuals) > 2*sd(residuals), ]
-
-#scatter showing linear relationship between correlation coefficient and effect size
-p_comp_scatter<-p_comp_scatter + 
-  geom_point(data = outliers, aes(x=outliers$Correlation, y=outliers$es,color="red",size =3)) 
-p_comp_scatter
+# Display scatter plot
+print(F_comp_scatter)
 ```
 
+### Percentage change
+```{r Effect sizes for Percentage change, include=TRUE, error=TRUE}
 
+# Subset data to include only Percent change
+p <- subset(zooALL, zooALL$Type %in% "Percent change")
+
+# Convert % change to a rough b coefficient and limits
+p$B <- (p$Value / 100)
+p$L <- (p$Lower / 100)
+p$U <- (p$Upper / 100)
+
+# Convert 95% Confidence interval to Standard deviation
+p_95 <- subset(p, p$Error %in% c("95% Confidence"))
+
+# Convert relevant columns to numeric
+p$B <- as.numeric(p$B)
+p_95$U <- as.numeric(p_95$U)
+p_95$L <- as.numeric(p_95$L)
+p_95$N.value <- as.numeric(p_95$N.value)
+p$Std._error <- as.numeric(p$Std._error)
+
+# Calculate standard deviation from 95% CI
+p_95_sd <- as.data.frame((sqrt(p_95$N.value) * (p_95$U - p_95$L)) / 3.92)
+p_95 <- cbind(p_95, p_95_sd)
+names(p_95)[names(p_95) == "(sqrt(p_95$N.value) * (p_95$U - p_95$L))/3.92"] <- "Std_dev"
+
+# Convert Standard error to Standard Deviation
+p_SE <- subset(p, p$Error %in% "Std. error")
+
+# Convert relevant columns to numeric
+p_SE$U <- as.numeric(p_SE$U)
+p_SE$L <- as.numeric(p_SE$L)
+p_SE$N.value <- as.numeric(p_SE$N.value)
+p_SE$Std._error <- as.numeric(p_SE$Std._error)
+
+# Calculate standard deviation from Standard error
+p_SE_sd <- as.data.frame(p_SE$Std._error * sqrt(p_SE$N.value))
+p_SE <- cbind(p_SE, p_SE_sd)
+names(p_SE)[names(p_SE) == "p_SE$Std._error * sqrt(p_SE$N.value)"] <- "Std_dev"
+
+# Combine the two dataframes
+p_Stdev <- rbind(p_95, p_SE)
+
+# Calculate Hedge's G effect size
+Hedge_p <- as.data.frame(esc_beta(beta = p_Stdev$B, sdy = p_Stdev$Std_dev, grp1n = p_Stdev$N.value / 2, grp2n = p_Stdev$N.value / 2, es.type = "g", study = p_Stdev$study))
+Hedge_p <- Hedge_p[!is.na(Hedge_p$se), ]
+
+# Unit scaling and sanity checks
+p_comp <- merge(p_Stdev, Hedge_p, by = "study")
+names(p_comp)[names(p_SE) == "B"] <- "Correlation"
+
+# Scatter plot showing the relationship between correlation coefficient and effect size
+p_comp_scatter <- ggplot(data = p_comp, aes(x = Correlation, y = es, label = study)) +
+  geom_point() +
+  xlab("Correlation coefficient") +
+  ylab("Effect size (g)") +
+  theme_classic() +
+  geom_line() +
+  geom_text(aes(label = study), vjust = 1) +
+  geom_smooth(method = "lm", se = FALSE)
+
+# Assess outliers using residuals
+model <- lm(es ~ Correlation, data = p_comp)
+residuals <- model$residuals
+outliers <- p_comp[abs(residuals) > 2 * sd(residuals), ]
+
+# Add outliers to scatter plot
+p_comp_scatter <- p_comp_scatter + 
+  geom_point(data = outliers, aes(x = outliers$Correlation, y = outliers$es, color = "red", size = 3))
+
+# Display scatter plot
+print(p_comp_scatter)
+```
+
+### R-squared
 ```{r Effect sizes for R-squared, include=TRUE, error=TRUE}
-R_square<-subset(zooALL, zooALL$Type %in% "R square")
+
+# Subset data to include only R-squared values
+R_square <- subset(zooALL, zooALL$Type %in% "R square")
 
 # Convert R-squared to Cohen's f^2 effect size
+R_square$R.squared <- as.numeric(R_square$R.squared) # Ensure R.squared is numeric
 f2 <- R_square$R.squared / (1 - R_square$R.squared)
 
 # Convert Cohen's f^2 to Hedge's g effect size
-g<-as.data.frame(sqrt(f2) * 1.5)
+g <- as.data.frame(sqrt(f2) * 1.5)
 
-Hedge_R_square<-cbind(R_square$study, g, R_square$Direction) 
+# Combine with study and direction information
+Hedge_R_square <- cbind(R_square$study, g, R_square$Direction)
 
-names(Hedge_R_square)[names(Hedge_R_square)=="sqrt(f2) * 1.5"]<-"es"
-names(Hedge_R_square)[names(Hedge_R_square)=="R_square$study"]<-"study"
-names(Hedge_R_square)[names(Hedge_R_square)=="R_square$Direction"]<-"Direction"
+# Rename columns for consistency
+names(Hedge_R_square)[names(Hedge_R_square) == "sqrt(f2) * 1.5"] <- "es"
+names(Hedge_R_square)[names(Hedge_R_square) == "R_square$study"] <- "study"
+names(Hedge_R_square)[names(Hedge_R_square) == "R_square$Direction"] <- "Direction"
 
-Hedge_R_square$es[Hedge_R_square$Direction =="decrease"] <- -Hedge_R_square$es[Hedge_R_square$Direction == "decrease"] #change sign of effect size based on the direction of relationship
-
+# Change sign of effect size based on the direction of the relationship
+Hedge_R_square$es[Hedge_R_square$Direction == "decrease"] <- -Hedge_R_square$es[Hedge_R_square$Direction == "decrease"]
 Hedge_R_square<-Hedge_R_square[,-3]
 
-#Unit scaling and Sanity checks
-Rsquare_comp<-merge(Hedge_R_square, R_square, by="study")
+# Unit scaling and sanity checks
+Rsquare_comp <- merge(Hedge_R_square, R_square, by = "study")
 
-Rsquare_comp_scatter<-ggplot(data = Rsquare_comp, aes(x=Value, y=es,label=study))+geom_point()+
-  xlab("R-squared")+ylab("Effect size (g)")+theme_classic()+geom_line()+geom_text(aes(label = study),vjust = 1)+
+# Scatter plot showing the relationship between R-squared and effect size
+Rsquare_comp_scatter <- ggplot(data = Rsquare_comp, aes(x = Value, y = es, label = study)) +
+  geom_point() +
+  xlab("R-squared") +
+  ylab("Effect size (g)") +
+  theme_classic() +
+  geom_line() +
+  geom_text(aes(label = study), vjust = 1) +
   geom_smooth(method = "lm", se = FALSE)
 
-# Assess outlier using residuals
-model <- lm(es~ Rsquare_comp$Value, data = Rsquare_comp)
+# Assess outliers using residuals
+model <- lm(es ~ Value, data = Rsquare_comp)
 residuals <- model$residuals
-outliers <- Rsquare_comp[abs(residuals) > 2*sd(residuals), ]
+outliers <- Rsquare_comp[abs(residuals) > 2 * sd(residuals), ]
 
-Rsquare_comp_scatter
+# Add outliers to scatter plot
+Rsquare_comp_scatter <- Rsquare_comp_scatter + 
+  geom_point(data = outliers, aes(x = Value, y = es, color = "red", size = 3))
+
+# Display scatter plot
+print(Rsquare_comp_scatter)
 ```
 
+### Bivariate regression analysis estimate
 ```{r Effect sizes for Bivariate regression analysis estimate, include=TRUE, error=TRUE}
-Est<-subset(zooALL, zooALL$Type %in% "Estimate")
+# Subset data to include only Estimate values
+Est <- subset(zooALL, zooALL$Type %in% "Estimate")
 
-Hedge_est<-as.data.frame(hedges_g(d=Est$Value, totaln=Est$N.value))
+# Convert to numeric
+Est$Value <- as.numeric(Est$Value)
+Est$N.value <- as.numeric(Est$N.value)
 
-Hedge_est<-cbind(Est$study, Hedge_est)
+# Calculate Hedge's G effect size
+Hedge_est <- as.data.frame(hedges_g(d = Est$Value, totaln = Est$N.value))
 
-summary(Hedge_est)
-names(Hedge_est)[names(Hedge_est)=="hedges_g(d = Est$Value, totaln = Est$N.value)"]<-"es"
-names(Hedge_est)[names(Hedge_est)=="Est$study"]<-"study"
+# Combine with study information
+Hedge_est <- cbind(Est$study, Hedge_est)
 
-Est_comp<-merge(Est, Hedge_est, by="study")
-summary(Est_comp)
+# Rename columns for consistency
+names(Hedge_est)[names(Hedge_est) == "hedges_g(d = Est$Value, totaln = Est$N.value)"] <- "es"
+names(Hedge_est)[names(Hedge_est) == "Est$study"] <- "study"
 
+# Merge datasets
+Est_comp <- merge(Est, Hedge_est, by = "study")
 
-Est_comp_scatter<-ggplot(data = Est_comp, aes(x=Value, y=es,label=study))+geom_point()+
-  xlab("Estimate")+ylab("Effect size (g)")+theme_classic()+geom_line()+geom_text(aes(label = study),vjust = 1)+
+# Scatter plot showing the relationship between Estimate and effect size
+Est_comp_scatter <- ggplot(data = Est_comp, aes(x = Value, y = es, label = study)) +
+  geom_point() +
+  xlab("Estimate") +
+  ylab("Effect size (g)") +
+  theme_classic() +
+  geom_line() +
+  geom_text(aes(label = study), vjust = 1) +
   geom_smooth(method = "lm", se = FALSE)
 
-Est_comp_scatter
+# Display scatter plot
+print(Est_comp_scatter)
 ```
