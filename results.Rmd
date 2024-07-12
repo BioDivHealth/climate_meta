@@ -558,6 +558,11 @@ print(pvals_nonlinear)
 
 ```{r eggers_tests}
 
+f1 <- df %>% filter(!is.na(se) & !is.na(es))
+f2 <- df %>% filter(!is.na(se) & !is.na(es)) %>% filter(Environmental_condition == "Temperature")
+f3 <- df %>% filter(!is.na(se) & !is.na(es)) %>% filter(Environmental_condition == "Precipitation")
+f4 <- df %>% filter(!is.na(se) & !is.na(es)) %>% filter(Environmental_condition == "Humidity")
+
 regtest_all = regtest(f1$es, sei=f1$se)
 regtest_temp = regtest(f2$es, sei=f2$se)
 regtest_prec = regtest(f3$es, sei=f3$se)
@@ -1081,8 +1086,8 @@ p3_rm = ggarrange(p1_rm, p2_rm, ncol = 2, nrow = 1)
 p3_rm = p3_rm  + theme(plot.margin = unit(c(0.5,0,0,0.2),"cm"))
 p3
 p3_rm
-ggsave(p3, file="outputs/FigureS2_AB.png", device="png", units="in", width=9.3, height=4, dpi=1000, scale=1)
-ggsave(p3_rm, file="outputs/FigureS2_CD.png", device="png", units="in", width=9.3, height=4, dpi=1000, scale=1)
+#ggsave(p3, file="outputs/FigureS2_AB.png", device="png", units="in", width=9.3, height=4, dpi=1000, scale=1)
+#ggsave(p3_rm, file="outputs/FigureS2_CD.png", device="png", units="in", width=9.3, height=4, dpi=1000, scale=1)
 ```
 
 ## Figure S3: Funnel plots 
@@ -1095,7 +1100,7 @@ s3 = ggarrange(funnel_plot_1, funnel_plot_2, funnel_plot_3, funnel_plot_4, nrow 
 s3 = s3 + theme(plot.margin = unit(c(0.7,0,0,0.3),"cm"))
 print(s3)
 
-ggsave(s3, file="outputs/FigureS3.png", device="png", units="in", width=8.5, height=5, dpi=1000, scale=1)
+#ggsave(s3, file="outputs/FigureS3.png", device="png", units="in", width=8.5, height=5, dpi=1000, scale=1)
 ```
 
 ## Figure S4: p-val distribution
