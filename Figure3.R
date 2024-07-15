@@ -7,7 +7,8 @@ library(patchwork)
 library(ggridges)
 
 loadData = function(infile){
-  df = read.csv(infile)
+  df = read.csv('data/dataset_final.csv')
+  df = unique(df)
   
   # Change vector names
   df = df%>%
