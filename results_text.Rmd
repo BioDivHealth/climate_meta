@@ -289,81 +289,7 @@ prec_samples = df %>%
 When dropping groups from the subsets examining environmental categories individually, levels of significance of some proportions within temperature and precipitation subsets also changed. Temperature subset showed significantly more increases than decreases in disease risk after removal of Hantaviral diseases (n = `r  sum(tmp_samples$General_Disease == "Hantaviral diseases")`; `r paste0(tmp_samples %>% summarize(percentage = mean(General_Disease == "Hantaviral diseases") * 100) %>% round(1), "%")` of the subset; $\overline{\chi^2}$ = `r round(subset(chi_temp, Group == "Hantaviral.diseases")$Chi_Square,2)`, df=1, p= `r round(subset(chi_temp, Group == "Hantaviral.diseases")$P_value,3)`), rodents as a reservoir (n = `r  sum(tmp_samples$Principal_reservoir == "Rodents")`; `r paste0(tmp_samples %>% summarize(percentage = mean(Principal_reservoir == "Rodents") * 100) %>% round(1), "%")` of the subset; $\overline{\chi^2}$ = `r round(subset(chi_temp, Group == "Rodents")$Chi_Square,2)`, df=1, p= `r round(subset(chi_temp, Group == "Rodents")$P_value,3)`) or when including only vectored diseases (n = `r  sum(tmp_samples$Transmission_type == "Vectored")`; `r paste0(tmp_samples %>% summarize(percentage = mean(Transmission_type == "Vectored") * 100) %>% round(1) %>% pull(), "%")` of the subset; $\overline{\chi^2}$ = `r round(subset(chi_temp, Group == "Non.vectored")$Chi_Square,2)`, df=1, p= `r round(subset(chi_temp, Group == "Non.vectored")$P_value,3)`). Simultaneously, precipitation subset no longer had significantly more increases than decreases in disease risk when rodents as a reservoir (n = `r  sum(tmp_samples$Principal_reservoir == "Rodents")`; `r paste0(prec_samples %>% summarize(percentage = mean(Principal_reservoir == "Rodents") * 100) %>% round(1), "%")` of the subset; $\overline{\chi^2}$ = `r round(subset(chi_prec, Group == "Rodents")$Chi_Square,2)`, df=1, p= `r round(subset(chi_prec, Group == "Rodents")$P_value,3)`) or non-vectored diseases (n = `r  sum(tmp_samples$Transmission_type == "Non-vectored")`; `r paste0(tmp_samples %>% summarize(percentage = mean(Transmission_type == "Non-vectored") * 100) %>% round(1), "%")` of the subset; $\overline{\chi^2}$ = `r round(subset(chi_prec, Group == "Non.vectored")$Chi_Square,2)`, df=1, p= `r round(subset(chi_prec, Group == "Non.vectored")$P_value,3)` ) were removed.
 
 ```{r journals, echo=TRUE, message=TRUE, warning=TRUE}
-#-----ES.   ------------------------------------------------------------------
-library(patchwork)
-library(ggplot2)
-library(dplyr)
-
-# Data filtering and preparation
-pub1 = df %>% filter(!is.na(es) & !is.na(Journal_5yr_Impact))
-pub1 %<>% dplyr::select(es, Journal_5yr_Impact, Environmental_condition)
-dat_pub1 = pub1
-dat_pub1$es = abs(dat_pub1$es)
-
-#mypal = pal_npg(alpha = 1)(9)
-#scales::show_col(mypal)
-colours_journals = c("#3C5488FF","#E64B35FF", "#175149")
-
-# Scatter plot with regression line
-p1 <- ggplot(dat_pub1, aes(x = Journal_5yr_Impact, y = es)) +
-  geom_point(color = colours_journals[2], alpha = 0.5) +
-  geom_smooth(method = "lm", color = colours_journals[3], se = TRUE, alpha = 0.17) +
-  #ggtitle("Effect Size vs Journal Impact Factor") +
-  xlab("Journal 5-year Impact Factor") +
-  ylab("Effect Size (Hedge's g)") +
-  scale_x_continuous(breaks = seq(0, max(dat_pub1$Journal_5yr_Impact), by = 2.5))+
-  theme_minimal()
-
-# Calculate Pearson correlation coefficient
-correlation1 <- cor.test(dat_pub1$es, dat_pub1$Journal_5yr_Impact,
-                         method = "spearman", 
-                         exact = FALSE)
-
-# Annotate the scatter plot with the correlation coefficient
-p1 <- p1 + annotate("text", x = max(dat_pub1$Journal_5yr_Impact) * 0.7, y = max(dat_pub1$es) * 0.9,
-                    label = paste("Pearson r:", round(correlation1$estimate, 2),
-                                  "\nP-value:", format(correlation1$p.value, digits = 3)),
-                    color = "black", size = 4, hjust = 0)
-p1 = p1 + labs(tag = "A")+
-    theme(plot.tag = element_text(face = "bold",size = 14),
-          plot.tag.position = c(0.0,1),
-          axis.title.x = element_text(size = 14),
-          axis.title.y = element_text(size = 14),
-          axis.text=element_text(size=12))  # Bold y-axis text)
-p1
-#------------------------------------------------------------------------------
-
-# Data filtering and preparation for the second plot
-pub2 = df %>% filter(!is.na(P.value_specific) & !is.na(Journal_5yr_Impact))
-pub2 %<>% dplyr::select(P.value_specific, Journal_5yr_Impact, Environmental_condition)
-dat_pub2 = pub2
-dat_pub2$P.value_specific = abs(dat_pub2$P.value_specific)
-
-# Scatter plot with regression line
-p2 <- ggplot(dat_pub2, aes(x = Journal_5yr_Impact, y = P.value_specific)) +
-  geom_point(color = colours_journals[1], alpha = 0.5) +
-  geom_smooth(method = "lm", color = colours_journals[3], se = TRUE, alpha=0.17) +
-  #ggtitle("Reported p-value vs Journal Impact Factor") +
-  xlab("Journal 5-year Impact Factor") +
-  ylab("p-value reported") +
-  theme_minimal()
-
-# Calculate Pearson correlation coefficient
-correlation2 <- cor.test(dat_pub2$Journal_5yr_Impact, dat_pub2$P.value_specific,
-                         method = "spearman", exact = FALSE)
-
-# Annotate the scatter plot with the correlation coefficient
-p2 <- p2 + annotate("text", x = max(dat_pub2$Journal_5yr_Impact) * 0.7, y = max(dat_pub2$P.value_specific) * 0.9,
-                    label = paste("Pearson r:", round(correlation2$estimate, 2),
-                                  "\nP-value:", format(correlation2$p.value, digits = 3)),
-                    color = "black", size = 4, hjust = 0)
-
-p2 = p2 + labs(tag = "B")+
-    theme(plot.tag = element_text(face = "bold",size = 14),
-          plot.tag.position = c(0,1),
-          axis.title.x = element_text(size = 14),
-          axis.title.y = element_text(size = 14),
-          axis.text=element_text(size=12))
+source('FigureS2.R')
 ```
 
 #### **Publication bias**
@@ -398,9 +324,9 @@ pcurve_results = pcurve(tmp, effect.estimation = FALSE)
 #Right skewness test for Full curve & Half curve has p = 0 (p<0.001)
 ```
 
-Spearman's rank correlation analysis detected a weak negative correlation between 5-Year Journal Impact Factors and Effect Sizes (Spearman's 𝜌 = `r round(correlation1$estimate, 2)[[1]]`, p = `r round(correlation1$p.value,4)`, Fig. S2A) but no significant correlation between Impact Factors and reported p-value (Spearman's 𝜌 = `r round(correlation2$estimate, 2)[[1]]`, p = `r round(correlation2$p.value,3)`, Fig. S2B).
+Pearson's product-moment correlation analysis showed no significant correlation between 5-Year Journal Impact Factors and Hedge's g or reported p-values, either when using the full dataset (Impact Factors and Hedge's g: r = `r round(correlation1$estimate,2)[[1]]`, p = `r round(correlation1$p.value,2)[[1]]`, df = `r correlation1$parameter[[1]]`; Impact Factors and p-values: r = `r round(correlation2$estimate,2)[[1]]`, p = `r round(correlation2$p.value,2)[[1]]`, df = `r correlation2$parameter[[1]]`), or after removing the outliers among Hedge's g and reported p-values (Impact Factors and Hedge's g: r = `r round(correlation1_rm$estimate,2)[[1]]`, p = `r round(correlation1_rm$p.value,2)[[1]]`, df = `r correlation1_rm$parameter[[1]]`; Impact Factors and p-values: r = `r round(correlation2_rm$estimate,2)[[1]]`, p = `r round(correlation2_rm$p.value,2)[[1]]`, df = `r correlation2_rm$parameter[[1]]`).
 
-There was limited evidence of publication bias inferred from funnel plots made by plotting standard errors against respective effect sizes (Fig. S3). Egger's regression tests for funnel plot asymmetry showed significant asymmetry of funnel plots for the overall dataset (p = `r round(list_regtest$All,3)`) and precipitation data (P-value = `r round(list_regtest$Precipitation,3)`), but no asymmetry was identified within humidity and temperature data (Fig. S3, Table S7).
+There was limited evidence of publication bias inferred from funnel plots made by plotting standard errors against respective effect sizes (Fig. S3). Egger's regression tests for funnel plot asymmetry showed significant asymmetry of funnel plots for the overall dataset (z = `r round(regtest_all$zval,2)`, p = `r round(list_regtest$All,3)`) and precipitation data (z = `r round(regtest_prec$zval,2)`, p = `r round(list_regtest$Precipitation,3)`), but no asymmetry was identified within humidity and temperature data (Fig. S3, Table S7).
 
 Furthermore, p-values extracted from the studies were examined to check for potential evidence of "p-hacking". Visual inspection of the distribution of p-values surrounding p = 0.05 found limited evidence of p-hacking, with a small spike in the number of studies with p-values just under p = 0.05 (Fig. S4).
 
@@ -440,9 +366,28 @@ es_categories = df%>%
 
 To compare measured climate effects between studies and disease groups, Hedge's g effect size was calculated for each extracted statistic from the studies. Hedge's g was able to be calculated for a total of `r sum(!is.na(df$es))` statistics (`r paste0(round(sum(!is.na(df$es))/sum(!is.na(df$Value)),2)*100,"%")` of the extracted statistics). Confidence intervals around Hedge's g were able to be calculated for `r df %>% filter(!is.na(ci.lo) & !is.na(ci.hi)) %>% count() %>% pull()` effect sizes. Temperature showed the highest proportion of positive effects on measures of disease risk, as `r paste0(round(es_categories$prop[es_categories$es_cat=="Positive effect (g > 0.2)" & es_categories$Environmental_condition=="Temperature"],2)*100,"%")` of studies (n=`r round(es_categories$n[es_categories$es_cat=="Positive effect (g > 0.2)" & es_categories$Environmental_condition=="Temperature"],2)`) had a value of Hedge's g greater than 0.2 (Fig. 2). Nearly half the studies showed no effect of precipitation (`r paste0(round(es_categories$prop[es_categories$es_cat=="No effect" & es_categories$Environmental_condition=="Precipitation"],3)*100,"%")`; n=`r es_categories$n[es_categories$es_cat=="No effect" & es_categories$Environmental_condition=="Precipitation"]`) or humidity (`r paste0(round(es_categories$prop[es_categories$es_cat=="No effect" & es_categories$Environmental_condition=="Humidity"],3)*100,"%")`; n=`r es_categories$n[es_categories$es_cat=="No effect" & es_categories$Environmental_condition=="Humidity"]`) on disease risk. Most subcategories of the data followed the same effect distribution of the full dataset for the measured climate factors, with similar numbers of negative and positive effects.
 
-However, the effect size distributions for vector-borne diseases and diseases vectored by mosquitoes significantly differed from the overall effect size distribution for temperature ***(Anderson-Darling Test: vector borne disease: AD = 2.53; p=0.045; mosquito vectored disease: AD = 5.15; p=0.011).*** Additionally, the effect size distribution for diseases with a livestock principal reservoir differed from the overall humidity effect size distribution ***(Anderson-Darling Test: AD = 2.74; p=0.04).*** When the subsets were compared to the full distributions with the subset removed, ***a few more categories were significantly different:*** non-vectored diseases and diseases with a rodent reservoir significantly differed from the overall temperature distribution, and diseases with a livestock principal reservoir differed from the overall precipitation distribution (Supp. Table SX).
+```{r}
+source('AD_KS_tests.R')
+# Creates: 
+# - results_df (for AD tests)
+# - es_summaries (for KS)
+# - pvals_ks (for KS)
+# - test_stats_ks (for KS)
+results_df
+es_summaries
+pvals_ks
+test_stats_ks
 
-Vector-mediated zoonotic diseases had significantly more positive effects ***(mean=0.35; sd=1.00; n=94)*** reported for temperature when compared to solely animal-hosted diseases ***(mean=-0.02; sd=1.01; n=138) (Two-sample Kolmogorov-Smirnov test; D=0.27; p = 0.0004; Figure 3).*** The distribution of effect sizes for precipitation centred around 0 for both vectored ***(mean=0.06; sd=0.55; n=83)*** and non-vectored ***(mean=0.10; sd=0.74; n=132)*** diseases. There was no significant difference between these distributions ***(D=0.09; p=0.43)***, but the distribution of effect sizes for precipitation had qualitatively larger tails for host only diseases compared to host-vector diseases (Fig. 3B). Humidity for non-vectored diseases had effects mainly clustered around zero ***(mean=0.05; sd=0.64; n=55)***, while vectored diseases tended towards more positive effects ***(mean=0.12; sd=0.70; n=37)***, but this difference was not significant ***(D=0.23; p=0.08).***
+results_df %>% filter(p_val_removed < 0.05)
+round(es_summaries$mn[es_summaries$Transmission_type=="Non-vectored" & es_summaries$Environmental_condition=="Precipitation"],2)
+round(es_summaries$sd[es_summaries$Transmission_type=="Non-vectored" & es_summaries$Environmental_condition=="Precipitation"],2)
+es_summaries$n[es_summaries$Transmission_type=="Non-vectored" & es_summaries$Environmental_condition=="Precipitation"]
+```
+
+
+However, the effect size distributions for vector-borne diseases and diseases vectored by mosquitoes significantly differed from the overall effect size distribution for temperature (Anderson-Darling Test: vector borne disease: AD = `r round(results_df$stat[results_df$Environmental_condition=="Temperature" & results_df$Group=="Vectored"],2)` ; p=`r results_df$p_val[results_df$Environmental_condition=="Temperature" & results_df$Group=="Vectored"]`; mosquito vectored disease: AD = `r round(results_df$stat[results_df$Environmental_condition=="Temperature" & results_df$Group=="Mosquito"],2)` ; p=`r results_df$p_val[results_df$Environmental_condition=="Temperature" & results_df$Group=="Mosquito"]`). Additionally, the effect size distribution for diseases with a livestock principal reservoir differed from the overall humidity effect size distribution (Anderson-Darling Test: AD = `r round(results_df$stat[results_df$Environmental_condition=="Humidity" & results_df$Group=="Livestock"],2)` ; p=`r results_df$p_val[results_df$Environmental_condition=="Humidity" & results_df$Group=="Livestock"]`). When the subsets were compared to the full distributions with the subset removed, a few more categories were significantly different: non-vectored diseases and diseases with a mammal reservoir significantly differed from the overall temperature distribution, and diseases with a livestock principal reservoir differed from the overall precipitation distribution (Supp. Table SX).
+
+Vector-mediated zoonotic diseases had significantly more positive effects (mean=`r round(es_summaries$mn[es_summaries$Transmission_type=="Vectored" & es_summaries$Environmental_condition=="Temperature"],2)`; sd=`r round(es_summaries$sd[es_summaries$Transmission_type=="Vectored" & es_summaries$Environmental_condition=="Temperature"],2)`; n=`r es_summaries$n[es_summaries$Transmission_type=="Vectored" & es_summaries$Environmental_condition=="Temperature"]`) reported for temperature when compared to solely animal-hosted diseases (mean=`r round(es_summaries$mn[es_summaries$Transmission_type=="Non-vectored" & es_summaries$Environmental_condition=="Temperature"],2)`; sd=`r round(es_summaries$sd[es_summaries$Transmission_type=="Non-vectored" & es_summaries$Environmental_condition=="Temperature"],2)`; n=`r es_summaries$n[es_summaries$Transmission_type=="Non-vectored" & es_summaries$Environmental_condition=="Temperature"]`) (Two-sample Kolmogorov-Smirnov test; D=`r round(test_stats_ks$Temperature[[1]],2)`; p = `r round(pvals_ks$Temperature,3)`; Fig. 3). The distribution of effect sizes for precipitation centred around 0 for both vectored (mean=`r round(es_summaries$mn[es_summaries$Transmission_type=="Vectored" & es_summaries$Environmental_condition=="Precipitation"],2)`; sd=`r round(es_summaries$sd[es_summaries$Transmission_type=="Vectored" & es_summaries$Environmental_condition=="Precipitation"],2)`; n=`r es_summaries$n[es_summaries$Transmission_type=="Vectored" & es_summaries$Environmental_condition=="Precipitation"]`) and non-vectored (mean=`r round(es_summaries$mn[es_summaries$Transmission_type=="Non-vectored" & es_summaries$Environmental_condition=="Precipitation"],2)`; sd=`r round(es_summaries$sd[es_summaries$Transmission_type=="Non-vectored" & es_summaries$Environmental_condition=="Precipitation"],2)`; n=`r es_summaries$n[es_summaries$Transmission_type=="Non-vectored" & es_summaries$Environmental_condition=="Precipitation"]`) diseases. There was no significant difference between these distributions (Two-sample Kolmogorov-Smirnov test; D=`r round(test_stats_ks$Precipitation[[1]],2)`; p = `r round(pvals_ks$Precipitation,3)`), but the distribution of effect sizes for precipitation had qualitatively larger tails for host only diseases compared to host-vector diseases (Fig. 3B). Humidity for non-vectored diseases had effects mainly clustered around zero (mean=`r round(es_summaries$mn[es_summaries$Transmission_type=="Non-vectored" & es_summaries$Environmental_condition=="Humidity"],2)`; sd=`r round(es_summaries$sd[es_summaries$Transmission_type=="Non-vectored" & es_summaries$Environmental_condition=="Humidity"],2)`; n=`r es_summaries$n[es_summaries$Transmission_type=="Non-vectored" & es_summaries$Environmental_condition=="Humidity"]`), while vectored diseases tended towards more positive effects (mean=`r round(es_summaries$mn[es_summaries$Transmission_type=="Vectored" & es_summaries$Environmental_condition=="Humidity"],2)`; sd=`r round(es_summaries$sd[es_summaries$Transmission_type=="Vectored" & es_summaries$Environmental_condition=="Humidity"],2)`; n=`r es_summaries$n[es_summaries$Transmission_type=="Vectored" & es_summaries$Environmental_condition=="Humidity"]`), but this difference was not significant (Two-sample Kolmogorov-Smirnov test; D=`r round(test_stats_ks$Humidity[[1]],2)`; p = `r round(pvals_ks$Humidity,3)`).
 
 ------------------------------------------------------------------------
 
