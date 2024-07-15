@@ -13,7 +13,8 @@ library(cowplot)
 
 # read Lewis' database of published estimates
 ll = read.csv("./data/lewis_dataset/lewis_data.csv")
-
+ll = unique(ll)
+#ll = read.csv('data/dataset_final.csv')
 
 
 # -----------  colours scheme ------------
