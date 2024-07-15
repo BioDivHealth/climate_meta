@@ -152,15 +152,16 @@ dat_pub1 %<>% filter(!es %in% unique(iqr_outliers_2$es))
 dat_pub1 %<>% select(es, Journal_5yr_Impact)
 dat_pub1 = unique(dat_pub1)
 
-correlation1 <- cor.test(abs(dat_pub1$es), 
+correlation1_rm <- cor.test(abs(dat_pub1$es), 
                          (dat_pub1$Journal_5yr_Impact), 
                          method = s2_method, 
                          exact = TRUE)
 
-print(correlation1)
+print(correlation1_rm)
 
 # Plot 
 dat_pub1$es = abs(dat_pub1$es)
+
 # Scatter plot with regression line
 p1_rm <- ggplot(dat_pub1, aes(x = Journal_5yr_Impact, y = abs(es))) +
   geom_point(color = colours_journals[2], alpha = 0.5) +
@@ -173,8 +174,8 @@ p1_rm <- ggplot(dat_pub1, aes(x = Journal_5yr_Impact, y = abs(es))) +
 
 # Annotate the scatter plot with the correlation coefficient
 p1_rm <- p1_rm + annotate("text", x = max(dat_pub1$Journal_5yr_Impact) * 0.65, y = max(dat_pub1$es) * 0.93,
-                    label = paste(stats_label, round(correlation1$estimate, 2),
-                                  "\np-value:", format(correlation1$p.value, digits = 2)),
+                    label = paste(stats_label, round(correlation1_rm$estimate, 2),
+                                  "\np-value:", format(correlation1_rm$p.value, digits = 2)),
                     color = "black", size = 3.8, hjust = 0, fontface = "bold")
 
 p1_rm = p1_rm + labs(tag = "C")+
@@ -245,7 +246,7 @@ dat_pub2 %<>% filter(!P.value_specific %in% unique(iqr_outliers_1$P.value_specif
 #dat_pub2 %<>% filter(!Journal_5yr_Impact %in% unique(iqr_outliers_1$Journal_5yr_Impact))
 
 #### Calculate Spearman's rank correlation -----
-correlation2 <- cor.test(dat_pub2$Journal_5yr_Impact, dat_pub2$P.value_specific,
+correlation2_rm <- cor.test(dat_pub2$Journal_5yr_Impact, dat_pub2$P.value_specific,
                           method = s2_method, exact = FALSE)
 
 
@@ -262,8 +263,8 @@ p2_rm <- ggplot(dat_pub2, aes(x = Journal_5yr_Impact, y = P.value_specific)) +
 
 # Annotate the scatter plot with the correlation coefficient
 p2_rm <- p2_rm + annotate("text", x = max(dat_pub2$Journal_5yr_Impact) * 0.62, y = max(dat_pub2$P.value_specific) * 0.93,
-                    label = paste(stats_label, round(correlation2$estimate, 2),
-                                  "\np-value:", format(correlation2$p.value, digits = 2)),
+                    label = paste(stats_label, round(correlation2_rm$estimate, 2),
+                                  "\np-value:", format(correlation2_rm$p.value, digits = 2)),
                     color = "black", size = 3.8, hjust = 0, fontface = "bold")
 
 p2_rm = p2_rm + labs(tag = "D")+
