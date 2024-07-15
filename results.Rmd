@@ -1058,7 +1058,7 @@ colors = c( "#00A8A5" , '#fee8c8', '#A80003')
 
 f2 = createFig2(df, results_df, colors)
 
-ggsave(f2, file="outputs/Figure2.png", device="png", units="in", width=12, height=9, dpi=600, scale=0.92)
+#ggsave(f2, file="outputs/Figure2.png", device="png", units="in", width=12, height=9, dpi=600, scale=0.92)
 ```
 
 ## Figure 3
@@ -1067,8 +1067,8 @@ ggsave(f2, file="outputs/Figure2.png", device="png", units="in", width=12, heigh
 source('Figure3.R')
 colors = c('#A80003',"#00A8A5")
 f3 = createFig3(df, colors)
-
-ggsave(f3, file="outputs/Figure3.png", device="png", units="in", width=8, height=6, dpi=300, scale=1.25)
+f3
+#ggsave(f3, file="outputs/Figure3.png", device="png", units="in", width=8, height=6, dpi=300, scale=1.25)
 ```
 
 
@@ -1115,6 +1115,6 @@ combined_plot <- ggdraw() +
 
 combined_plot
 
-ggsave(combined_plot, file="outputs/FigureS4.png", device="png", units="in", width=6.3, height=3.8, dpi=1000, scale=0.95)
+#ggsave(combined_plot, file="outputs/FigureS4.png", device="png", units="in", width=6.3, height=3.8, dpi=1000, scale=0.95)
 ```
 
