@@ -199,10 +199,44 @@ outliers <- OR_comp[abs(residuals) > 2 * sd(residuals), ]
 
 # Add outliers to scatter plot
 OR_comp_scatter <- OR_comp_scatter + 
-  geom_point(data = outliers, aes(x = Value, y = es, color = "red", size = 3))
+  geom_point(data = outliers, aes(x = Value, y = es, color = "red", size = 2))+
+  theme(legend.position = "none")
 
 # Display scatter plot
 print(OR_comp_scatter)
+# -------------------------------------------------------------
+library(ggplot2)
+
+OR_comp_scatter <- ggplot(data = OR_comp, aes(x = Value, y = es)) +
+  geom_point(aes(color = "Data Point", shape = "Data Point"), size = 2) +  # Black Xs for studies
+  xlab("Odds Ratio") +
+  ylab("Effect size (g)") +
+  theme_classic() +
+  geom_line() +
+  geom_text(aes(label = study), position = position_jitter(width = 0.3, height = 0.2), alpha = 0.7) +  # Add jitter to labels
+  geom_smooth(method = "lm", se = FALSE)
+
+# Assess outliers using residuals
+OR_comp$es <- unlist(OR_comp$es)
+model <- lm(es ~ Value, data = OR_comp)
+
+residuals <- model$residuals
+outliers <- OR_comp[abs(residuals) > 2 * sd(residuals), ]
+
+# Add outliers to scatter plot
+OR_comp_scatter <- OR_comp_scatter + 
+  geom_point(data = outliers, aes(x = Value, y = es, color = "Outlier", shape = "Outlier"), size = 3) +  # Red dot for outliers
+  
+  # Customize the legend
+  scale_color_manual(name = "Legend", 
+                     values = c("Data Point" = "grey50", "Outlier" = "red")) +
+  scale_shape_manual(name = "Legend", 
+                     values = c("Data Point" = 16, "Outlier" = 16)) +  # Shape 4 is X, Shape 16 is a filled circle
+  theme(legend.position = "right")
+
+# Display scatter plot
+print(OR_comp_scatter)
+
 
 ```
 
