@@ -136,7 +136,7 @@ ci_to_sd <- function(ci_lower, ci_upper, n, conf_level = 0.95) {
 
 # Effect sizes
 
-### Odds ratio
+### Odds ratizo
 ```{r Effect sizes for Odds Ratio, include = TRUE}
 
 # Subset data for Odds Ratio and 95% Confidence intervals
@@ -180,65 +180,52 @@ Hedge_OR$study <- unlist(Hedge_OR$study)
 OR_comp <- left_join(OR, Hedge_OR, by = "study")
 
 # Plotting graph
-OR_comp$es = unlist(OR_comp$es); OR_comp$Value = unlist(OR_comp$Value)
-OR_comp_scatter <- ggplot(data = OR_comp, aes(x = Value, y = es)) +
-  geom_point() +
-  xlab("Odds Ratio") +
-  ylab("Effect size (g)") +
-  theme_classic() +
-  geom_line() +
-  geom_text(aes(label = study), vjust = 1) +
-  geom_smooth(method = "lm", se = FALSE)
-
-# Assess outliers using residuals
 OR_comp$es = unlist(OR_comp$es)
-model <- lm(es ~ Value, data = OR_comp)
+OR_comp$Value = unlist(OR_comp$Value)
+```
 
-residuals <- model$residuals
-outliers <- OR_comp[abs(residuals) > 2 * sd(residuals), ]
-
-# Add outliers to scatter plot
-OR_comp_scatter <- OR_comp_scatter + 
-  geom_point(data = outliers, aes(x = Value, y = es, color = "red", size = 2))+
-  theme(legend.position = "none")
-
-# Display scatter plot
-print(OR_comp_scatter)
-# -------------------------------------------------------------
-library(ggplot2)
-
+#### Scatterplot odds ratio
+```{r}
+# -----PLOT ORIGINAL STAT VS HEDGES G --------------
 OR_comp_scatter <- ggplot(data = OR_comp, aes(x = Value, y = es)) +
-  geom_point(aes(color = "Data Point", shape = "Data Point"), size = 2) +  # Black Xs for studies
+  geom_line() +
+  geom_smooth(method = "lm", se = FALSE, color = "#54D8B1FF") +
+  geom_point(aes(color = "Observation", shape = "Observation"), size = 3, alpha = 0.5) + 
   xlab("Odds Ratio") +
   ylab("Effect size (g)") +
-  theme_classic() +
-  geom_line() +
-  geom_text(aes(label = study), position = position_jitter(width = 0.3, height = 0.2), alpha = 0.7) +  # Add jitter to labels
-  geom_smooth(method = "lm", se = FALSE)
+  theme_classic()
 
 # Assess outliers using residuals
 OR_comp$es <- unlist(OR_comp$es)
 model <- lm(es ~ Value, data = OR_comp)
-
 residuals <- model$residuals
 outliers <- OR_comp[abs(residuals) > 2 * sd(residuals), ]
 
 # Add outliers to scatter plot
 OR_comp_scatter <- OR_comp_scatter + 
-  geom_point(data = outliers, aes(x = Value, y = es, color = "Outlier", shape = "Outlier"), size = 3) +  # Red dot for outliers
+  geom_point(data = outliers, 
+             aes(x = Value, y = es, color = "Outlier", shape = "Outlier"), 
+             size = 3.5) +  # Red dot for outliers
+  geom_text(data = outliers, 
+            aes(x = Value, y = es, label = study), 
+            position = position_jitter(width = 0.6, height = 0.2), 
+            alpha = 0.9, 
+            size = 3.5) +  # Add labels only for outliers
+  scale_color_manual(name = "", values = c("Observation" = "#175149FF", "Outlier" = "#E54E21FF")) +
+  scale_shape_manual(name = "", values = c("Observation" = 16, "Outlier" = 16)) +
   
-  # Customize the legend
-  scale_color_manual(name = "Legend", 
-                     values = c("Data Point" = "grey50", "Outlier" = "red")) +
-  scale_shape_manual(name = "Legend", 
-                     values = c("Data Point" = 16, "Outlier" = 16)) +  # Shape 4 is X, Shape 16 is a filled circle
-  theme(legend.position = "right")
+  # Increase font sizes for legend and axis labels
+  theme(legend.position = "right",
+        legend.text = element_text(size = 12),  # Increase legend font size
+        axis.text.x = element_text(size = 12),  # Increase x-axis text size
+        axis.text.y = element_text(size = 12),  # Increase y-axis text size
+        axis.title.x = element_text(size = 14), # Increase x-axis title size
+        axis.title.y = element_text(size = 14)) # Increase y-axis title size
 
 # Display scatter plot
 print(OR_comp_scatter)
-
-
 ```
+
 
 ### Beta coefficient
 ```{r Effect sizes for Beta coefficient, include=TRUE, error=TRUE}
@@ -311,43 +298,21 @@ Hedge_Beta_t<-Beta_t2
 Beta_comp <- left_join(Beta_Stdev, Hedge_Beta, by = "study")
 names(Beta_comp)[names(Beta_SE) == "Value"] <- "Correlation"
 
-# Scatter plot showing the relationship between correlation coefficient and effect size
-Beta_comp_scatter <- ggplot(data = Beta_comp, aes(x = Correlation, y = es)) +
-  geom_point() +
-  xlab("Correlation coefficient (β)") +
-  ylab("Effect size (g)") +
-  theme_classic() +
-  geom_line() +
-  geom_text(aes(label = study), vjust = 1) +
-  geom_smooth(method = "lm", se = FALSE)
+# # Graphing Beta coefficients which don't have errors
+# Beta_t_comp <- merge(Beta_t, Beta_t2, by = "study")
+# Beta_t_comp_scatter <- ggplot(data = Beta_t_comp, aes(x = Value, y = es, label = study)) +
+#   geom_point() +
+#   xlab("Correlation coefficient (β)") +
+#   ylab("Effect size (g)") +
+#   theme_classic() +
+#   geom_line() +
+#   geom_text(aes(label = study), vjust = 1) +
+#   geom_smooth(method = "lm", se = FALSE)
+# 
+# # Display scatter plot
+# print(Beta_t_comp_scatter)
 
-# Assess outliers using residuals
-model <- lm(es ~ Correlation, data = Beta_comp)
-residuals <- model$residuals
-outliers <- Beta_comp[abs(residuals) > 2 * sd(residuals), ]
-
-# Add outliers to scatter plot
-Beta_comp_scatter <- Beta_comp_scatter + 
-  geom_point(data = outliers, aes(x = Correlation, y = es, color = "red", size = 3))
-
-# Display scatter plot
-print(Beta_comp_scatter)
-
-# Graphing Beta coefficients which don't have errors
-Beta_t_comp <- merge(Beta_t, Beta_t2, by = "study")
-Beta_t_comp_scatter <- ggplot(data = Beta_t_comp, aes(x = Value, y = es, label = study)) +
-  geom_point() +
-  xlab("Correlation coefficient (β)") +
-  ylab("Effect size (g)") +
-  theme_classic() +
-  geom_line() +
-  geom_text(aes(label = study), vjust = 1) +
-  geom_smooth(method = "lm", se = FALSE)
-
-# Display scatter plot
-print(Beta_t_comp_scatter)
-
-# Test for Standard error
+# Test for Standard error --------
 Beta_test_se <- subset(Beta_comp, Beta_comp$Error %in% c("Std. error"))
 Beta_test_se <- sample_n(Beta_test_se, 5)
 
@@ -393,6 +358,49 @@ test_that("ci_to_sd returns correct standard deviation for all rows", {
 })
 ```
 
+#### Scatterplot beta 
+```{r}
+# -----PLOT ORIGINAL STAT VS HEDGES G --------------
+{Beta_comp_scatter <- ggplot(data = Beta_comp, aes(x = Correlation, y = es)) +
+  geom_line() +  # Add line
+  geom_smooth(method = "lm", se = FALSE, color = "#54D8B1FF") + 
+  geom_point(aes(color = "Observation", shape = "Observation"), size = 3, alpha = 0.5) +  # Add main data points
+  xlab("Correlation coefficient (β)") +
+  ylab("Effect size (g)") +
+  theme_classic()
+
+# Assess outliers using residuals
+model <- lm(es ~ Correlation, data = Beta_comp)
+residuals <- model$residuals
+outliers <- Beta_comp[abs(residuals) > 2 * sd(residuals), ]
+
+# Add outliers to scatter plot
+Beta_comp_scatter <- Beta_comp_scatter + 
+  geom_point(data = outliers, 
+             aes(x = Correlation, y = es, color = "Outlier", shape = "Outlier"), 
+             size = 3.5) +  # Add slightly larger points for outliers
+  geom_text(data = outliers, 
+            aes(x = Correlation, y = es, label = study), 
+            position = position_jitter(width = 0.6, height = 0.2), 
+            alpha = 0.9, 
+            size = 3.5) +  # Add text labels only for outliers
+  scale_color_manual(name = "", 
+                     values = c("Observation" = "#175149FF", "Outlier" = "#E54E21FF")) +  # Custom colors
+  scale_shape_manual(name = "", 
+                     values = c("Observation" = 16, "Outlier" = 16)) +  # Custom shapes
+  theme(legend.position = "right",
+        legend.text = element_text(size = 12),  # Increase legend text size
+        axis.text.x = element_text(size = 12),  # Increase x-axis text size
+        axis.text.y = element_text(size = 12),  # Increase y-axis text size
+        axis.title.x = element_text(size = 14), # Increase x-axis title size
+        axis.title.y = element_text(size = 14)) # Increase y-axis title size
+
+# Display scatter plot
+print(Beta_comp_scatter)
+}
+```
+
+
 ### Unstandardized coefficients
 ```{r Effect sizes for Unstandardised coefficients, include=TRUE}
 
@@ -428,28 +436,6 @@ Hedge_B <- as.data.frame(esc_B(b = B_Stdev$Value, sdy = B_Stdev$Std_dev, grp1n =
 # Unit scaling and sanity checks
 B_comp <- as.data.frame(left_join(B_Stdev, Hedge_B, by = "study"))
 names(B_comp)[names(B_SE) == "Value"] <- "Correlation"
-
-# Scatter plot showing the relationship between correlation coefficient and effect size
-B_comp_scatter <- ggplot(data = B_comp, aes(x = Correlation, y = es, label = as.character(N.value))) +
-  geom_point() +
-  xlab("Correlation coefficient") +
-  ylab("Effect size (g)") +
-  theme_classic() +
-  geom_line() +
-  geom_text(aes(label = study), vjust = 1) +
-  geom_smooth(method = "lm", se = FALSE)
-
-# Assess outliers using residuals
-model <- lm(es ~ Correlation, data = B_comp)
-residuals <- model$residuals
-outliers <- B_comp[abs(residuals) > 2 * sd(residuals), ]
-
-# Add outliers to scatter plot
-B_comp_scatter <- B_comp_scatter + 
-  geom_point(data = outliers, aes(x = Correlation, y = es, color = "red", size = 3))
-
-# Display scatter plot
-print(B_comp_scatter)
 
 # Test for Standard error
 B_test_se <- subset(B_comp, B_comp$Error %in% c("Std. error"))
@@ -492,6 +478,51 @@ test_that("ci_to_sd returns correct standard deviation for all rows", {
 })
 ```
 
+#### Scatterplot correlation
+
+```{r}
+library(ggplot2)
+
+# Scatter plot showing the relationship between correlation coefficient and effect size
+B_comp_scatter <- ggplot(data = B_comp, aes(x = Correlation, y = es)) +
+  geom_line() +  # Add line
+  geom_smooth(method = "lm", se = FALSE, color = "#54D8B1FF") +  # Add smooth line with custom color
+  geom_point(aes(color = "Observation", shape = "Observation"), size = 3, alpha = 0.5) +  # Add main data points
+  xlab("Correlation coefficient") +
+  ylab("Effect size (g)") +
+  theme_classic()
+
+# Assess outliers using residuals
+model <- lm(es ~ Correlation, data = B_comp)
+residuals <- model$residuals
+outliers <- B_comp[abs(residuals) > 2 * sd(residuals), ]
+
+# Add outliers to scatter plot
+B_comp_scatter <- B_comp_scatter + 
+  geom_point(data = outliers, 
+             aes(x = Correlation, y = es, color = "Outlier", shape = "Outlier"), 
+             size = 3.5) +  # Add slightly larger points for outliers
+  geom_text(data = outliers, 
+            aes(x = Correlation, y = es, label = as.character(N.value)), 
+            position = position_jitter(width = 0.6, height = 0.2), 
+            alpha = 0.9, 
+            size = 3.5) +  # Add text labels only for outliers
+  scale_color_manual(name = "", 
+                     values = c("Observation" = "#175149FF", "Outlier" = "#E54E21FF")) +  # Custom colors
+  scale_shape_manual(name = "", 
+                     values = c("Observation" = 16, "Outlier" = 16)) +  # Custom shapes
+  theme(legend.position = "right",
+        legend.text = element_text(size = 12),  # Increase legend text size
+        axis.text.x = element_text(size = 12),  # Increase x-axis text size
+        axis.text.y = element_text(size = 12),  # Increase y-axis text size
+        axis.title.x = element_text(size = 14), # Increase x-axis title size
+        axis.title.y = element_text(size = 14)) # Increase y-axis title size
+
+# Display scatter plot
+print(B_comp_scatter)
+```
+
+
 ### Spearman & Pearson correlaiton
 ```{r Effect sizes for Spearman & Pearson correlaiton, include=TRUE}
 
@@ -519,15 +550,20 @@ names(Hedge_R)[names(Hedge_R) == "R.2$study"] <- "study"
 
 # Unit scaling and sanity checks
 names(R_comp)[names(R_comp) == "Value"] <- "Correlation"
+```
+
+#### Scatterplot spearman/pearson
+```{r}
+library(ggplot2)
 
 # Scatter plot showing the relationship between correlation coefficient and effect size
 R_comp_scatter <- ggplot(data = R_comp, aes(x = Correlation, y = es)) +
-  geom_point() +
+  geom_line() +  # Add line
+  geom_smooth(method = "lm", se = FALSE, color = "#54D8B1FF") +  # Add smooth line with custom color
+  geom_point(aes(color = "Observation", shape = "Observation"), size = 3, alpha = 0.5) +  # Add main data points
   xlab("Correlation coefficient (r)") +
   ylab("Effect size (g)") +
-  theme_classic() +
-  geom_line() +
-  geom_smooth(method = "lm", se = FALSE)
+  theme_classic()
 
 # Assess outliers using residuals
 model <- lm(es ~ Correlation, data = R_comp)
@@ -536,11 +572,29 @@ outliers <- R_comp[abs(residuals) > 2 * sd(residuals), ]
 
 # Add outliers to scatter plot
 R_comp_scatter <- R_comp_scatter + 
-  geom_point(data = outliers, aes(x = Correlation, y = es, color = "red", size = 3))
+  geom_point(data = outliers, 
+             aes(x = Correlation, y = es, color = "Outlier", shape = "Outlier"), 
+             size = 3.5) +  # Add slightly larger points for outliers
+  geom_text(data = outliers, 
+            aes(x = Correlation, y = es, label = study), 
+            position = position_jitter(width = 0.1, height = 0.5), 
+            alpha = 0.9, 
+            size = 3.5) +  # Add text labels only for outliers
+  scale_color_manual(name = "", 
+                     values = c("Observation" = "#175149FF", "Outlier" = "#E54E21FF")) +  # Custom colors
+  scale_shape_manual(name = "", 
+                     values = c("Observation" = 16, "Outlier" = 16)) +  # Custom shapes
+  theme(legend.position = "right",
+        legend.text = element_text(size = 12),  # Increase legend text size
+        axis.text.x = element_text(size = 12),  # Increase x-axis text size
+        axis.text.y = element_text(size = 12),  # Increase y-axis text size
+        axis.title.x = element_text(size = 14), # Increase x-axis title size
+        axis.title.y = element_text(size = 14)) # Increase y-axis title size
 
 # Display scatter plot
 print(R_comp_scatter)
 ```
+
 
 ### Ratios
 ```{r Effect sizes for Ratios, include=TRUE}
@@ -582,18 +636,20 @@ Hedge_Ratios <- Hedge_Ratios[Hedge_Ratios$se != 0, ]
 # Unit scaling and sanity checks
 Ratios_comp <- merge(Ratios, Hedge_Ratios, by = "study")
 Ratios_comp$es <- unlist(Ratios_comp$es)
+```
 
-# Scatter plot showing the relationship between ratios and effect size
+#### Scatterplot ratios
+
+```{r}
+
+# Initial scatter plot showing the relationship between ratios and effect size
 Ratios_comp_scatter <- ggplot(data = Ratios_comp, aes(x = Value, y = es)) +
-  geom_point() +
+  geom_line() +  # Add line
+  geom_smooth(method = "lm", se = FALSE, color = "#54D8B1FF") +  # Add smooth line with custom color
+  geom_point(aes(color = "Observation", shape = "Observation"), size = 3, alpha = 0.5) +  # Add main data points
   xlab("Ratios") +
   ylab("Effect size (g)") +
-  theme_classic() +
-  geom_line() +
-  geom_smooth(method = "lm", se = FALSE)
-
-# Display scatter plot
-print(Ratios_comp_scatter)
+  theme_classic()
 
 # Assess outliers using residuals
 model <- lm(es ~ Value, data = Ratios_comp)
@@ -601,12 +657,30 @@ residuals <- model$residuals
 outliers <- Ratios_comp[abs(residuals) > 2 * sd(residuals), ]
 
 # Add outliers to scatter plot
-Ratios_comp_scatter <- Ratios_comp_scatter +
-  geom_point(data = outliers, aes(x = Value, y = es, color = "red", size = 3))
+Ratios_comp_scatter <- Ratios_comp_scatter + 
+  geom_point(data = outliers, 
+             aes(x = Value, y = es, color = "Outlier", shape = "Outlier"), 
+             size = 3.5) +  # Add slightly larger points for outliers
+  geom_text(data = outliers, 
+            aes(x = Value, y = es, label = study), 
+            position = position_jitter(width = 0.6, height = 0.2), 
+            alpha = 0.9, 
+            size = 3.5) +  # Add text labels only for outliers
+  scale_color_manual(name = "", 
+                     values = c("Observation" = "#175149FF", "Outlier" = "#E54E21FF")) +  # Custom colors
+  scale_shape_manual(name = "", 
+                     values = c("Observation" = 16, "Outlier" = 16)) +  # Custom shapes
+  theme(legend.position = "right",
+        legend.text = element_text(size = 12),  # Increase legend text size
+        axis.text.x = element_text(size = 12),  # Increase x-axis text size
+        axis.text.y = element_text(size = 12),  # Increase y-axis text size
+        axis.title.x = element_text(size = 14), # Increase x-axis title size
+        axis.title.y = element_text(size = 14)) # Increase y-axis title size
 
 # Display scatter plot with outliers
 print(Ratios_comp_scatter)
 ```
+
 
 ### Z-scores
 ```{r Effect sizes for Z-scores, include=TRUE}
@@ -627,15 +701,20 @@ names(Hedge_z)[names(Hedge_z) == "hedges_g(d = Hedge_z, totaln = z$N.value)"] <-
 
 # Unit scaling and sanity checks
 z_comp <- merge(z, Hedge_z, by = "study")
+```
+
+#### Scatterplot z-score
+```{r}
+library(ggplot2)
 
 # Scatter plot showing the relationship between Z-score and effect size
 z_comp_scatter <- ggplot(data = z_comp, aes(x = Value, y = es)) +
-  geom_point() +
+  geom_line() +  # Add line
+  geom_smooth(method = "lm", se = FALSE, color = "#54D8B1FF") +  # Add smooth line with custom color
+  geom_point(aes(color = "Observation", shape = "Observation"), size = 3, alpha = 0.5) +  # Add main data points
   xlab("Z-score") +
   ylab("Effect size (g)") +
-  theme_classic() +
-  geom_line() +
-  geom_smooth(method = "lm", se = FALSE)
+  theme_classic()
 
 # Assess outliers using residuals
 model <- lm(es ~ Value, data = z_comp)
@@ -643,12 +722,30 @@ residuals <- model$residuals
 outliers <- z_comp[abs(residuals) > 2 * sd(residuals), ]
 
 # Add outliers to scatter plot
-z_comp_scatter <- z_comp_scatter +
-  geom_point(data = outliers, aes(x = Value, y = es, color = "red", size = 3))
+z_comp_scatter <- z_comp_scatter + 
+  geom_point(data = outliers, 
+             aes(x = Value, y = es, color = "Outlier", shape = "Outlier"), 
+             size = 3.5) +  # Add slightly larger points for outliers
+  geom_text(data = outliers, 
+            aes(x = Value, y = es, label = study), 
+            position = position_jitter(width = 0.6, height = 0.2), 
+            alpha = 0.9, 
+            size = 3.5) +  # Add text labels only for outliers
+  scale_color_manual(name = "", 
+                     values = c("Observation" = "#175149FF", "Outlier" = "#E54E21FF")) +  # Custom colors
+  scale_shape_manual(name = "", 
+                     values = c("Observation" = 16, "Outlier" = 16)) +  # Custom shapes
+  theme(legend.position = "right",
+        legend.text = element_text(size = 12),  # Increase legend text size
+        axis.text.x = element_text(size = 12),  # Increase x-axis text size
+        axis.text.y = element_text(size = 12),  # Increase y-axis text size
+        axis.title.x = element_text(size = 14), # Increase x-axis title size
+        axis.title.y = element_text(size = 14)) # Increase y-axis title size
 
-# Display scatter plot
+# Display scatter plot with outliers
 print(z_comp_scatter)
 ```
+
 
 ### T-test
 ```{r Effect sizes for T-test, include=TRUE}
@@ -694,19 +791,35 @@ Hedge_F$es <- unlist(Hedge_F$es)
 
 # Unit scaling and sanity checks
 F_comp <- merge(FS, Hedge_F, by = "study")
+```
+
+#### Scatterplot F-statistic
+```{r}
+library(ggplot2)
 
 # Scatter plot showing the relationship between F-statistic and effect size
 F_comp_scatter <- ggplot(data = F_comp, aes(x = Value, y = es)) +
-  geom_point() +
+  geom_line() +  # Add line
+  geom_smooth(method = "lm", se = FALSE, color = "#54D8B1FF") +  # Add smooth line with custom color
+  geom_point(aes(color = "Observation", shape = "Observation"), size = 3, alpha = 0.5) +  # Add main data points
   xlab("F-statistic") +
   ylab("Effect size (g)") +
   theme_classic() +
-  geom_line() +
-  geom_smooth(method = "lm", se = FALSE)
+  scale_color_manual(name = "", 
+                     values = c("Observation" = "#175149FF")) +  # Custom color
+  scale_shape_manual(name = "", 
+                     values = c("Observation" = 16)) +  # Custom shape
+  theme(legend.position = "right",
+        legend.text = element_text(size = 12),  # Increase legend text size
+        axis.text.x = element_text(size = 12),  # Increase x-axis text size
+        axis.text.y = element_text(size = 12),  # Increase y-axis text size
+        axis.title.x = element_text(size = 14), # Increase x-axis title size
+        axis.title.y = element_text(size = 14)) # Increase y-axis title size
 
 # Display scatter plot
 print(F_comp_scatter)
 ```
+
 
 ### Percentage change
 ```{r Effect sizes for Percentage change, include=TRUE, error=TRUE}
@@ -759,28 +872,6 @@ Hedge_p <- Hedge_p[!is.na(Hedge_p$se), ]
 p_comp <- merge(p_Stdev, Hedge_p, by = "study")
 names(p_comp)[names(p_SE) == "B"] <- "Correlation"
 
-# Scatter plot showing the relationship between correlation coefficient and effect size
-p_comp_scatter <- ggplot(data = p_comp, aes(x = Correlation, y = es, label = study)) +
-  geom_point() +
-  xlab("Correlation coefficient") +
-  ylab("Effect size (g)") +
-  theme_classic() +
-  geom_line() +
-  geom_text(aes(label = study), vjust = 1) +
-  geom_smooth(method = "lm", se = FALSE)
-
-# Assess outliers using residuals
-model <- lm(es ~ Correlation, data = p_comp)
-residuals <- model$residuals
-outliers <- p_comp[abs(residuals) > 2 * sd(residuals), ]
-
-# Add outliers to scatter plot
-p_comp_scatter <- p_comp_scatter + 
-  geom_point(data = outliers, aes(x = outliers$Correlation, y = outliers$es, color = "red", size = 3))
-
-# Display scatter plot
-print(p_comp_scatter)
-
 # Test for 95% CI
 p_test_ci <- subset(p_comp, Error %in% c("95% Confidence"))
 p_test_ci <- sample_n(p_test_ci, 5)
@@ -802,6 +893,49 @@ test_that("ci_to_sd returns correct standard deviation for all rows", {
   # Compare the expected and actual standard deviations
   expect_equal(actual_sds, expected_sds, tolerance = 1e-5)
 })
+```
+
+#### Scatterplot percentage change
+```{r}
+library(ggplot2)
+p_comp <- merge(p_Stdev, Hedge_p, by = "study")
+# Scatter plot showing the relationship between correlation coefficient and effect size
+p_comp_scatter <- ggplot(data = p_comp, aes(x = Value, y = es)) +
+  geom_smooth(method = "lm", se = FALSE, color = "#54D8B1FF") +  # Add smooth line with custom color
+  geom_line(alpha = 0.3) +  # Add line
+  geom_point(aes(color = "Observation", shape = "Observation"), size = 3, alpha = 0.5) +  # Add main data points
+  xlab("Percentage change") +
+  ylab("Effect size (g)") +
+  theme_classic()
+
+# Assess outliers using residuals
+model <- lm(es ~ Value, data = p_comp)
+residuals <- model$residuals
+outliers <- p_comp[abs(residuals) > 2 * sd(residuals), ]
+
+# Add outliers to scatter plot
+p_comp_scatter <- p_comp_scatter + 
+  geom_point(data = outliers, 
+             aes(x = Value, y = es, color = "Outlier", shape = "Outlier"), 
+             size = 3.5) +  # Add slightly larger points for outliers
+  geom_text(data = outliers, 
+            aes(x = Value, y = es, label = study), 
+            position = position_jitter(width = 0, height = 0.025), 
+            alpha = 0.9, 
+            size = 3.5) +  # Add text labels only for outliers
+  scale_color_manual(name = "", 
+                     values = c("Observation" = "#175149FF", "Outlier" = "#E54E21FF")) +  # Custom colors
+  scale_shape_manual(name = "", 
+                     values = c("Observation" = 16, "Outlier" = 16)) +  # Custom shapes
+  theme(legend.position = "right",
+        legend.text = element_text(size = 12),  # Increase legend text size
+        axis.text.x = element_text(size = 12),  # Increase x-axis text size
+        axis.text.y = element_text(size = 12),  # Increase y-axis text size
+        axis.title.x = element_text(size = 14), # Increase x-axis title size
+        axis.title.y = element_text(size = 14)) # Increase y-axis title size
+
+# Display scatter plot
+print(p_comp_scatter)
 ```
 
 ### R-squared
@@ -831,16 +965,20 @@ Hedge_R_square<-Hedge_R_square[,-3]
 
 # Unit scaling and sanity checks
 Rsquare_comp <- merge(Hedge_R_square, R_square, by = "study")
+```
+
+#### Scatterplot R-squared
+```{r}
+library(ggplot2)
 
 # Scatter plot showing the relationship between R-squared and effect size
-Rsquare_comp_scatter <- ggplot(data = Rsquare_comp, aes(x = Value, y = es, label = study)) +
-  geom_point() +
+Rsquare_comp_scatter <- ggplot(data = Rsquare_comp, aes(x = Value, y = es)) +
+  geom_line() +  # Add line
+  geom_smooth(method = "lm", se = FALSE, color = "#54D8B1FF") +  # Add smooth line with custom color
+  geom_point(aes(color = "Observation", shape = "Observation"), size = 3, alpha = 0.5) +  # Add main data points
   xlab("R-squared") +
   ylab("Effect size (g)") +
-  theme_classic() +
-  geom_line() +
-  geom_text(aes(label = study), vjust = 1) +
-  geom_smooth(method = "lm", se = FALSE)
+  theme_classic()
 
 # Assess outliers using residuals
 model <- lm(es ~ Value, data = Rsquare_comp)
@@ -849,7 +987,24 @@ outliers <- Rsquare_comp[abs(residuals) > 2 * sd(residuals), ]
 
 # Add outliers to scatter plot
 Rsquare_comp_scatter <- Rsquare_comp_scatter + 
-  geom_point(data = outliers, aes(x = Value, y = es, color = "red", size = 3))
+  geom_point(data = outliers, 
+             aes(x = Value, y = es, color = "Outlier", shape = "Outlier"), 
+             size = 3.5) +  # Add slightly larger points for outliers
+  geom_text(data = outliers, 
+            aes(x = Value, y = es, label = study), 
+            position = position_jitter(width = 0.6, height = 0.2), 
+            alpha = 0.9, 
+            size = 3.5) +  # Add text labels only for outliers
+  scale_color_manual(name = "", 
+                     values = c("Observation" = "#175149FF", "Outlier" = "#E54E21FF")) +  # Custom colors
+  scale_shape_manual(name = "", 
+                     values = c("Observation" = 16, "Outlier" = 16)) +  # Custom shapes
+  theme(legend.position = "right",
+        legend.text = element_text(size = 12),  # Increase legend text size
+        axis.text.x = element_text(size = 12),  # Increase x-axis text size
+        axis.text.y = element_text(size = 12),  # Increase y-axis text size
+        axis.title.x = element_text(size = 14), # Increase x-axis title size
+        axis.title.y = element_text(size = 14)) # Increase y-axis title size
 
 # Display scatter plot
 print(Rsquare_comp_scatter)
@@ -890,3 +1045,31 @@ Est_comp_scatter <- ggplot(data = Est_comp, aes(x = Value, y = es, label = study
 # Display scatter plot
 print(Est_comp_scatter)
 ```
+
+#### Scatterplot bivariate regression
+```{r}
+library(ggplot2)
+
+# Scatter plot showing the relationship between Estimate and effect size
+Est_comp_scatter <- ggplot(data = Est_comp, aes(x = Value, y = es)) +
+  geom_smooth(method = "lm", se = FALSE, color = "#54D8B1FF") +  # Add smooth line with custom color
+  geom_line(alpha = 0.3) +  # Add line
+  geom_point(aes(color = "Observation", shape = "Observation"), size = 3, alpha = 0.5) +  # Add main data points
+  xlab("Estimate") +
+  ylab("Effect size (g)") +
+  theme_classic() +
+  scale_color_manual(name = "", 
+                     values = c("Observation" = "#175149FF")) +  # Custom color
+  scale_shape_manual(name = "", 
+                     values = c("Observation" = 16)) +  # Custom shape
+  theme(legend.position = "right",
+        legend.text = element_text(size = 12),  # Increase legend text size
+        axis.text.x = element_text(size = 12),  # Increase x-axis text size
+        axis.text.y = element_text(size = 12),  # Increase y-axis text size
+        axis.title.x = element_text(size = 14), # Increase x-axis title size
+        axis.title.y = element_text(size = 14)) # Increase y-axis title size
+
+# Display scatter plot
+print(Est_comp_scatter)
+```
+
