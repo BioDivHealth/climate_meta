@@ -1073,3 +1073,86 @@ Est_comp_scatter <- ggplot(data = Est_comp, aes(x = Value, y = es)) +
 print(Est_comp_scatter)
 ```
 
+## Combine plots
+
+```{r}
+combined_plot <- (OR_comp_scatter + Beta_comp_scatter) / 
+                 (B_comp_scatter + R_comp_scatter) / 
+                 (Ratios_comp_scatter + z_comp_scatter) / 
+                 (F_comp_scatter + Est_comp_scatter) / 
+                 (p_comp_scatter + Rsquare_comp_scatter) +
+                 plot_layout(ncol = 2, guides = "collect") & theme(legend.position = "bottom")
+
+# Display the combined plot
+print(combined_plot)
+```
+
+```{r}
+library(patchwork)
+
+# Function to extract legend from a ggplot object
+get_legend <- function(my_plot) {
+  tmp <- ggplotGrob(my_plot)
+  leg <- which(sapply(tmp$grobs, function(x) x$name) == "guide-box")
+  legend <- tmp$grobs[[leg]]
+  return(legend)
+}
+
+# Create a combined plot without legends
+combined_plot <- (OR_comp_scatter + theme(legend.position = "none")) + 
+                 (Rsquare_comp_scatter + theme(legend.position = "none")) +
+                 (Beta_comp_scatter + theme(legend.position = "none")) / 
+                 (B_comp_scatter + theme(legend.position = "none")) + 
+                 (R_comp_scatter + theme(legend.position = "none")) / 
+                 (Ratios_comp_scatter + theme(legend.position = "none")) + 
+                 (z_comp_scatter + theme(legend.position = "none")) / 
+                 (F_comp_scatter + theme(legend.position = "none")) + 
+                 (Est_comp_scatter + theme(legend.position = "none")) / 
+                 (p_comp_scatter + theme(legend.position = "none")) + 
+                 plot_layout(ncol = 2)
+
+# Extract the legend from one of the plots (assuming all have the same legend)
+legend_plot <- get_legend(OR_comp_scatter)
+
+# Combine the plot and the legend
+final_plot <- plot_grid(combined_plot, legend_plot, ncol = 1, rel_heights = c(10, 1))
+
+# Display the combined plot with a single legend
+print(final_plot)
+```
+
+```{r}
+# Save the final plot covering 80% of an A4 page
+ggsave("combined_plot_A4_80percent.png", final_plot, width = 6.62, height = 9.35, units = "in", dpi = 300, scale = 1.4)
+```
+
+
+```{r}
+library(patchwork)
+
+# Function to extract legend from a ggplot object
+get_legend <- function(my_plot) {
+  tmp <- ggplotGrob(my_plot)
+  leg <- which(sapply(tmp$grobs, function(x) x$name) == "guide-box")
+  legend <- tmp$grobs[[leg]]
+  return(legend)
+}
+
+# Create a combined plot without legends and adjust the order
+combined_plot <- (OR_comp_scatter + Rsquare_comp_scatter + theme(legend.position = "none")) /
+                 (Beta_comp_scatter + B_comp_scatter + theme(legend.position = "none")) / 
+                 (R_comp_scatter + Ratios_comp_scatter + theme(legend.position = "none")) / 
+                 (z_comp_scatter + F_comp_scatter + theme(legend.position = "none")) / 
+                 (Est_comp_scatter + p_comp_scatter + theme(legend.position = "none")) +
+                 plot_layout(ncol = 2)
+
+# Extract the legend from one of the plots
+legend_plot <- get_legend(OR_comp_scatter)
+
+# Combine the plot and the legend
+final_plot <- plot_grid(combined_plot, legend_plot, ncol = 1, rel_heights = c(10, 1))
+
+# Display the combined plot with a single legend
+print(final_plot)
+```
+
