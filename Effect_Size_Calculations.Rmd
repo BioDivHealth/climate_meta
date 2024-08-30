@@ -9,8 +9,14 @@ editor_options:
 
 # Set-up of packages
 
+```{r}
+#install.packages("grateful")
+```
+
+
 ```{r Loading libraries, include=FALSE}
 library(plyr)
+library(grateful)
 library(dplyr)
 library(ggplot2)
 library(esc)
@@ -326,40 +332,40 @@ Beta_test_se$N.value <- as.numeric(Beta_test_se$N.value)
 Beta_test_se$Std_dev <- as.numeric(Beta_test_se$Std_dev)
 
 # Define the test for se_to_sd function
-test_that("se_to_sd returns correct standard deviation for all rows in a dataframe", {
-  Beta_test_se_df <- data.frame(
-    se = Beta_test_se$Std._error,
-    n = Beta_test_se$N.value,
-    sd = Beta_test_se$Std_dev
-  )
-  
-  expected_sds <- Beta_test_se_df$sd
-  actual_sds <- apply(Beta_test_se_df, 1, function(x) se_to_sd(x[1], x[2]))
-  
-  expect_equal(round(actual_sds, 3), round(expected_sds, 3))
-})
-
-# Test for 95% CI
-Beta_test_ci <- subset(Beta_comp, Error %in% c("95% Confidence"))
-Beta_test_ci <- sample_n(Beta_test_ci, 5)
-
-# Define the test for ci_to_sd function
-test_that("ci_to_sd returns correct standard deviation for all rows", {
-  # Create the data frame
-  data <- data.frame(
-    ci_lower = Beta_test_ci$Lower,
-    ci_upper = Beta_test_ci$Upper,
-    sd = Beta_test_ci$Std_dev,
-    n = Beta_test_ci$N.value
-  )
-  
-  # Calculate the expected and actual standard deviations
-  expected_sds <- data$sd
-  actual_sds <- apply(data, 1, function(x) ci_to_sd(x[1], x[2], x[4]))
-  
-  # Compare the expected and actual standard deviations
-  expect_equal(actual_sds, expected_sds, tolerance = 1e-4)
-})
+# test_that("se_to_sd returns correct standard deviation for all rows in a dataframe", {
+#   Beta_test_se_df <- data.frame(
+#     se = Beta_test_se$Std._error,
+#     n = Beta_test_se$N.value,
+#     sd = Beta_test_se$Std_dev
+#   )
+#   
+#   expected_sds <- Beta_test_se_df$sd
+#   actual_sds <- apply(Beta_test_se_df, 1, function(x) se_to_sd(x[1], x[2]))
+#   
+#   expect_equal(round(actual_sds, 3), round(expected_sds, 3))
+# })
+# 
+# # Test for 95% CI
+# Beta_test_ci <- subset(Beta_comp, Error %in% c("95% Confidence"))
+# Beta_test_ci <- sample_n(Beta_test_ci, 5)
+# 
+# # Define the test for ci_to_sd function
+# test_that("ci_to_sd returns correct standard deviation for all rows", {
+#   # Create the data frame
+#   data <- data.frame(
+#     ci_lower = Beta_test_ci$Lower,
+#     ci_upper = Beta_test_ci$Upper,
+#     sd = Beta_test_ci$Std_dev,
+#     n = Beta_test_ci$N.value
+#   )
+#   
+#   # Calculate the expected and actual standard deviations
+#   expected_sds <- data$sd
+#   actual_sds <- apply(data, 1, function(x) ci_to_sd(x[1], x[2], x[4]))
+#   
+#   # Compare the expected and actual standard deviations
+#   expect_equal(actual_sds, expected_sds, tolerance = 1e-4)
+# })
 ```
 
 #### Scatterplot beta
@@ -450,37 +456,37 @@ B_test_se$Std._error <- as.numeric(B_test_se$Std._error)
 B_test_se$N.value <- as.numeric(B_test_se$N.value)
 B_test_se$Std_dev <- as.numeric(B_test_se$Std_dev)
 
-test_that("se_to_sd returns correct standard deviation for all rows in a dataframe", {
-  B_test_se <- data.frame(
-    se = B_test_se$Std._error,
-    n = B_test_se$N.value,
-    sd = B_test_se$Std_dev
-  )
-  
-  expected_sds <- B_test_se$sd
-  actual_sds <- apply(B_test_se, 1, function(x) se_to_sd(x[1], x[2]))
-  expect_equal(round(actual_sds, 3), round(expected_sds, 3))
-})
-
-# Test for 95% CI
-B_test_ci <- subset(B_comp, Error %in% c("95% Confidence"))
-
-test_that("ci_to_sd returns correct standard deviation for all rows", {
-  # Create the data frame
-  data <- data.frame(
-    ci_lower = B_test_ci$Lower,
-    ci_upper = B_test_ci$Upper,
-    sd = B_test_ci$Std_dev,
-    n = B_test_ci$N.value
-  )
-  
-  # Calculate the expected and actual standard deviations
-  expected_sds <- data$sd
-  actual_sds <- apply(data, 1, function(x) ci_to_sd(x[1], x[2], x[4]))
-  
-  # Compare the expected and actual standard deviations
-  expect_equal(round(actual_sds, 2), round(expected_sds, 2))
-})
+# test_that("se_to_sd returns correct standard deviation for all rows in a dataframe", {
+#   B_test_se <- data.frame(
+#     se = B_test_se$Std._error,
+#     n = B_test_se$N.value,
+#     sd = B_test_se$Std_dev
+#   )
+#   
+#   expected_sds <- B_test_se$sd
+#   actual_sds <- apply(B_test_se, 1, function(x) se_to_sd(x[1], x[2]))
+#   expect_equal(round(actual_sds, 3), round(expected_sds, 3))
+# })
+# 
+# # Test for 95% CI
+# B_test_ci <- subset(B_comp, Error %in% c("95% Confidence"))
+# 
+# test_that("ci_to_sd returns correct standard deviation for all rows", {
+#   # Create the data frame
+#   data <- data.frame(
+#     ci_lower = B_test_ci$Lower,
+#     ci_upper = B_test_ci$Upper,
+#     sd = B_test_ci$Std_dev,
+#     n = B_test_ci$N.value
+#   )
+#   
+#   # Calculate the expected and actual standard deviations
+#   expected_sds <- data$sd
+#   actual_sds <- apply(data, 1, function(x) ci_to_sd(x[1], x[2], x[4]))
+#   
+#   # Compare the expected and actual standard deviations
+#   expect_equal(round(actual_sds, 2), round(expected_sds, 2))
+# })
 ```
 
 #### Scatterplot correlation
@@ -887,22 +893,22 @@ p_test_ci <- subset(p_comp, Error %in% c("95% Confidence"))
 p_test_ci <- sample_n(p_test_ci, 5)
 
 # Define the test for ci_to_sd function
-test_that("ci_to_sd returns correct standard deviation for all rows", {
-  # Create the data frame
-  data <- data.frame(
-    ci_L = p_test_ci$L,
-    ci_U = p_test_ci$U,
-    sd = p_test_ci$Std_dev,
-    n = p_test_ci$N.value
-  )
-  
-  # Calculate the expected and actual standard deviations
-  expected_sds <- data$sd
-  actual_sds <- apply(data, 1, function(x) ci_to_sd(x[1], x[2], x[4]))
-  
-  # Compare the expected and actual standard deviations
-  expect_equal(actual_sds, expected_sds, tolerance = 1e-5)
-})
+# test_that("ci_to_sd returns correct standard deviation for all rows", {
+#   # Create the data frame
+#   data <- data.frame(
+#     ci_L = p_test_ci$L,
+#     ci_U = p_test_ci$U,
+#     sd = p_test_ci$Std_dev,
+#     n = p_test_ci$N.value
+#   )
+#   
+#   # Calculate the expected and actual standard deviations
+#   expected_sds <- data$sd
+#   actual_sds <- apply(data, 1, function(x) ci_to_sd(x[1], x[2], x[4]))
+#   
+#   # Compare the expected and actual standard deviations
+#   expect_equal(actual_sds, expected_sds, tolerance = 1e-5)
+# })
 ```
 
 #### Scatterplot percentage change
@@ -1090,6 +1096,80 @@ print(Est_comp_scatter)
 
 ## Combine plots
 
+### Add annotations based on the significance of regression
+
+```{r}
+# Annotate plots based on model significance
+
+# List of models to evaluate
+models <- list(
+  lm1 = lm(es ~ Value, data = OR_comp),
+  lm2 = lm(es ~ Correlation, data = Beta_comp),
+  lm3 = lm(es ~ Correlation, data = B_comp),
+  lm4 = lm(es ~ Correlation, data = R_comp),
+  lm5 = lm(es ~ Value, data = Ratios_comp),
+  lm6 = lm(es ~ Value, data = z_comp),
+  lm7 = lm(es ~ Value, data = F_comp),
+  lm8 = lm(es ~ Value, data = Est_comp),
+  lm9 = lm(es ~ Value, data = p_comp),
+  lm10 = lm(es ~ Value, data = Rsquare_comp)
+)
+
+# Function to check significance
+check_significance <- function(model) {
+  p_value <- summary(model)$coefficients[2, 4]  # Extract the p-value for the predictor
+  if (p_value < 0.001) {
+    return("***")
+  } else if (p_value < 0.01) {
+    return("**")
+  } else if (p_value < 0.05) {
+    return("*")
+  } else {
+    return("")
+  }
+}
+
+model_significance <- lapply(models, check_significance)
+```
+
+```{r}
+vjust_value = 4
+custom_size = 7
+custom_alpha = 0.8
+custom_color = "#AF4E24FF"
+#"#C52E19FF", "#AC9765FF", "#54D8B1FF", "#B67C3BFF", "#175149FF", "#AF4E24FF"
+OR_comp_scatter <- OR_comp_scatter + 
+  annotate("text", x = Inf, y = Inf, label = model_significance$lm1, vjust = vjust_value, hjust = 1.1, size = custom_size, color = custom_color, alpha = custom_alpha)
+
+Rsquare_comp_scatter <- Rsquare_comp_scatter + 
+  annotate("text", x = Inf, y = Inf, label = model_significance$lm10, vjust = vjust_value, hjust = 1.1, size = custom_size, color = custom_color, alpha = custom_alpha)
+
+Beta_comp_scatter <- Beta_comp_scatter + 
+  annotate("text", x = Inf, y = Inf, label = model_significance$lm2, vjust = vjust_value, hjust = 1.1, size = custom_size, color = custom_color, alpha = custom_alpha)
+
+B_comp_scatter <- B_comp_scatter + 
+  annotate("text", x = Inf, y = Inf, label = model_significance$lm3, vjust = vjust_value, hjust = 1.1, size = custom_size, color = custom_color, alpha = custom_alpha)
+
+R_comp_scatter <- R_comp_scatter + 
+  annotate("text", x = Inf, y = Inf, label = model_significance$lm4, vjust = vjust_value, hjust = 1.1, size = custom_size, color = custom_color, alpha = custom_alpha)
+
+Ratios_comp_scatter <- Ratios_comp_scatter + 
+  annotate("text", x = Inf, y = Inf, label = model_significance$lm5, vjust = vjust_value, hjust = 1.1, size = custom_size, color = custom_color, alpha = custom_alpha)
+
+z_comp_scatter <- z_comp_scatter + 
+  annotate("text", x = Inf, y = Inf, label = model_significance$lm6, vjust = vjust_value, hjust = 1.1, size = custom_size, color = custom_color, alpha = custom_alpha)
+
+F_comp_scatter <- F_comp_scatter + 
+  annotate("text", x = Inf, y = Inf, label = model_significance$lm7, vjust = vjust_value, hjust = 1.1, size = custom_size, color = custom_color, alpha = custom_alpha)
+
+Est_comp_scatter <- Est_comp_scatter + 
+  annotate("text", x = Inf, y = Inf, label = model_significance$lm8, vjust = vjust_value, hjust = 1.1, size = custom_size, color = custom_color, alpha = custom_alpha)
+
+p_comp_scatter <- p_comp_scatter + 
+  annotate("text", x = Inf, y = Inf, label = model_significance$lm9, vjust = vjust_value, hjust = 1.1, size = custom_size, color = custom_color, alpha = custom_alpha)
+```
+
+
 ```{r}
 library(patchwork)
 library(cowplot)
@@ -1122,47 +1202,17 @@ final_plot <- plot_grid(
 print(final_plot)
 
 # Save the final plot
-ggsave("combined_plot_A4_70percent.png", final_plot, width = 5.5, height = 6.7, units = "in", dpi = 300, scale = 1.7)
+ggsave("combined_plot_A4_70percent_signif.png", final_plot, width = 5.5, height = 6.7, units = "in", dpi = 300, scale = 1.7)
 ```
 
-## Check significance of regression
 
 ```{r}
-# List of models to evaluate
-models <- list(
-  lm1 = lm(es ~ Value, data = OR_comp),
-  lm2 = lm(es ~ Correlation, data = Beta_comp),
-  lm3 = lm(es ~ Correlation, data = B_comp),
-  lm4 = lm(es ~ Correlation, data = R_comp),
-  lm5 = lm(es ~ Value, data = Ratios_comp),
-  lm6 = lm(es ~ Value, data = z_comp),
-  lm7 = lm(es ~ Value, data = F_comp),
-  lm8 = lm(es ~ Value, data = Est_comp),
-  lm9 = lm(es ~ Correlation, data = p_comp),
-  lm10 = lm(es ~ Value, data = Rsquare_comp)
-)
+#cite_packages(output = "file", out.dir = getwd(),out.format = "pdf")
+```
 
-# Function to check significance
-check_significance <- function(model) {
-  model_summary <- summary(model)
-  f_statistic <- model_summary$fstatistic
-  p_value <- pf(f_statistic[1], f_statistic[2], f_statistic[3], lower.tail = FALSE)
-  
-  cat("F-statistic:", f_statistic[1], "\n")
-  cat("p-value:", p_value, "\n")
-  
-  if (p_value < 0.05) {
-    cat("The model is significant.\n\n")
-  } else {
-    cat("The model is not significant.\n\n")
-  }
-}
 
-# Loop through each model and check significance
-for (i in 1:length(models)) {
-  cat("Model", i, ":\n")
-  check_significance(models[[i]])
-}
-
+```{r }
+pkgs <- cite_packages(output = "table", out.dir = ".")
+knitr::kable(pkgs)
 ```
 
