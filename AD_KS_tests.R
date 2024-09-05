@@ -5,6 +5,7 @@
 # Load data 
 df = read.csv('data/dataset_final.csv')
 df = unique(df)
+set.seed(123)
 
 # Change vector names
 df = df%>%
@@ -89,7 +90,7 @@ perm_comp_test <- function(x, y, B = 1e3) {
 #Defining categories and parameters to use in procedure.
 
 categories = list(Transmission_type = c('Vectored', 'Non-vectored'), 
-                  Principal_reservoir = c('Rodents', 'Mammals (multispecies)', 'Livestock'), 
+                  Principal_reservoir = c('Rodents', 'Mammals (multispecies)', 'Livestock', 'Birds'), 
                   Pathogen = c('Virus', 'Bacteria'), 
                   vector = c('Mosquito', 'Tick', 'Mite')
 )
@@ -181,7 +182,7 @@ results_df = results_df%>%
                        names = c("Environmental_condition", "Category", "Group"))
 
 rownames(results_df) = NULL
-
+#write.csv(results_df, 'outputs/tables/DistributionADTest_Results_Birds.csv', row.names = F)
 #results_df 
 
 # Comparison of Vector and Non-vector borne disease ----
