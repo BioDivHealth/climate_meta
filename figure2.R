@@ -19,6 +19,12 @@ picture_labeller <- function(value, pic_first=TRUE) {
   return(label_with_image)
 }
 
+# group effect sizes
+df = df%>%
+  mutate(es_cat = ifelse(es < -0.2, 'Negative effect (g < -0.2)', #if CI contains 0
+                         ifelse(abs(es) < 0.2, 'No effect', # otherwise negative
+                                'Positive effect (g > 0.2)')) # or positive
+  )
 
 createFig2  = function(df, stats, colors){
   # -------------------- Format data --------------------
@@ -32,7 +38,7 @@ createFig2  = function(df, stats, colors){
                                                               ifelse(p_val < 0.05, '*', ''))))
   
   ### Groups to include
-  hosts = c('Rodents', 'Mammals (multispecies)', 'Livestock')
+  hosts = c('Rodents', 'Mammals (multispecies)', 'Livestock', 'Birds')
   parasites = c('Virus', 'Bacteria')
   vectors = c('Mosquito', 'Tick', 'Mite')
   
@@ -145,7 +151,8 @@ createFig2  = function(df, stats, colors){
               fontface="bold",
               vjust=0,
               hjust=0,
-              size=4)+
+              size=8,
+              alpha = 0.8)+
     facet_grid(.~Environmental_condition)+
     midplot+
     scale_fill_manual(values=colors)+
@@ -178,7 +185,9 @@ createFig2  = function(df, stats, colors){
               fontface="bold",
               vjust=0,
               hjust=0,
-              size=4)+
+              size=8,
+              alpha = 0.8
+              )+
     facet_grid(.~Environmental_condition)+
     midplot+
     scale_fill_manual(name="Hedges *g* Effect Size", values=colors)+
@@ -217,7 +226,8 @@ createFig2  = function(df, stats, colors){
               fontface="bold",
               vjust=0,
               hjust=0,
-              size=4)+
+              size=8,
+              alpha = 0.8)+
     facet_grid(.~Environmental_condition)+
     midplot+
     scale_x_continuous(expand=c(0,0),limits=c(0,1), breaks=seq(0, 1, by=0.25), labels=c(0, 0.25, 0.5, 0.75, 1))+
@@ -250,9 +260,10 @@ createFig2  = function(df, stats, colors){
     )+
     geom_text(data=pv, aes(x=.02, y=Principal_reservoir, label=significance),
               fontface="bold",
-              size=4,
+              size=8,
+              alpha = 0.8,
               hjust=0,
-              vjust=0)+
+              vjust=0.1)+
     facet_grid(.~Environmental_condition)+
     botplot+
     scale_fill_manual(values=colors)+
@@ -261,7 +272,6 @@ createFig2  = function(df, stats, colors){
     #scale_x_continuous(expand = expansion(mult = c(0, .15)))+
     labs(y = 'Principal \n reservoir', x="Proportion of measures")+
     theme(panel.spacing = unit(1, "lines"))
-  
   
   fig = p1+hl+p2+p3+p4+p5+plot_layout(ncol=1,
                                    heights=c(2,0.25, 2,2,3,3),
@@ -273,7 +283,7 @@ createFig2  = function(df, stats, colors){
 
 # -------------------- Create Figure  --------------------
 
-#colors = c( "#29A1AB" , '#fee8c8', '#AB3329')
+# colors = c( "#29A1AB" , '#fee8c8', '#AB3329')
 # arch palette"#88a0dc" "#381a61" "#7c4b73" "#ed968c" "#ab3329" "#e78429" "#f9d14a"
 
 #createFig2(df, results_df, colors)
