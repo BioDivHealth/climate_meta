@@ -81,12 +81,13 @@ df%>%
 
 ```{r studycounts2}
 
-df%>%
+tmp = df%>%
   filter(General_Disease != "Multiple") %>%
   group_by(Disease, General_Disease) %>%
   summarise(N = n_distinct(Reference_ID)) %>%#
   mutate(P = N/sum(N))%>%
   arrange(desc(N))
+print(tmp,n = length(tmp$N))
 
 ```
 
@@ -138,22 +139,25 @@ df%>%
 **Statistical Method**
 
 ```{r statsmeth2}
-df%>%
+tmp = df%>%
   group_by(General_Stats_Method) %>%
   summarise(N = n_distinct(Reference_ID)) %>%#
   mutate(P = N/sum(N))%>%
   arrange(desc(N)) 
 
+print(tmp, n = length(tmp$N))
 ```
 
 **Statistical Method**
 
 ```{r statsmeth}
-df%>%
+tmp = df%>%
   group_by(Statistical_method) %>%
   summarise(N = n_distinct(Reference_ID)) %>%#
   mutate(P = N/sum(N))%>%
   arrange(desc(N)) 
+
+print(tmp, n = length(tmp$N))
 
 ```
 
@@ -194,6 +198,7 @@ perform_chi_tests <- function(data, n_samples, percentage) {
   for (i in 1:n_samples) {
     #sample % of data
     smp <- data[sample(1:nrow(data), size = round(nrow(data) * percentage), replace = TRUE),]
+    
     #smp$Direction = as.factor(smp$Direction)
     #perform chi-tests
     #print(table(smp$Direction))
@@ -858,7 +863,7 @@ Defining categories and parameters to use in procedure.
 
 ```{r catdefine}
 categories = list(Transmission_type = c('Vectored', 'Non-vectored'), 
-                  Principal_reservoir = c('Rodents', 'Mammals (multispecies)', 'Livestock'), 
+                  Principal_reservoir = c('Rodents', 'Mammals (multispecies)', 'Livestock', 'Birds'), 
                   Pathogen = c('Virus', 'Bacteria'), 
                   vector = c('Mosquito', 'Tick', 'Mite')
                   )
@@ -1057,8 +1062,9 @@ source('figure2.R')
 colors = c( "#00A8A5" , '#fee8c8', '#A80003')
 
 f2 = createFig2(df, results_df, colors)
+f2
 
-#ggsave(f2, file="outputs/Figure2.png", device="png", units="in", width=12, height=9, dpi=600, scale=0.92)
+ggsave(f2, file="outputs/Figure2_new.png", device="png", units="in", width=12, height=9, dpi=600, scale=0.92)
 ```
 
 ## Figure 3
