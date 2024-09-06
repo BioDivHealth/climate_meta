@@ -46,7 +46,7 @@ if (!require(metafor, quietly = TRUE)) {
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, include=FALSE)
 
 # load dataset
-df = read.csv('data/dataset_final.csv')
+df = read.csv(here('data','dataset_final.csv'))
 
 # change vector names
 df = df%>%
@@ -186,7 +186,7 @@ In general, temperature, rainfall and humidity influence zoonotic disease risk, 
 
 ### **Positive Temperature effects**
 ```{r AD_KS_TESTS}
-source('AD_KS_tests.R')
+source(here('scripts','AD_KS_tests.R'))
 # Creates: 
 # - results_df (for AD tests)
 # - es_summaries (for KS)
