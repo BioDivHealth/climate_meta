@@ -1,0 +1,149 @@
+---
+title: "Climate impacts on zoonotic disease meta-analysis: text"
+output:
+  html_notebook: 
+    theme: flatly
+    fig_caption: yes
+  html_document: 
+    keep_md: yes
+editor_options:
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE, results='asis'}
+# depss
+
+if (!require(tidyverse, quietly = TRUE)) {
+  install.packages("tidyverse")
+  library(tidyverse)
+}
+
+if (!require(twosamples, quietly = TRUE)) {
+  install.packages("twosamples")
+  library(twosamples)
+}
+
+if (!require(magrittr, quietly = TRUE)) {
+  install.packages("magrittr")
+  library(magrittr)
+}
+
+if (!require(knitr, quietly = TRUE)) {
+  install.packages("library(knitr)")
+  library(knitr)
+}
+
+if (!require(ggpubr, quietly = TRUE)) {
+  install.packages("library(ggpubr)")
+  library(ggpubr)
+}
+
+if (!require(metafor, quietly = TRUE)) {
+  install.packages("metafor")
+  library(metafor)
+}
+
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, include=FALSE)
+
+# load dataset
+df = read.csv('data/dataset_final.csv')
+
+# change vector names
+df = df%>%
+  mutate(Transmission_type = ifelse(Transmission_type == 'HVH', 'Vectored', 'Non-vectored'))
+
+# add parasite group
+df = df%>%
+  mutate(Pathogen = ifelse(Pathogen == 'P', 'Parasite',
+                                ifelse(Pathogen == 'V', 'Virus',
+                                        'Bacteria')))
+# keep only unique rows
+df = unique(df)
+```
+
+## Literature search results
+
+```{r}
+extracted_stats = df %>% filter(!is.na(Value))
+extracted_stats %<>% 
+  select(Environmental_condition) %>% 
+  count(Environmental_condition) %>% 
+  group_by(Environmental_condition) %>% 
+  mutate(prop = n/length(extracted_stats$Environmental_condition))
+
+disease_txt = df%>%
+  filter(General_Disease != "Multiple") %>%
+  group_by(General_Disease) %>%
+  summarise(N = n_distinct(Reference_ID)) %>%#
+  mutate(P = N/sum(N))%>%
+  arrange(desc(N))
+```
+
+The search criteria isolated 13,468 article titles, which were narrowed down through a four-step screening process (Fig. S1) to `r length(unique(df$Reference_ID))` (1.3 % of total) independent, empirical studies that could be included in the final dataset. These studies, representing `r length(unique(df$Disease))` diseases (Table S12) from `r length(unique(df$Country))` countries, provided `r length(df$Value[!is.na(df$Value)])` statistics quantifying the relationship between climate variables and zoonotic disease risk. Temperature was the most commonly studied variable `r paste0("(",paste0(round(extracted_stats$prop[extracted_stats$Environmental_condition=="Temperature"],2)*100,"%"),", ","n=",extracted_stats$n[extracted_stats$Environmental_condition=="Temperature"],")")`, followed by precipitation `r paste0("(",paste0(round(extracted_stats$prop[extracted_stats$Environmental_condition=="Precipitation"],2)*100,"%"),", ","n=",extracted_stats$n[extracted_stats$Environmental_condition=="Precipitation"],")")`, and humidity `r paste0("(",paste0(round(extracted_stats$prop[extracted_stats$Environmental_condition=="Humidity"],2)*100,"%"),", ","n=",extracted_stats$n[extracted_stats$Environmental_condition=="Humidity"],")")`. The studies had close to global coverage, with areas of high sampling in South and East Asia and Europe, and more limited sampling in Central and North Asia and Eastern Africa (Fig. 1A). Hantaviruses were the most frequently studied pathogens `r paste0("(",paste0(round(disease_txt$P[disease_txt$General_Disease=="Hantaviral diseases"],3)*100,"%"),", ","n=",disease_txt$N[disease_txt$General_Disease=="Hantaviral diseases"],")")`, followed by arboviruses `r paste0("(",paste0(round(disease_txt$P[disease_txt$General_Disease=="Arboviral diseases"],3)*100,"%"),", ","n=",disease_txt$N[disease_txt$General_Disease=="Arboviral diseases"],")")` and leptospirosis `r paste0("(",paste0(round(disease_txt$P[disease_txt$General_Disease=="Leptospirosis"],3)*100,"%"),", ","n=",disease_txt$N[disease_txt$General_Disease=="Leptospirosis"],")")` (see Fig. 1B).
+
+
+## Key findings and emerging patterns among climatic factors
+```{r reppvalsignificance_text, include=FALSE}
+
+#filter out records without P values 
+pvals = df %>% filter(P.value_general!="" & !is.na(P.value_general))
+
+#unify P-values
+pvals$P.value_general[pvals$P.value_general=="<.0.05" |
+                    pvals$P.value_general=="<0..05"] = "<0.05"
+pvals = as.data.frame(table(pvals$P.value_general)); names(pvals) = c("pval","freq")
+
+# Calculate proportions
+pvals %<>% mutate(P = freq/sum(freq))
+
+# Proportion of studies with P-values at different levels
+alfa_005_p = pvals %>% filter(pval!=">0.05") %>% summarise(total_sum = sum(P, na.rm = TRUE)) %>% pull(total_sum)
+
+alfa_001_p = pvals %>% filter(!pval %in% c("<0.05",">0.05")) %>% summarise(total_sum = sum(P, na.rm = TRUE)) %>% pull(total_sum)
+
+alfa_0001_p = pvals %>% filter(!pval %in% c("<0.05",">0.05","<0.01")) %>% summarise(total_sum = sum(P, na.rm = TRUE)) %>% pull(total_sum)
+```
+
+```{r hedges_summary}
+df = df %>%
+  mutate(es_cat = ifelse(es < -0.2, 'Negative effect (g < -0.2)', #if CI contains 0
+                         ifelse(abs(es) < 0.2, 'No effect', # otherwise negative
+                                'Positive effect (g > 0.2)'))) # or positive
+es_categories = df %>%
+  subset(Linear_Nonlinear == 'Linear')%>%
+  count(es_cat, Environmental_condition)%>%
+  group_by(Environmental_condition)%>%
+  mutate(prop = n /sum(n), tot = sum(n))
+
+# summary tables ----------
+effect_sizes = es_categories #%>% filter(Environmental_condition=="Temperature")
+tmp = effect_sizes %>% group_by(es_cat) %>% summarise(total_n = sum(n))
+tmp$prop = tmp$total_n/sum(tmp$total_n)
+tmp_comb = tmp %>% mutate(effect_type = ifelse(es_cat == 'No effect', 'No effect', 'Non-zero effect')) %>%
+  group_by(effect_type) %>%
+  summarise(total_n = sum(total_n))
+tmp_comb$prop = tmp_comb$total_n/sum(tmp_comb$total_n)
+
+tmp_comb
+tmp
+```
+
+
+
+In general, temperature, rainfall and humidity influence zoonotic disease risk, according to the majority of studies assessed (`r paste0(round(alfa_005_p,3)*100, "%")` significant at α=0.05, `r paste0(round(alfa_001_p,2)*100, "%")` at α=0.01, `r paste0(round(alfa_0001_p,2)*100, "%")` at α=0.001). Standardising the statistics extracted from the studies by transforming them into Hedge’s g  showed that most studies  [56% Non-zero effect sizes, STAT FOR WHOLE DATASET] reported non-zero effects more often than no effect of climate measures on zoonotic risk [CHECK] (Fig. 2). However, when splitting the dataset into the three climate measures separately only temperature had more positive or negative effects compared to no effects [64.3% Non-zero effect sizes, STAT], with over half of the studies reporting no effect of precipitation  (50.2%; n=107) or humidity (51.1%; n=47) on disease risk. When broken down for each of the separate climate factors the majority of subcategories of the data followed a similar effect size distribution as for the full dataset, with similar numbers of negative and positive effects (Fig. 2).
+
+Positive Temperature effects
+Temperature emerged as an important factor in influencing the measures of zoonotic risk. Across the three climatic factors investigated, temperature showed the highest proportion of positive effects on measures of disease risk, with 39% (n=90) of studies having a value of Hedge’s g greater than 0.2 (Fig. 2). [need to mention negative effects being rare]. Furthermore, the effect size distributions for vector-borne diseases and diseases vectored by mosquitoes significantly differed from the overall effect size distribution for temperature, suggesting a positive influence of temperature on disease risk among these groups (Anderson-Darling Test: vector borne disease: AD = 2.53; p=0.045; mosquito vectored disease: AD = 5.15; p=0.011). When the subsets were compared to the full distributions with the subset removed, a few more categories were significantly different: non-vectored diseases and diseases with a mammal reservoir significantly differed from the overall temperature distribution (Table S8).
+Vector-borne zoonotic diseases had significantly more positive effects (mean=0.31; sd=0.89; n=92) reported for temperature when compared to solely animal-hosted diseases (mean=-0.02; sd=1.01; n=138) (Two-sample Kolmogorov-Smirnov test; D=0.26; p = 0.001; Fig. 3).
+
+Varied precipitation and humidity effects
+Precipitation and humidity presented a more complex and variable influence on zoonotic disease risk compared to temperature. Effect size distributions for both climatic factors centred around zero, with no significant differences observed between the distributions of vectored and non-vectored subsets (Two-sample Kolmogorov-Smirnov test for precipitation: D=0.09; p = 0.445; and humidity: D=0.23; p = 0.079, Fig. 2 & Fig. 3). 
+Additionally, the distribution of effect sizes for precipitation had visually larger tails for non-vectored diseases compared to vectored diseases (Fig. 3B), but the available data was too limited to perform statistical tests. Moreover, while majority of observations on the impacts of humidity on disease risk showed no significant effect, a subset of studies focusing on diseases with livestock as the principal reservoir did exhibit a significantly different distribution of effect sizes for humidity (Anderson-Darling Test: AD = 2.74; p = 0.041; Fig. 2, Table S10). When the distribution of effect sizes within specific subsets were compared to the full distributions with the subset removed, diseases with a livestock principal reservoir differed from the overall precipitation distribution (Table S9). 
+
+Inconsistencies, methodological limitations and biases
+Several inconsistencies and methodological limitations were identified within the collated dataset and the source studies. While Hedge’s g was able to be calculated for a total of 535 statistics (98% of the extracted statistics), the confidence intervals around Hedge’s g were able to be calculated for only 253 effect sizes, due to limited reporting of statistics within source studies and lack of clearly reported sample sizes, standard errors or confidence intervals.
+The dataset analysed contains considerable diversity in both the number of data points per disease and the statistical methods employed across studies. For example, certain diseases including Haemorrhagic fever with renal syndrome (n=28) and Leptospirosis (n=23) were well-represented, while eight diseases (anaplasmosis, bartonellosis, Ebola, MERS, MPox, Q-fever, theileriosis, and toxoplasmosis) were represented by just one study each, limiting generalisability of the analysis. 
+In terms of methodology, the collated dataset represented 82 specific statistical methods used in the source studies, many of which lacked consistent and detailed reporting of methods used. For example, some methods reported as employed in the studies included minimal description such as “Linear regression”, “Regression analysis”, “Bayesian model”, while others provided more detail including for example “Seasonal autoregressive integrated moving average models” or “Univariate generalised autoregressive poisson regressions”. Furthermore, the use of non-linear models was relatively rare, with only 12.1% of studies investigating non-linear relationship between climatic variables and measures of zoonotic disease risk (Fig. 1F).
+
+Publication bias 
+There was some degree of publication bias inferred from funnel plots showing standard errors against respective effect sizes (Fig. S3). Egger’s regression tests for funnel plot asymmetry showed significant asymmetry the overall dataset (z = 2.62, p = 0.009) and precipitation data (z = 2.71, p = 0.007), but none within humidity and temperature data (Fig. S3, Table S7). Pearson’s product-moment correlation analysis showed no significant correlation between 5-Year Journal Impact Factors and Hedge’s g or reported p-values, even after removing outliers among Hedge’s g and p-values (Fig. S2). Furthermore, p-values extracted from the studies were examined to check for potential evidence of “p-hacking”. Visual inspection of the distribution of p-values surrounding p = 0.05 found limited evidence of p-hacking, with a small spike in the number of studies with p-values just under p = 0.05 (Fig. S4). 
