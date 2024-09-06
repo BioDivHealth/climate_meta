@@ -3,16 +3,12 @@
 
 # ------------- setup -------------
 
-# wd
-PATH = dirname(rstudioapi::getSourceEditorContext()$path)
-setwd(PATH)
-
 # deps
 library(ggplot2); library(dplyr); library(magrittr); library(sf); library(patchwork);
 library(cowplot)
 
 # read Lewis' database of published estimates
-ll = read.csv("./data/lewis_dataset/lewis_data.csv")
+ll = read.csv(here('data','lewis_dataset','lewis_data.csv'))
 ll = unique(ll)
 #ll = read.csv('data/dataset_final.csv')
 
@@ -34,7 +30,7 @@ meth_col = colors[5]
 # 1. disease group
 ll = ll %>%
   dplyr::left_join(
-    read.csv("./data/rory_annotations/dz_harm.csv")
+    read.csv(here('data', 'rory_annotations', 'dz_harm.csv'))
   )
 
 p0 = ll %>%
@@ -83,7 +79,7 @@ p00 = ll %>%
 
 cats = ll %>%
   dplyr::left_join(
-    read.csv("./data/rory_annotations/datatype_harm.csv")
+    read.csv(here('data', 'rory_annotations', 'datatype_harm.csv'))
   ) %>%
   dplyr::select(Reference_ID, Reponse2) %>%
   distinct()
@@ -141,7 +137,7 @@ p3 = table(pvb$P_V_B) %>%
 
 ll = ll %>%
   left_join(
-    read.csv("./data/rory_annotations/method_harm.csv")
+    read.csv(here('data', 'rory_annotations', 'method_harm.csv'))
   )
 meth = ll %>%
   dplyr::select(Reference_ID, Method2) %>%
@@ -185,7 +181,7 @@ p5 = table(nl$Linear_Nonlinear) %>%
 # ----------- map of locations ---------
 
 # map
-ne = sf::st_read("./data/shapefiles/world-administrative-boundaries.shp")
+ne = sf::st_read(here('data', 'shapefiles', 'world-administrative-boundaries.shp'))
 robinson = "+proj=robin +lon_0=0 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs"
 ne2 = sf::st_transform(ne, robinson)
 
@@ -194,7 +190,7 @@ ne2 = sf::st_transform(ne, robinson)
 ll2 = ll %>%
   dplyr::select(-Longitude, -Latitude_) %>%
   dplyr::left_join(
-    read.csv("./data/rory_annotations/geoloc_harm.csv")
+    read.csv(here('data', 'rory_annotations', 'geoloc_harm.csv'))
   ) %>%
   dplyr::mutate(
     Longitude = as.numeric(Longitude), Latitude_ = as.numeric(Latitude_)
