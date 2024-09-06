@@ -1,0 +1,1130 @@
+---
+title: "Climate impacts on zoonotic disease meta-analysis results"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE, results='asis'}
+# deps
+library(tidyr)
+library(twosamples)
+library(here)
+library(magrittr)
+library(tidyverse)
+
+knitr::opts_chunk$set(echo = FALSE)
+
+# load dataset
+df = read.csv(here("data","dataset_final.csv"))
+df = unique(df) #ensure all rows are unique
+
+# change vector names
+df = df%>%
+  mutate(Transmission_type = ifelse(Transmission_type == 'HVH', 'Vectored', 'Non-vectored'))
+
+# add parasite group
+df = df%>%
+  mutate(Pathogen = ifelse(Pathogen == 'P', 'Parasite',
+                                ifelse(Pathogen == 'V', 'Virus',
+                                        'Bacteria')))
+
+cat(paste('Number of unique studies:', length(unique(df$Reference_ID))))
+cat(paste('Number of pathogens:', length(unique(df$Disease))))
+cat(paste('Number of countries:', length(unique(df$Country))))
+```
+
+# Results Section 1: Literature search results
+
+**Climate variables assessed - 3 categories**
+
+```{r climatevars1}
+ df%>%
+  select(Reference_ID, Environmental_condition)%>%
+  distinct() %>% 
+  count(Environmental_condition) %>%  
+  group_by(Environmental_condition) %>% 
+  mutate(prop = n/length(unique(df$Reference_ID)))
+```
+
+**Climate variables assessed**
+
+```{r climatevars2}
+
+df%>%
+  select(Reference_ID, Environmental_condition)%>%
+  distinct()%>%
+  mutate(measured = Environmental_condition)%>%
+  mutate(measured = ifelse(measured == 'Temperature', 'T', ifelse(measured == 'Precipitation', 'P', 'H')))%>%
+  pivot_wider(names_from=Environmental_condition, values_from=measured ,values_fill='')%>%
+  relocate(any_of(c('Reference_ID', 'Temperature', 'Precipitation', 'Humidity')))%>%
+  mutate(ClimMeasured = paste0(Temperature, Precipitation, Humidity))%>%
+  group_by(ClimMeasured)%>%
+    summarise(N = n_distinct(Reference_ID)) %>%#
+  mutate(P = N/sum(N))%>%
+  arrange(desc(N)) 
+  
+```
+
+**Proportion of each disease group in dataset**
+
+```{r studycounts1}
+
+df%>%
+  filter(General_Disease != "Multiple") %>%
+  group_by(General_Disease) %>%
+  summarise(N = n_distinct(Reference_ID)) %>%#
+  mutate(P = N/sum(N))%>%
+  arrange(desc(N))
+
+```
+
+**Proportion of specific diseases in dataset**
+
+```{r studycounts2}
+
+tmp = df%>%
+  filter(General_Disease != "Multiple") %>%
+  group_by(Disease, General_Disease) %>%
+  summarise(N = n_distinct(Reference_ID)) %>%#
+  mutate(P = N/sum(N))%>%
+  arrange(desc(N))
+print(tmp,n = length(tmp$N))
+
+```
+
+**Response variables examined**
+
+```{r responsecounts}
+
+df%>%
+  group_by(General_response) %>%
+  summarise(N = n_distinct(Reference_ID)) %>%#
+  mutate(P = N/sum(N))%>%
+  arrange(desc(N)) 
+
+```
+
+**Host Taxonomic Groups**
+
+```{r taxgroups}
+df%>%
+  group_by(Principal_reservoir) %>%
+  summarise(N = n_distinct(Reference_ID)) %>%#
+  mutate(P = N/sum(N))%>%
+  arrange(desc(N)) 
+
+```
+
+**Type of Pathogen**
+
+```{r pathtype}
+
+df%>%
+  group_by(Pathogen) %>%
+  summarise(N = n_distinct(Reference_ID)) %>%#
+  mutate(P = N/sum(N))%>%
+  arrange(desc(N)) 
+```
+
+**Linear vs Non-linear**
+
+```{r lnl}
+df%>%
+  group_by(Linear_Nonlinear) %>%
+  summarise(N = n_distinct(Reference_ID)) %>%#
+  mutate(P = N/sum(N))%>%
+  arrange(desc(N)) 
+
+```
+
+**Statistical Method**
+
+```{r statsmeth2}
+tmp = df%>%
+  group_by(General_Stats_Method) %>%
+  summarise(N = n_distinct(Reference_ID)) %>%#
+  mutate(P = N/sum(N))%>%
+  arrange(desc(N)) 
+
+print(tmp, n = length(tmp$N))
+```
+
+**Statistical Method**
+
+```{r statsmeth}
+tmp = df%>%
+  group_by(Statistical_method) %>%
+  summarise(N = n_distinct(Reference_ID)) %>%#
+  mutate(P = N/sum(N))%>%
+  arrange(desc(N)) 
+
+print(tmp, n = length(tmp$N))
+
+```
+
+# Results Section 2: Reported significance of climate measures in studies and publication bias
+
+```{r repsignificance}
+
+#filter out records without P values
+tmp = df %>% filter(P.value_general!="" & !is.na(P.value_general))
+
+#unify P-values
+tmp$P.value_general[tmp$P.value_general=="<.0.05" |
+                    tmp$P.value_general=="<0..05"] = "<0.05"
+tmp = as.data.frame(table(tmp$P.value_general)); names(tmp) = c("significance","freq")
+
+#calculate proportions
+tmp %<>% mutate(P = freq/sum(freq))
+
+#Proportion of studies significant at different levels
+cat("Proportion of studies significant at alfa = 0.05: ", tmp %>% filter(significance!=">0.05") %>% summarise(total_sum = sum(P, na.rm = TRUE)) %>% pull(total_sum), "\n")
+
+cat("Proportion of studies significant at alfa = 0.01: ", tmp %>% filter(!significance %in% c("<0.05",">0.05")) %>% summarise(total_sum = sum(P, na.rm = TRUE)) %>% pull(total_sum),"\n")
+
+cat("Proportion of studies significant at alfa = 0.001: ", tmp %>% filter(!significance %in% c("<0.05",">0.05","<0.01")) %>% summarise(total_sum = sum(P, na.rm = TRUE)) %>% pull(total_sum),"\n")
+
+```
+
+### Chi-square direction reported + groups removed
+
+```{r chisq_groups_removed_function}
+
+library(dplyr)
+
+# Function to perform chi-square tests on sampled data
+perform_chi_tests <- function(data, n_samples, percentage) {
+  results <- data.frame(i = 1:n_samples)
+  data$Direction = as.factor(data$Direction)
+  for (i in 1:n_samples) {
+    #sample % of data
+    smp <- data[sample(1:nrow(data), size = round(nrow(data) * percentage), replace = TRUE),]
+    
+    #smp$Direction = as.factor(smp$Direction)
+    #perform chi-tests
+    #print(table(smp$Direction))
+    chi_test_all <- chisq.test(xtabs(data = smp, Dummy ~ Direction))
+
+    if(length(unique(data$Environmental_condition))==3){
+    #extract statistics and p-values
+    results$chi_all[i] <- chi_test_all$statistic
+    results$p_all[i] <- chi_test_all$p.value
+    } else {
+    if(unique(data$Environmental_condition)=="Humidity"){
+      results$chi_all[i] <- chi_test_all$statistic
+      results$p_all[i] <- chi_test_all$p.value
+    }
+    if(unique(data$Environmental_condition)=="Temperature"){
+      results$chi_all[i] <- chi_test_all$statistic
+      results$p_all[i] <- chi_test_all$p.value
+    }
+  if(unique(data$Environmental_condition)=="Precipitation"){
+    results$chi_all[i] <- chi_test_all$statistic
+    results$p_all[i] <- chi_test_all$p.value
+  }
+ }
+}
+  
+  return(results)
+}
+
+# Function to calculate summary statistics (P-values)
+calculate_means <- function(results) {
+  means <- c(
+    p_all = mean(results$p_all, na.rm = TRUE),
+    chi_all = mean(results$chi_all, na.rm = TRUE),
+    chi_ci_lower_all = t.test(results$chi_all, conf.level = 0.95)$conf.int[1], #Chi Ci Lower
+    chi_ci_upper_all = t.test(results$chi_all, conf.level = 0.95)$conf.int[2] #Chi Ci Upper
+  )
+  return(means)
+}
+
+# Main analysis function (removing 1 group from the 3 biggest groups at a time)
+chisq_remove_groups <- function(df, grouping_factor, percentage = percentage, n_samples = 1000) {
+  
+   df <- df %>%
+        filter(Direction != "") %>%
+        filter(P.value_general != "") %>%
+        filter(P.value_general != ">0.05")
+  
+  # none_removed doesnt remove any groups and performs analysis for full dataset
+  # and 3 climatic subsets
+  if(grouping_factor!="none_removed"){
+    group_summary <- df %>%
+      group_by(across(all_of(grouping_factor))) %>%
+      summarise(N = n_distinct(Reference_ID)) %>%
+      mutate(P = N / sum(N)) %>%
+      arrange(desc(N))
+    print(group_summary)[1:3,1]
+    #identify top 3 groups per count
+    top_groups <- as.vector(unlist(group_summary[1:3, 1]))
+    top_groups = top_groups[!is.na(top_groups)]}
+  
+  means_df <- list()
+  
+  if(grouping_factor!="none_removed"){
+    for (group_rm in top_groups) {
+      tmp <- df %>%
+        filter(Direction != "") %>%
+        filter(P.value_general != "") %>%
+        filter(P.value_general != ">0.05") %>%
+        filter(across(all_of(grouping_factor)) != group_rm)
+      #check if all env. categories have mroe than 10 records
+      if (all(table(tmp$Environmental_condition) > 10)) {
+        results <- perform_chi_tests(tmp, n_samples, percentage)
+        means <- calculate_means(results)
+        means_df[[group_rm]] <- means
+      }
+    }
+  } else {
+    tmp <- df %>%
+      filter(Direction != "") %>%
+      filter(P.value_general != "") %>%
+      filter(P.value_general != ">0.05")
+    
+    if (all(table(tmp$Environmental_condition) >= 10)) {
+      results <- perform_chi_tests(tmp, n_samples, percentage)
+      means <- calculate_means(results)
+      means_df[[grouping_factor]] <- means
+    }
+  }
+  
+  if(grouping_factor!="none_removed"){
+    means_chi = lapply(means_df, function(sublist) { sublist[grep("chi", names(sublist))]})
+    means_pval = lapply(means_df, function(sublist) { sublist[!grepl("chi", names(sublist))]})} 
+  else {
+    means_chi = list()
+    means_chi[[grouping_factor]] = means_df[[grouping_factor]][grep("chi",names(means_df[[grouping_factor]]))]
+    means_pval = list()
+    means_pval[[grouping_factor]] = means_df[[grouping_factor]][!grepl("chi",names(means_df[[grouping_factor]]))]
+  }
+  
+  #Transform P-values to simplified significance levels
+  levels_means_pval <- as.data.frame(lapply(means_pval, function(x) {
+    ifelse(x < 0.01, "**", ifelse(x < 0.05, "*", ">0.05"))
+  }))
+  means_pval = as.data.frame(means_pval)
+  rownames(levels_means_pval) <- rownames(means_pval)
+  means_chi = as.data.frame(means_chi)
+  
+  return(list(means_pval = means_pval, levels_means_pval = levels_means_pval,
+              means_chi = means_chi))
+  
+}
+```
+
+### Groups removed one at time
+
+```{r full_chisq_and_groups_removed}
+#Set the percentage of data to use
+percentage = 0.8
+set.seed(123)
+for(i in c("All","Temperature","Precipitation","Humidity")){
+
+if(i!="All"){
+  df2 = df %>% filter(Environmental_condition==i)
+} else {
+  df2 = df
+}
+
+#Run the chi-square tests on full dataset
+none_removed = chisq_remove_groups(df2, grouping_factor = "none_removed",percentage = percentage, n_samples = 1000)
+
+#tmp = df2 %>% filter(Environmental_condition=="Temperature")
+#Run the chi-square tests on the dataset with 1 of 3 top categories from the grouping factor removed at a time
+disease_removed = chisq_remove_groups(df2, grouping_factor = "General_Disease", percentage = percentage, n_samples = 1000)
+country_removed = chisq_remove_groups(df2, grouping_factor = "Country", percentage = percentage, n_samples = 1000)
+princ_reservoir_removed = chisq_remove_groups(df2, grouping_factor = "Principal_reservoir", percentage = percentage, n_samples = 1000)
+stat_method_removed = chisq_remove_groups(df2, grouping_factor = "Statistical_method", percentage = percentage, n_samples = 1000)
+pathogen_group_removed = chisq_remove_groups(df2, grouping_factor = "Pathogen", percentage = percentage, n_samples = 1000)
+transmission_type_removed = chisq_remove_groups(df2, grouping_factor = "Transmission_type", percentage = percentage, n_samples = 1000)
+
+combined_pvals = (cbind(none_removed$means_pval, disease_removed$means_pval,
+                        country_removed$means_pval, princ_reservoir_removed$means_pval, 
+                        pathogen_group_removed$means_pval, stat_method_removed$means_pval, transmission_type_removed$means_pval))
+
+combined_levels = (cbind(none_removed$levels_means_pval, disease_removed$levels_means_pval,
+                        country_removed$levels_means_pval, princ_reservoir_removed$levels_means_pval, 
+                        pathogen_group_removed$levels_means_pval, stat_method_removed$levels_means_pval, transmission_type_removed$levels_means_pval))
+
+combined_chi = (cbind(none_removed$means_chi, disease_removed$means_chi, country_removed$means_chi, princ_reservoir_removed$means_chi, 
+                      pathogen_group_removed$means_chi, stat_method_removed$means_chi, transmission_type_removed$means_chi))
+
+#Transform Chi values ----------------------
+chi_transformed <- combined_chi %>%
+  rownames_to_column(var = "Metric") %>%
+  pivot_longer(cols = -Metric, names_to = "Group", values_to = "Value")
+
+chi_wide <- chi_transformed %>% # Convert to wide format with diseases as rows and metrics as columns
+  pivot_wider(names_from = Metric, values_from = Value)
+
+#Transform P values ----------------------
+pval_transformed <- combined_pvals %>%
+  rownames_to_column(var = "Metric") %>%
+  pivot_longer(cols = -Metric, names_to = "Group", values_to = "Value")
+
+# Convert to wide format with diseases as rows and metrics as columns
+pvals_wide <- pval_transformed %>%
+  pivot_wider(names_from = Metric, values_from = Value)
+
+#Transform P levels ----------------------
+pval_levels_transformed <- combined_levels %>%
+  rownames_to_column(var = "Metric") %>%
+  pivot_longer(cols = -Metric, names_to = "Group", values_to = "Value")
+
+# Convert to wide format with diseases as rows and metrics as columns
+pvals_levels_wide <- pval_levels_transformed %>%
+  pivot_wider(names_from = Metric, values_from = Value)
+
+names(pvals_levels_wide) = c("Group","P_level")
+
+#Join dataframes
+full_results <- chi_wide %>%
+  left_join(pvals_wide, by = "Group") %>%
+  left_join(pvals_levels_wide, by = "Group")
+
+# Split the data frame into four separate data frames based on column names
+df2_all <- full_results #%>% select(Group, contains("all"))
+
+# Function to rename columns in each dataframe
+rename_columns <- function(df2) {
+  df2 %>%
+    rename_with(~ str_replace(., "chi_all", "Chi_Square")) %>%
+    rename_with(~ str_replace(., "chi_ci_lower_.*", "Chi_Lower_CI")) %>%
+    rename_with(~ str_replace(., "chi_ci_upper_.*", "Chi_Upper_CI")) %>% 
+    rename_with(~ str_replace(., "p_all", "P_value"))
+}
+
+# Apply the renaming function to each dataframe
+df2_all <- rename_columns(df2_all)
+
+if(i=="All"){
+  df2_all_env = df2_all
+}
+if(i=="Temperature"){
+  df2_temp = df2_all
+}
+if(i=="Humidity"){
+  df2_hum = df2_all
+}
+if(i=="Precipitation"){
+  df2_prec = df2_all
+}
+}
+
+# Combine the data frames into a list
+list_of_dfs <- list(Overall = df2_all_env, Humidity = df2_hum, Temperature = df2_temp, Precipitation = df2_prec)
+print(list_of_dfs)
+
+# Define the file name
+file_name <- "chisq_results.xlsx"
+library(openxlsx)
+# Create a new workbook
+wb <- createWorkbook()
+# Loop through each dataframe in the list and add it to a new sheet
+for (name in names(list_of_dfs)) {
+  addWorksheet(wb, name)
+  writeData(wb, name, list_of_dfs[[name]])
+}
+
+# write.csv(as.data.frame(list_of_dfs[["Overall"]]),'outputs/tables/chisq_results_overall2.csv', row.names = F)
+# write.csv(as.data.frame(list_of_dfs[["Temperature"]]),'outputs/tables/chisq_results_temperature2.csv', row.names = F)
+# write.csv(as.data.frame(list_of_dfs[["Humidity"]]),'outputs/tables/chisq_results_humidity2.csv', row.names = F)
+# write.csv(as.data.frame(list_of_dfs[["Precipitation"]]),'outputs/tables/chisq_results_precipitation2.csv', row.names = F)
+# 
+# # Save the workbook
+# saveWorkbook(wb, file_name, overwrite = TRUE)
+```
+
+### Secondary reporting rates
+
+```{r secondary_reporting_rates}
+#SETUP ---------------------------------------------------------------------
+second = df
+
+#filter out records without P values
+second = second %>% filter(P.value_general!="" & !is.na(P.value_general))
+
+#unify P-values
+second$P.value_general[second$P.value_general=="<.0.05" |
+                       second$P.value_general=="<0..05" | 
+                       second$P.value_general=="<0.0001"|
+                       second$P.value_general=="<0.001" | 
+                       second$P.value_general=="<0.01"] = "<0.05"
+#save IDs of unique studies
+studies = unique(second$Reference_ID)
+
+#make dataframe to write in
+studies_with_secondary = data.frame(studies = studies, secondary = NA, any_significant = NA,
+                                    two_or_more_significant = NA)
+
+#EVALUATE REPORTING RATES ------------------------------------------------------------------------
+for(i in (studies_with_secondary$studies)){
+ sub = second %>% filter(Reference_ID==i) #subset records for 1 study
+ levels = sub$P.value_general #list significance levels within the study
+ 
+ #note studies with 2 or more significance values reported
+ if(length(levels)>1){
+   studies_with_secondary$secondary[studies_with_secondary$studies==i] = TRUE
+ }
+ #note studies with at least 1 significant result
+ if("<0.05" %in% levels){
+    studies_with_secondary$any_significant[studies_with_secondary$studies==i] = TRUE
+ } else{
+   studies_with_secondary$any_significant[studies_with_secondary$studies==i] = FALSE
+ }
+ #note studies with more than 1 significant result
+ if(sum(levels=="<0.05")>1){
+   studies_with_secondary$two_or_more_significant[studies_with_secondary$studies==i] = TRUE
+ } else {studies_with_secondary$two_or_more_significant[studies_with_secondary$studies==i] = FALSE}
+}
+
+# FILTER STUDIES WITH >1 REPORTED SIGNIFICANCE LEVEL & >1 SIGNIFICANT RESULT (or >=1 SIGNIFICANT?)-------
+tmp = studies_with_secondary %>% filter(secondary==TRUE & any_significant==TRUE)
+#tmp = studies_with_secondary %>% filter(secondary==TRUE & two_or_more_significant==TRUE) #can choose this one 
+
+tmp2 = df %>% filter(Reference_ID %in% tmp$studies) %>% 
+  filter(P.value_general!="" & !is.na(P.value_general))
+
+#unify P-values
+tmp2$P.value_general[tmp2$P.value_general=="<.0.05" |
+                    tmp2$P.value_general=="<0..05"] = "<0.05"
+tmp2 = as.data.frame(table(tmp2$P.value_general)); names(tmp2) = c("significance","freq")
+
+#calculate proportions
+tmp2 %<>% mutate(P = freq/sum(freq))
+
+#SIGNIFICANCE AT DIFFERENT LEVELS ------------------------------------------------
+cat("Proportion of studies significant at alfa = 0.05: ", 
+    tmp2 %>% filter(significance!=">0.05") %>% 
+    summarise(total_sum = sum(P, na.rm = TRUE)) %>% 
+    pull(total_sum), "\n")
+
+cat("Proportion of studies significant at alfa = 0.01: ",
+    tmp2 %>% filter(!significance %in% c("<0.05",">0.05")) %>%
+    summarise(total_sum = sum(P, na.rm = TRUE)) %>% 
+    pull(total_sum),"\n")
+
+cat("Proportion of studies significant at alfa = 0.001: ",
+    tmp2 %>% filter(!significance %in% c("<0.05",">0.05","<0.01")) %>%
+      summarise(total_sum = sum(P, na.rm = TRUE)) %>%
+      pull(total_sum),"\n")
+
+```
+
+### Linear vs Non-linear
+
+```{r pvals_linear_nonlinear}
+#filter out records without P values --------------------------------------
+pvals = df %>% filter(P.value_general!="" & !is.na(P.value_general))
+
+# Unify P-values
+pvals$P.value_general[pvals$P.value_general %in% c("<.0.05", "<0..05", 
+                                                   "<0.0001", "<0.001", "<0.01")] <- "<0.05"
+
+# Linear relationships p-values
+pvals_linear = pvals %>% filter(P.value_general!="" & !is.na(P.value_general) & Linear_Nonlinear=="Linear")
+pvals_linear = as.data.frame(table(pvals_linear$P.value_general)) 
+names(pvals_linear) = c("pval","freq")
+
+# Non-linear relationships p-values
+pvals_nonlinear = pvals %>% filter(P.value_general!="" & !is.na(P.value_general) & Linear_Nonlinear=="Non-linear")
+pvals_nonlinear = as.data.frame(table(pvals_nonlinear$P.value_general))
+names(pvals_nonlinear) = c("pval","freq")
+
+# Create contingency table for tests
+contingency_table <- matrix(
+  c(pvals_linear$freq[1], pvals_linear$freq[2],
+    pvals_nonlinear$freq[1], pvals_nonlinear$freq[2]),
+  nrow = 2,
+  byrow = TRUE
+)
+
+# Perform Fisher's Exact Test
+fisher_test <- fisher.test(contingency_table)
+print(fisher_test)
+
+# Perform Chi-square test
+chi_square_test <- chisq.test(contingency_table)
+print(chi_square_test)
+
+# Calculate proportions for pvals_linear
+pvals_linear <- pvals_linear %>%
+  mutate(proportion = freq / sum(freq))
+
+# Calculate proportions for pvals_nonlinear
+pvals_nonlinear <- pvals_nonlinear %>%
+  mutate(proportion = freq / sum(freq))
+
+# Print the results
+print(pvals_linear)
+print(pvals_nonlinear)
+```
+
+### Eggers test
+
+```{r eggers_tests}
+
+f1 <- df %>% filter(!is.na(se) & !is.na(es))
+f2 <- df %>% filter(!is.na(se) & !is.na(es)) %>% filter(Environmental_condition == "Temperature")
+f3 <- df %>% filter(!is.na(se) & !is.na(es)) %>% filter(Environmental_condition == "Precipitation")
+f4 <- df %>% filter(!is.na(se) & !is.na(es)) %>% filter(Environmental_condition == "Humidity")
+
+regtest_all = regtest(f1$es, sei=f1$se)
+regtest_temp = regtest(f2$es, sei=f2$se)
+regtest_prec = regtest(f3$es, sei=f3$se)
+regtest_hum = regtest(f4$es, sei=f4$se)
+
+list_regtest = list(All = regtest_all$pval, Temperature = regtest_temp$pval, Precipitation = regtest_prec$pval, Humidity = regtest_hum$pval)
+
+print("P-values of regtests:")
+print(list_regtest)
+
+#--------------------------------------
+# Extract the p-values and z-values
+pval_all <- regtest_all$pval
+zval_all <- regtest_all$zval
+est_all <- regtest_all$est
+
+pval_temp <- regtest_temp$pval
+zval_temp <- regtest_temp$zval
+est_temp <- regtest_temp$est
+
+pval_prec <- regtest_prec$pval
+zval_prec <- regtest_prec$zval
+est_prec <- regtest_prec$est
+
+pval_hum <- regtest_hum$pval
+zval_hum <- regtest_hum$zval
+est_hum <- regtest_hum$est
+
+# Create a data frame
+results_regtests <- data.frame(
+  Data = c("Overall_dataset", "Temperature", "Precipitation", "Humidity"),
+  Intercept = c(est_all, est_temp, est_prec, est_hum),
+  Z_value = c(zval_all, zval_temp, zval_prec, zval_hum),
+  P_value = c(pval_all, pval_temp, pval_prec, pval_hum)
+)
+
+#write.csv(results_regtests, 'outputs/tables/eggers_funnel_tests.csv', row.names = F)
+```
+
+## IF vs Effect Size
+
+```{r journals, echo=TRUE, message=TRUE, warning=TRUE}
+
+library(ggplot2)
+library(dplyr)
+
+# ES VS IF ---
+
+## Prepare data
+pub1 = df %>% filter(!is.na(es) & !is.na(Journal_5yr_Impact))
+pub1 %<>% dplyr::select(es, Journal_5yr_Impact, Environmental_condition)
+dat_pub1 = pub1
+dat_pub1$es = abs(dat_pub1$es)
+
+## Perform Shapiro-Wilk test for normality ----
+print(shapiro.test(abs(dat_pub1$es)))
+print(shapiro.test((dat_pub1$Journal_5yr_Impact)))
+
+# Do correlation test for all data points
+spearman_corr <- cor.test(dat_pub1$Journal_5yr_Impact, 
+                          abs(dat_pub1$es), 
+                          method = "spearman", 
+                          exact = FALSE)
+print(spearman_corr)
+
+## Check outliers-------------
+# IF 
+# Calculate IQR
+Q1 <- quantile(dat_pub1$Journal_5yr_Impact, 0.25)
+Q3 <- quantile(dat_pub1$Journal_5yr_Impact, 0.75)
+IQR <- Q3 - Q1
+
+# Check outliers using IQR
+lower_bound <- Q1 - 1.5 * IQR
+upper_bound <- Q3 + 1.5 * IQR
+iqr_outliers <- dat_pub1 %>% filter(Journal_5yr_Impact < lower_bound |
+                                     Journal_5yr_Impact > upper_bound)
+# Print the number of outliers among Impact Factors
+cat("Number of outliers detected by IQR method:", nrow(iqr_outliers), "\n")
+
+# Print the outliers detected
+cat("Outliers detected by IQR method:\n")
+print(unique(iqr_outliers$Journal_5yr_Impact))
+
+# Remove outliers
+dat_pub1 %<>% filter(!Journal_5yr_Impact %in% unique(iqr_outliers1$Journal_5yr_Impact))
+
+# ES ! ----
+# Calculate IQR
+Q1 <- quantile(dat_pub1$es, 0.25)
+Q3 <- quantile(dat_pub1$es, 0.75)
+IQR <- Q3 - Q1
+
+# Check outliers using IQR
+lower_bound <- Q1 - 1.5 * IQR
+upper_bound <- Q3 + 1.5 * IQR
+iqr_outliers1 <- dat_pub1 %>% filter(es < lower_bound | es > upper_bound)
+
+# Print the number of outliers
+cat("Number of outliers detected by IQR method:", nrow(iqr_outliers1), "\n")
+
+# Print the outliers detected
+cat("Outliers detected by IQR method:\n")
+print(unique(iqr_outliers1$es))
+
+dat_pub1 %<>% filter(!es %in% unique(iqr_outliers1$es))
+
+# Calculate Spearman's rank correlation --
+
+spearman_corr <- cor.test(dat_pub1$Journal_5yr_Impact, 
+                          abs(dat_pub1$es), 
+                          method = "spearman", 
+                          exact = FALSE)
+print(spearman_corr)
+```
+
+## IF vs p-value
+
+```{r}
+# p-VALUE VS IF ------------------------------------------------
+## Prepare data
+pub2 = df %>% filter(!is.na(P.value_specific) & !is.na(Journal_5yr_Impact))
+pub2 %<>% dplyr::select(P.value_specific, Journal_5yr_Impact, Environmental_condition)
+dat_pub2 = pub2
+dat_pub2$P.value_specific = abs(dat_pub2$P.value_specific)
+
+# Perform Shapiro-Wilk test for normality
+shapiro_test_es <- shapiro.test((dat_pub2$P.value_specific))
+shapiro_test_impact <- shapiro.test(dat_pub2$Journal_5yr_Impact)
+
+# Print the Shapiro-Wilk test results
+print(shapiro_test_es)
+print(shapiro_test_impact)
+
+# Calculate Spearman's rank correlation with outliers
+spearman_corr <- cor.test(dat_pub2$P.value_specific, dat_pub2$Journal_5yr_Impact, method = "spearman", exact = FALSE)
+print(spearman_corr)
+
+## Check outliers ---------------------------------------------
+# IF ! ----|
+# Calculate IQR
+Q1 <- quantile(dat_pub2$Journal_5yr_Impact, 0.25)
+Q3 <- quantile(dat_pub2$Journal_5yr_Impact, 0.75)
+IQR <- Q3 - Q1
+
+# Check outliers using IQR
+lower_bound <- Q1 - 1.5 * IQR
+upper_bound <- Q3 + 1.5 * IQR
+iqr_outliers2 <- dat_pub2 %>% filter(Journal_5yr_Impact < lower_bound | Journal_5yr_Impact > upper_bound)
+
+# Print the number of outliers
+cat("Number of outliers detected by IQR method:", nrow(iqr_outliers2), "\n")
+
+# Print the outliers detected
+cat("Outliers detected by IQR method:\n")
+print(unique(iqr_outliers2$Journal_5yr_Impact))
+
+dat_pub2 %<>% filter(!Journal_5yr_Impact %in% unique(iqr_outliers2$Journal_5yr_Impact))
+
+# P.value_specific ! ----|
+# Calculate IQR
+Q1 <- quantile(dat_pub2$P.value_specific, 0.25)
+Q3 <- quantile(dat_pub2$P.value_specific, 0.75)
+IQR <- Q3 - Q1
+
+# Check outliers using IQR
+lower_bound <- Q1 - 1.5 * IQR
+upper_bound <- Q3 + 1.5 * IQR
+iqr_outliers2 <- dat_pub2 %>% filter(P.value_specific < lower_bound | P.value_specific > upper_bound)
+
+# Print the number of outliers
+cat("Number of outliers detected by IQR method:", nrow(iqr_outliers2), "\n")
+
+# Print the outliers detected
+cat("Outliers detected by IQR method:\n")
+print(unique(iqr_outliers2$P.value_specific))
+
+dat_pub2 %<>% filter(!P.value_specific %in% unique(iqr_outliers2$P.value_specific))
+
+# Calculate Spearman's rank correlation without outliers
+spearman_corr <- cor.test(dat_pub2$P.value_specific, dat_pub2$Journal_5yr_Impact, method = "spearman", exact = FALSE)
+print(spearman_corr)
+```
+
+
+
+
+# Results Section 3: Strength of climate effects of zoonotic diseases
+
+##Effect Size Category Grouping 
+
+```{r numpergroup}
+
+# group effect sizes
+df = df%>%
+  mutate(es_cat = ifelse(es < -0.2, 'Negative effect (g < -0.2)', #if CI contains 0
+                         ifelse(abs(es) < 0.2, 'No effect', # otherwise negative
+                                'Positive effect (g > 0.2)')) # or positive
+  )
+
+df%>%#
+  subset(Linear_Nonlinear == 'Linear')%>%
+  count(es_cat, Environmental_condition)%>%
+  group_by(Environmental_condition)%>%
+  mutate(prop = n /sum(n), tot = sum(n))
+```
+
+By category:
+
+```{r}
+df%>%#
+  subset(Linear_Nonlinear == 'Linear')%>%
+  count(es_cat, Environmental_condition)%>%
+  group_by(Environmental_condition)%>%
+  mutate(prop = n /sum(n), tot = sum(n))
+```
+
+## Determining how category distributions differ from full dataset
+
+### Defining statistical test
+
+```{r}
+ad2_stat <- function(x, y) {
+
+  # Sample sizes
+  n <- length(x)
+  m <- length(y)
+
+  # Pooled sample and pooled ecdf
+  z <- c(x, y)
+  z <- z[-which.max(z)] # Exclude the largest point
+  H <- rank(z) / (n + m)
+
+  # Statistic computation via ecdf()
+  (n * m / (n + m)^2) * sum((ecdf(x)(z) - ecdf(y)(z))^2 / ((1 - H) * H))
+
+}
+
+```
+
+```{r}
+# A homogeneity test using the Anderson-Darling statistic
+perm_comp_test <- function(x, y, B = 1e3) {
+
+  # Sizes of x and y
+  n <- length(x)
+  m <- length(y)
+
+  # Test statistic function. Requires TWO arguments, one being the original
+  # data (X_1, ..., X_n, Y_1, ..., Y_m) and the other containing the random
+  # index for permuting the sample
+  Tn <- function(data, perm_index) {
+
+    # Permute sample by perm_index
+    data <- data[perm_index]
+
+    # Split into two samples
+    x <- data[1:n]
+    y <- data[(n + 1):(n + m)]
+
+    # Test statistic -- MODIFY DEPENDING ON THE PROBLEM
+    ad2_stat(x = x, y = y)
+
+  }
+
+  # Perform permutation resampling with the aid of boot::boot
+  Tn_star <- boot::boot(data = c(x, y), statistic = Tn,
+                        sim = "permutation", R = B)
+
+  # Test information -- MODIFY DEPENDING ON THE PROBLEM
+  method <- "Permutation-based Anderson-Darling test of homogeneity"
+  alternative <- "any alternative to homogeneity"
+
+  # p-value: modify if rejection does not happen for large values of the
+  # test statistic
+  pvalue <- mean(Tn_star$t > Tn_star$t0)
+
+  # Construct an "htest" result
+  result <- list(statistic = c("stat" = Tn_star$t0), p.value = pvalue,
+                 statistic_perm = drop(Tn_star$t),
+                 B = B, alternative = alternative, method = method,
+                 data.name = deparse(substitute(x)))
+  class(result) <- "htest"
+
+  # Return "htest"
+  return(result)
+
+}
+
+```
+
+Defining categories and parameters to use in procedure.
+
+```{r catdefine}
+categories = list(Transmission_type = c('Vectored', 'Non-vectored'), 
+                  Principal_reservoir = c('Rodents', 'Mammals (multispecies)', 'Livestock', 'Birds'), 
+                  Pathogen = c('Virus', 'Bacteria'), 
+                  vector = c('Mosquito', 'Tick', 'Mite')
+                  )
+
+# random number seed
+set.seed(123)
+```
+
+**Anderson Darling Test: without subset removal**
+
+```{r ad1}
+
+# create named list for results
+pvals  = vector("list")
+test_stats = vector('list')
+
+for(condition in unique(df$Environmental_condition)){
+  # separate out climate factor
+  temp = df%>%
+    subset(Linear_Nonlinear == 'Linear')%>%
+    subset(Environmental_condition == condition)
+  
+  for(category in names(categories)){
+    for(group in categories[[category]]){
+      # separate out category  
+      group_df = temp%>%
+        filter(.data[[category]] == group)
+      
+      ad = perm_comp_test(temp$es, group_df$es)
+
+      pvals[[paste(condition, category, group, sep='.')]] = ad$p.value
+      test_stats[[paste(condition, category, group, sep='.')]] = ad$statistic
+    }
+  }
+}
+```
+
+**Create Dataframe**
+
+```{r}
+results_df = data.frame(id = names(pvals),
+                        p_val = unlist(pvals),
+                        stat = unlist(test_stats))
+
+```
+
+**Anderson-Darling Test with subset removal**
+
+```{r ad2}
+
+# create named list for results
+pvals  = vector("list")
+test_stats = vector('list')
+
+for(condition in unique(df$Environmental_condition)){
+  # separate out climate factor
+  temp = df%>%
+    subset(Linear_Nonlinear == 'Linear')%>%
+    subset(Environmental_condition == condition)
+  
+  for(category in names(categories)){
+    for(group in categories[[category]]){
+      # separate out category  
+      group_df = temp%>%
+        filter(.data[[category]] == group)
+      
+      # filter out group for random sample
+      temp_filtered = temp%>%
+        filter(.data[[category]] != group)
+      
+      ad = perm_comp_test(temp_filtered$es, group_df$es)
+      
+      #ad = ad2_stat(nonvec$es, vec$es)
+
+      pvals[[paste(condition, category, group, sep='.')]] = ad$p.value
+      test_stats[[paste(condition, category, group, sep='.')]] = ad$statistic
+      #pvals[[paste(condition, category, group, sep='.')]] = 1- goftest::pAD(q=ad)
+      #test_stats[[paste(condition, category, group, sep='.')]] = ad
+    }
+  }
+}
+```
+
+**Combine and save dataframes**
+
+```{r}
+results_df2 = data.frame(id = names(pvals),
+                        p_val_removed = unlist(pvals),
+                        stat_removed = unlist(test_stats))
+
+results_df = left_join(results_df, results_df2)
+
+results_df = results_df%>%
+  separate_wider_delim(cols = id, delim = ".", names = c("Environmental_condition", "Category", "Group"))
+
+rownames(results_df) = NULL
+
+results_df 
+
+#write.csv(results_df, here('outputs','tables','DistributionADTest_Results.csv'), row.names = F)
+```
+
+
+## Results Section: Comparison of Vector and Non-vector borne disease
+
+```{r}
+
+df%>%
+  subset(Linear_Nonlinear == 'Linear')%>%
+  group_by(Transmission_type, Environmental_condition)%>%
+  summarize(mn = mean(es), sd = sd(es), n=n())
+
+```
+
+Testing vectored vs non-vectored
+
+```{r ad2}
+
+# create named list for results
+pvals  = vector("list")
+test_stats = vector('list')
+
+for(condition in unique(df$Environmental_condition)){
+  # separate out climate factor
+  vec = df%>%
+    subset(Linear_Nonlinear == 'Linear')%>%
+    subset(Environmental_condition == condition)%>%
+    subset(Transmission_type == 'Vectored')
+  
+  nonvec = df%>%
+    subset(Linear_Nonlinear == 'Linear')%>%
+    subset(Environmental_condition == condition)%>%
+    subset(Transmission_type == 'Non-vectored')
+  
+      
+  #ad = ad_test(vec$es, nonvec$es, nboots=10000)
+  ks = ks.test(nonvec$es, vec$es, alternative = 'greater')
+  pvals[[condition]] = ks$p.value
+  test_stats[[condition]] = ks$statistic
+}
+```
+
+## Original vs transformed stats
+```{r}
+
+new_stats = df%>% filter(Direction!="" & es_cat!="" & 
+                     !is.na(Direction) & !is.na(es_cat)) #filter(P.value_general!=">0.05")
+
+# Set the number of bootstrap samples
+num_bootstrap_samples <- 1000
+
+# Initialize vectors to store p-values
+p_values <- numeric(num_bootstrap_samples)
+
+# Perform bootstrapping with 80% of the data
+set.seed(123)  # For reproducibility
+for (i in 1:num_bootstrap_samples) {
+  # Resample 80% of the data with replacement
+  resampled_data <- new_stats %>% sample_frac(size = 0.8, replace = TRUE)
+  
+  # Create a contingency table
+  contingency_table <- table(resampled_data$Direction, resampled_data$es_cat)
+  
+  # Perform Fisher's exact test with increased workspace
+  fisher_test <- fisher.test(contingency_table, workspace = 2e8)
+  
+  # Store the p-value
+  p_values[i] <- fisher_test$p.value
+}
+
+# Summarize the results
+p_value_summary <- summary(p_values)
+p_value_summary
+mean(p_values)
+```
+
+
+# Main figures
+
+## Figure 1
+
+```{r fig1, echo=TRUE, fig.height=9.5, fig.width=10.5}
+source(here('scripts','figure1.R'))
+
+plot(Fig1)
+
+#ggsave(Fig1, file=here('outputs', 'Figure1.jpg'), device="jpg", units="in", width=10.5, height=9.5, dpi=600, scale=0.93)
+```
+
+## Figure 2
+
+```{r fig2, include=FALSE}
+source(here('scripts','figure2.R'))
+#colors = c("#053C5E" , '#fee8c8', '#A31621')
+#colors = c( "#29A1AB" , '#fee8c8', '#AB3329')
+colors = c( "#00A8A5" , '#fee8c8', '#A80003')
+
+f2 = createFig2(df, results_df, colors)
+f2
+
+#ggsave(f2, file=here('outputs', 'Figure2_new.png'), device="png", units="in", width=12, height=9, dpi=600, scale=0.92)
+```
+
+## Figure 3
+
+```{r fig3, echo=FALSE}
+source(here('scripts','Figure3.R'))
+colors = c('#A80003',"#00A8A5")
+f3 = createFig3(df, colors)
+f3
+#ggsave(f3, file=here('outputs','Figure3.png'), device="png", units="in", width=8, height=6, dpi=300, scale=1.25)
+```
+
+
+# Supplementary figures
+
+## Figure S2: Impact Factors
+```{r FigS2}
+
+source(here('scripts','FigureS2.R'))
+
+p3 = ggarrange(p1, p2, ncol = 2, nrow = 1)
+p3 = p3  + theme(plot.margin = unit(c(0.5,0,0,0.2),"cm"))
+
+p3_rm = ggarrange(p1_rm, p2_rm, ncol = 2, nrow = 1)
+p3_rm = p3_rm  + theme(plot.margin = unit(c(0.5,0,0,0.2),"cm"))
+p3
+p3_rm
+
+#ggsave(p3, file=here('outputs','FigureS2_AB.png'), device="png", units="in", width=9.3, height=4, dpi=1000, scale=1)
+#ggsave(p3_rm, file=here('outputs','FigureS2_CD.png'), device="png", units="in", width=9.3, height=4, dpi=1000, scale=1)
+```
+
+## Figure S3: Funnel plots 
+
+```{r FigS3}
+
+source(here('scripts','FigureS3.R'))
+
+s3 = ggarrange(funnel_plot_1, funnel_plot_2, funnel_plot_3, funnel_plot_4, nrow = 2, ncol = 2)
+s3 = s3 + theme(plot.margin = unit(c(0.7,0,0,0.3),"cm"))
+print(s3)
+
+#ggsave(s3, file=here('outputs','FigureS3.png'), device="png", units="in", width=8.5, height=5, dpi=1000, scale=1)
+```
+
+## Figure S4: p-val distribution
+
+```{r FigS4}
+source(here('scripts','FigureS4.R'))
+
+combined_plot <- ggdraw() +
+  draw_plot(pl2) +
+  draw_plot(pl1, x = 0.43, y = 0.34, width = 0.49, height = 0.53) +
+  draw_plot_label(label = "Zoomed-in view", x = 0.55, y = 0.925, size = 9)
+
+combined_plot
+
+#ggsave(combined_plot, file="outputs/FigureS4.png", device="png", units="in", width=6.3, height=3.8, dpi=1000, scale=0.95)
+```
+
