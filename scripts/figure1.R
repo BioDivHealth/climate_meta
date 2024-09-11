@@ -8,10 +8,14 @@ library(ggplot2); library(dplyr); library(magrittr); library(sf); library(patchw
 library(cowplot)
 
 # read Lewis' database of published estimates
-ll = read.csv(here('data','lewis_dataset','lewis_data.csv'))
-ll = unique(ll)
-#ll = read.csv('data/dataset_final.csv')
+lw = read.csv(here('data','lewis_dataset','lewis_data.csv'))
+lw = unique(lw)
 
+df = read.csv(here('data','dataset_final.csv'))
+ll = df %>% rename("Disease2" = "General_Disease",
+                   "P_V_B" = "Pathogen",
+                   "Method2" = "General_Stats_Method",
+                   "Response2" = "General_response")
 
 # -----------  colours scheme ------------
 
@@ -28,10 +32,10 @@ meth_col = colors[5]
 # ---------- plots ------------
 
 # 1. disease group
-ll = ll %>%
-  dplyr::left_join(
-    read.csv(here('data', 'rory_annotations', 'dz_harm.csv'))
-  )
+# ll = ll %>%
+#   dplyr::left_join(
+#     read.csv(here('data', 'rory_annotations', 'dz_harm.csv'))
+#   )
 
 p0 = ll %>%
   dplyr::filter(Disease2 != "Multiple") %>%
@@ -77,14 +81,19 @@ p00 = ll %>%
 
 # 3. response variables (hazard metric)
 
-cats = ll %>%
-  dplyr::left_join(
-    read.csv(here('data', 'rory_annotations', 'datatype_harm.csv'))
-  ) %>%
-  dplyr::select(Reference_ID, Reponse2) %>%
-  distinct()
+# harm = read.csv(here('data', 'rory_annotations', 'datatype_harm.csv'))
+# harm %<>% rename("Response2" = "Reponse2")
+# 
+# cats = ll %>%
+#   dplyr::left_join(
+#     harm
+#   ) %>%
+#   dplyr::select(Reference_ID, Response2) %>%
+#   distinct()
 
-p1 = table(cats$Reponse2) %>%
+cats = ll %>% select(Reference_ID, Response2) %>% distinct()
+
+p1 = table(cats$Response2) %>%
   as.data.frame %>%
   dplyr::rename(Response=1, N=2) %>%
   dplyr::mutate(
@@ -135,10 +144,11 @@ p3 = table(pvb$P_V_B) %>%
 
 # 5. modelling method
 
-ll = ll %>%
-  left_join(
-    read.csv(here('data', 'rory_annotations', 'method_harm.csv'))
-  )
+# ll = ll %>%
+#   left_join(
+#     read.csv(here('data', 'rory_annotations', 'method_harm.csv'))
+#   )
+
 meth = ll %>%
   dplyr::select(Reference_ID, Method2) %>%
   distinct() 
@@ -186,12 +196,13 @@ robinson = "+proj=robin +lon_0=0 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs"
 ne2 = sf::st_transform(ne, robinson)
 
 # reads in extra CSV of country centroid geolocations for ones where finer scale not available
+locs_extra = read.csv(here('data', 'rory_annotations', 'geoloc_harm.csv'))
 
-ll2 = ll %>%
+ll2 = lw %>%
   dplyr::select(-Longitude, -Latitude_) %>%
-  dplyr::left_join(
-    read.csv(here('data', 'rory_annotations', 'geoloc_harm.csv'))
-  ) %>%
+   dplyr::left_join(
+     locs_extra
+   ) %>%
   dplyr::mutate(
     Longitude = as.numeric(Longitude), Latitude_ = as.numeric(Latitude_)
   ) %>%
@@ -203,15 +214,15 @@ ll2 = ll %>%
   )
 
 # data for the bar plot
-climvars = ll %>%
+climvars = lw %>%
   select(Reference_ID, Environmental_condition)%>%
   distinct() %>% 
   count(Environmental_condition) %>%  
   group_by(Environmental_condition) %>% 
-  mutate(prop = n/length(unique(df$Reference_ID)))
+  mutate(prop = n/length(unique(df$lw)))
 
 # Create the bar plot
-bar_plot <- ggplot(climvars, aes(x = n, y = Environmental_condition, fill = Environmental_condition)) +
+bar_plot_old <- ggplot(climvars, aes(x = n, y = Environmental_condition, fill = Environmental_condition)) +
   geom_col() +
   scale_fill_manual(values = c("Humidity" = "#FCC237", "Precipitation" = "#0FAEB8", "Temperature" = "#352A87")) +  # Custom colors
   labs(x = "Num. studies", y = NULL) +
@@ -225,11 +236,11 @@ bar_plot <- ggplot(climvars, aes(x = n, y = Environmental_condition, fill = Envi
     plot.tag.position = c(0.195, 1.2),
     plot.tag = element_text(face = "bold", size = 12))
 
-# Create the map
-map <- ggplot() + 
+# Create the map----------------------------------------------------
+map_old <- ggplot() + 
   geom_sf(data = ne2, fill = "grey90", color = "grey70", size = 0.4) + 
   theme_void() + 
-  geom_sf(data = sf::st_jitter(ll2, 0.5), size = 1.2, aes(color = Var), alpha = 0.8) + 
+  geom_sf(data = sf::st_jitter(ll2, factor = 0.003), size = 1.2, aes(color = Var), alpha = 0.8) + 
   scale_color_manual(values = pals::parula(n = 8)[c(1, 4, 7)], name = "Climate metric type") + 
   labs(tag = "A")+
   theme(
@@ -239,12 +250,89 @@ map <- ggplot() +
     plot.tag.position = c(0.05, 0.9),
     plot.tag = element_text(face = "bold", size = 12)
   )
-  
+
+## Map new --------------
+no_coord = ll %>% filter(is.na(Longitude) | is.na(Latitude_))
+
+l4 = lw %>%
+  dplyr::select(-Longitude, -Latitude_) %>%
+  dplyr::left_join(
+    locs_extra
+  ) %>%
+  dplyr::mutate(
+    Longitude = as.numeric(Longitude), Latitude_ = as.numeric(Latitude_))
+
+for (i in no_coord$Data_ID){
+  if (i %in% l4$Data_ID){
+    if((unique(is.na(no_coord$Longitude[no_coord$Data_ID==i])) | unique(is.na(no_coord$Latitude_[no_coord$Data_ID==i])))){
+      print(i)
+      if(unique(!is.na(l4$Latitude_)[l4$Data_ID==i]) & unique(!is.na(l4$Longitude)[l4$Data_ID==i])){
+        no_coord$Latitude_[no_coord$Data_ID==i] = l4$Latitude_[l4$Data_ID==i]
+        no_coord$Longitude[no_coord$Data_ID==i] = l4$Longitude[l4$Data_ID==i]
+      }
+    }
+  }
+}
+
+coord = ll %>% filter(!(is.na(Longitude) | is.na(Latitude_)))
+new_coord = rbind(coord, no_coord)
+
+### Prepare data for the map
+new_coord %<>% dplyr::mutate(Longitude = as.numeric(Longitude), Latitude_ = as.numeric(Latitude_)) %>%
+  dplyr::filter(!is.na(Longitude) & !is.na(Latitude_)) %>%
+  sf::st_as_sf(coords=c("Longitude", "Latitude_"), crs=sf::st_crs(ne)) %>%
+  sf::st_transform(robinson) %>%
+  dplyr::mutate(
+    Var = factor(Environmental_condition, levels=c("Temperature", "Precipitation", "Humidity"), ordered=TRUE)
+  )
+
+# Create the map
+map_new <- ggplot() + 
+  geom_sf(data = ne2, fill = "grey90", color = "grey70", size = 0.4) + 
+  theme_void() + 
+  geom_sf(data = sf::st_jitter(new_coord, factor = 0.003), size = 1.2, aes(color = Var), alpha = 0.8) + 
+  scale_color_manual(values = pals::parula(n = 8)[c(1, 4, 7)], name = "Climate metric type") + 
+  labs(tag = "A")+
+  theme(
+    legend.title = element_text(size = 11),
+    legend.text = element_text(size = 10, color = "grey15"), 
+    legend.position = "none",  # Remove the legend to make space for the bar plot
+    plot.tag.position = c(0.05, 0.9),
+    plot.tag = element_text(face = "bold", size = 12)
+  )
+
+# data for the bar plot new
+climvars_new = ll %>%
+  select(Reference_ID, Environmental_condition)%>%
+  distinct() %>% 
+  count(Environmental_condition) %>%  
+  group_by(Environmental_condition) %>% 
+  mutate(prop = n/length(unique(df$lw)))
+
+# Create the bar plot new
+bar_plot_new <- ggplot(climvars_new, aes(x = n, y = Environmental_condition, fill = Environmental_condition)) +
+  geom_col() +
+  scale_fill_manual(values = c("Humidity" = "#FCC237", "Precipitation" = "#0FAEB8", "Temperature" = "#352A87")) +  # Custom colors
+  labs(x = "Num. studies", y = NULL) +
+  theme_minimal() +
+  #labs(tag = "B")+
+  theme(
+    legend.position = "none",  # Remove legend
+    axis.text.y = element_text(size = 10),  # Bold y-axis text
+    #axis.text.x = element_text(size = 12),  # X-axis text size
+    axis.title.x = element_text(size = 11),  # Bold x-axis title
+    plot.tag.position = c(0.195, 1.2),
+    plot.tag = element_text(face = "bold", size = 12))
 
 # Combine the map and bar plot using cowplot
-combined_plot <- ggdraw() +
-  draw_plot(map, 0, 0, 1, 1) +
-  draw_plot(bar_plot, x = 0.05, y = 0.05, width = 0.23, height = 0.25)
+combined_plot_old <- ggdraw() +
+  draw_plot(map_old, 0, 0, 1, 1) +
+  draw_plot(bar_plot_old, x = 0.05, y = 0.05, width = 0.23, height = 0.25)
+
+combined_plot_new <- ggdraw() +
+  draw_plot(map_new, 0, 0, 1, 1) +
+  draw_plot(bar_plot_new, x = 0.05, y = 0.05, width = 0.23, height = 0.25)
+
 
 # design for barplots
 design = "
@@ -264,8 +352,10 @@ design2 = "
   11
   #2
 "
-Fig1 = combined_plot + (comb) + plot_layout(nrow=2, heights=c(1, 0.8), widths=c(0.05, 1), design=design2)
-#print(Fig1)
+
+Fig1_old = combined_plot_old + (comb) + plot_layout(nrow=2, heights=c(1, 0.8), widths=c(0.05, 1), design=design2)
+Fig1_new = combined_plot_new + (comb) + plot_layout(nrow=2, heights=c(1, 0.8), widths=c(0.05, 1), design=design2)
+print(Fig1)
 
 # save
 #ggsave(Fig1, file="Figure1.jpg", device="jpg", units="in", width=10.5, height=9.5, dpi=600, scale=0.93)
