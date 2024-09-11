@@ -1051,9 +1051,10 @@ mean(p_values)
 ```{r fig1, echo=TRUE, fig.height=9.5, fig.width=10.5}
 source(here('scripts','figure1.R'))
 
-plot(Fig1)
+plot(Fig1_old)
+plot(Fig1_new)
 
-#ggsave(Fig1, file=here('outputs', 'Figure1.jpg'), device="jpg", units="in", width=10.5, height=9.5, dpi=600, scale=0.93)
+ggsave(Fig1_new, file=here('outputs', 'Figure1.jpg'), device="jpg", units="in", width=10.5, height=9.5, dpi=600, scale=0.93)
 ```
 
 ## Figure 2
