@@ -252,7 +252,12 @@ map_old <- ggplot() +
   )
 
 ## Map new --------------
-no_coord = ll %>% filter(is.na(Longitude) | is.na(Latitude_))
+ll %<>% dplyr::mutate(
+  Longitude = as.numeric(Longitude), Latitude_ = as.numeric(Latitude_)
+) 
+no_coord = ll %>% dplyr::mutate(
+  Longitude = as.numeric(Longitude), Latitude_ = as.numeric(Latitude_)
+)  %>% filter(is.na(Longitude) | is.na(Latitude_))
 
 l4 = lw %>%
   dplyr::select(-Longitude, -Latitude_) %>%
