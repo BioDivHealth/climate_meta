@@ -18,6 +18,11 @@ if (!require(tidyverse, quietly = TRUE)) {
   library(tidyverse)
 }
 
+if (!require(here, quietly = TRUE)) {
+  install.packages("here")
+  library(tidyverse)
+}
+
 if (!require(twosamples, quietly = TRUE)) {
   install.packages("twosamples")
   library(twosamples)
@@ -91,8 +96,9 @@ The search criteria isolated 13,468 article titles, which were narrowed down thr
 ## Key findings and emerging patterns among climatic factors
 ```{r reppvalsignificance_text, include=FALSE}
 
-#filter out records without P values 
-pvals = df %>% filter(P.value_general!="" & !is.na(P.value_general))
+#filter out records without P values
+#pvals = df %>% filter(P.value_general!="" & !is.na(P.value_general))
+pvals = df %>% filter(!is.na(Value))
 
 #unify P-values
 pvals$P.value_general[pvals$P.value_general=="<.0.05" |
@@ -173,9 +179,6 @@ tmp_comb_hum <- tmp_hum %>%
   group_by(effect_type) %>%
   summarise(total_n = sum(total_n)) %>%
   mutate(prop = total_n / sum(total_n))
-
-paste0(round(tmp_comb_all$prop[tmp_comb_all$effect_type=="Non-zero effect"],2)*100,"%")
-paste0(round(tmp_comb_temp$prop[tmp_comb_temp$effect_type=="Non-zero effect"],3)*100,"%")
 ```
 
 
