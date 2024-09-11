@@ -92,7 +92,8 @@ perm_comp_test <- function(x, y, B = 1e3) {
 categories = list(Transmission_type = c('Vectored', 'Non-vectored'), 
                   Principal_reservoir = c('Rodents', 'Mammals (multispecies)', 'Livestock', 'Birds'), 
                   Pathogen = c('Virus', 'Bacteria'), 
-                  vector = c('Mosquito', 'Tick', 'Mite')
+                  vector = c('Mosquito', 'Tick', 'Mite'),
+                  Country = c('China','Iran','USA','Argentina','India') #added temporarily
 )
 
 # random number seed
@@ -182,7 +183,7 @@ results_df = results_df%>%
                        names = c("Environmental_condition", "Category", "Group"))
 
 rownames(results_df) = NULL
-#write.csv(results_df, 'outputs/tables/DistributionADTest_Results_Birds.csv', row.names = F)
+write.csv(results_df, here('outputs','tables','DistributionADTest_Results_Birds_andCountries.csv'), row.names = F)
 #results_df 
 
 # Comparison of Vector and Non-vector borne disease ----
