@@ -1081,6 +1081,15 @@ f3
 #ggsave(f3, file=here('outputs','Figure3.png'), device="png", units="in", width=8, height=6, dpi=300, scale=1.25)
 ```
 
+## Figure 4
+
+```{r fig4, echo=FALSE}
+source(here('scripts','Figure4.R'))
+f4 = createFig4(data, colors)
+f4
+ggsave(f4, file=here('outputs','Figure4.png'), device="png", units="in", width=8, height=6, dpi=300, scale=1.25)
+```
+
 
 # Supplementary figures
 
