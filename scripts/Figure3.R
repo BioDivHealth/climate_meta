@@ -20,6 +20,7 @@ library(ggridges)
 
 
 # -------------------- Load data --------------------
+
 createFig3  = function(df, colors){
 # Load effect size data
   # Order environmental factors
