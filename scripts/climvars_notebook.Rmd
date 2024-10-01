@@ -1,0 +1,514 @@
+---
+title: "R Notebook"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+```{r include=FALSE}
+library(tidyverse)
+library(here)
+library(knitr)
+library(kableExtra)  # Load kableExtra for table styling
+df = read.csv(here('data', 'es_climvars_proportions.csv'))
+```
+
+# Temperature Hedge's g vs BIO1
+
+```{r echo=FALSE}
+# Temperature climate sensitivity
+df_temp = df %>% dplyr::filter(Environmental_condition == "Temperature" & !is.na(es))
+
+kable(table(df_temp$es_cat, df_temp$bio1.greater_than_1), 
+      caption = "Nr of SSP x Climate model combinations (out of 15) predicting >1ºC increase") %>%
+  #kable_styling(latex_options = "scale_down") %>%
+  column_spec(1, width = "5cm") %>%   # Set width for the first column
+  column_spec(2, width = "2cm")       # Set width for the second column
+```
+
+```{r echo=FALSE}
+# Temperature climate sensitivity
+df_temp = df %>% dplyr::filter(Environmental_condition == "Temperature" & !is.na(es))
+
+kable(table(df_temp$es_cat, df_temp$bio1.less_than_1), 
+      caption = "Nr of SSP x Climate model combinations (out of 15) predicting <1ºC increase") %>%
+  #kable_styling(latex_options = "scale_down") %>%
+  column_spec(1, width = "5cm") %>%
+  column_spec(2, width = "2cm")
+```
+
+\newpage
+
+# Precipitation Hedge's g vs BIO12
+
+```{r echo=FALSE}
+# Precipitation climate sensitivity
+df_prec = df %>% dplyr::filter(Environmental_condition == "Precipitation" & !is.na(es))
+
+kable(table(df_prec$es_cat, df_prec$bio12.greater_than_100), 
+      caption = "Nr of SSP x Climate model combinations (out of 15) predicting >100mm increase in annual rainfall versus categories of effect sizes of precipitation climate sensitivity") %>%
+  #kable_styling(latex_options = "scale_down") %>%
+  column_spec(1, width = "5cm") %>%
+  column_spec(2, width = "0.5cm")
+```
+
+```{r echo=FALSE}
+# Precipitation climate sensitivity
+df_prec = df %>% dplyr::filter(Environmental_condition == "Precipitation" & !is.na(es))
+
+kable(table(df_prec$es_cat, df_prec$bio12.between_minus_100_and_100), 
+      caption = "Nr of SSP x Climate model combinations (out of 15) predicting > -100mm to +100mm change in annual rainfall versus categories of effect sizes of precipitation climate sensitivity") %>%
+  #kable_styling(latex_options = "scale_down") %>%
+  column_spec(1, width = "4cm") %>%
+  column_spec(2, width = "0cm")
+
+```
+
+```{r echo=FALSE}
+# Precipitation climate sensitivity
+df_prec = df %>% dplyr::filter(Environmental_condition == "Precipitation" & !is.na(es))
+
+kable(table(df_prec$es_cat, df_prec$bio12.less_than_minus_100), 
+      caption = "Nr of SSP x Climate model combinations (out of 15) predicting < -100mm reduction in annual rainfall versus categories of effect sizes of precipitation climate sensitivity") %>%
+  #kable_styling(latex_options = "scale_down") %>%
+  column_spec(1, width = "5cm") %>%
+  column_spec(2, width = "0.5cm")
+```
+
+\newpage
+
+```{r echo=FALSE}
+library(tidyverse)
+library(reshape2)
+
+# Assuming df_temp is the original dataset used for the table
+
+# Create your table data (replace with actual data if necessary)
+tbl <- table(df_temp$es_cat, df_temp$bio1.greater_than_1)
+
+# Convert the table to a long-format data frame
+df_long <- as.data.frame(tbl)
+
+# For ggplot2 heatmaps, you need three columns: x-axis, y-axis, and value
+df_long <- melt(tbl)  # Converts table into a long data frame
+
+# View the melted data frame (optional)
+head(df_long)
+
+# Create the heatmap using ggplot2
+ggplot(df_long, aes(Var2, Var1, fill = value)) +
+  geom_tile(color = "white") +  # Color the tiles
+  scale_fill_gradient(low = "white", high = "red") +  # Color scale (adjust colours as needed)
+  labs(x = "Nr of climatologies (max 15)", y = "Effect Size", fill = "Count") +  # Axis labels
+  ggtitle("Heatmap showing Nr of SSP x Climate model combinations\n (out of 15) predicting >1ºC increase") +
+  theme_minimal() +  # Clean theme
+  theme(axis.text.x = element_text(angle = 10, hjust = 1, size = 14),
+        axis.text.y = element_text(angle = 10, hjust = 1, size = 11),
+        axis.title.x = element_text(size = 15))  # Tilt the x-axis labels for clarity
+```
+
+```{r echo=FALSE}
+# Prepare the data for BIO1 greater than 1ºC
+tbl_bio1_greater_than_1 <- table(df_temp$es_cat, df_temp$bio1.greater_than_1)
+df_long_bio1_greater <- melt(tbl_bio1_greater_than_1)
+
+# Plot heatmap for BIO1 greater than 1ºC
+ggplot(df_long_bio1_greater, aes(Var2, Var1, fill = value)) +
+  geom_tile(color = "black") +  # Color the tiles
+  scale_fill_gradient(low = "white", high = "red") +  # Color scale
+  labs(x = "Nr of agreeing BIO1 climatologies (max 15)", y = "Effect Size", fill = "Count") +  # Axis labels
+  ggtitle("Heatmap showing distribution of Hedge's g categories \n(for temperature) across climatologies (out of 15) predicting >1ºC\nincrease (2041-2070 compared to baseline)") +  # Title
+  theme_minimal() +  # Clean theme
+  theme(axis.text.x = element_text(angle = 10, hjust = 1, size = 14),
+        axis.text.y = element_text(angle = 10, hjust = 1, size = 11),
+        axis.title.x = element_text(size = 15))
+```
+
+```{r echo=FALSE}
+# Prepare the data for BIO1 less than 1ºC
+tbl_bio1_less_than_1 <- table(df_temp$es_cat, df_temp$bio1.less_than_1)
+df_long_bio1_less <- melt(tbl_bio1_less_than_1)
+
+# Plot heatmap for BIO1 less than 1ºC
+ggplot(df_long_bio1_less, aes(Var2, Var1, fill = value)) +
+  geom_tile(color = "black") +  # Color the tiles
+  scale_fill_gradient(low = "white", high = "red") +  # Color scale
+  labs(x = "Nr of agreeing BIO1 climatologies (max 15)", y = "Effect Size", fill = "Count") +  # Axis labels
+  ggtitle("Heatmap showing distribution of Hedge's g categories \n(for temperature) across climatologies (out of 15) predicting <1ºC\nincrease (2041-2070 compared to baseline)") +  # Title
+  theme_minimal() +  # Clean theme
+  theme(axis.text.x = element_text(angle = 10, hjust = 1, size = 14),
+        axis.text.y = element_text(angle = 10, hjust = 1, size = 11),
+        axis.title.x = element_text(size = 15))
+```
+
+```{r echo=FALSE}
+# Prepare the data for BIO12 greater than 100mm
+tbl_bio12_greater_than_100 <- table(df_prec$es_cat, df_prec$bio12.greater_than_100)
+df_long_bio12_greater <- melt(tbl_bio12_greater_than_100)
+
+df_long_bio12_greater$Var2 <- factor(df_long_bio12_greater$Var2, levels = as.character(0:15), ordered = TRUE)
+
+# Plot heatmap for BIO12 greater than 100mm
+ggplot(df_long_bio12_greater, aes(Var2, Var1, fill = value)) +
+  geom_tile(color = "black") +  # Color the tiles
+  scale_x_discrete() +  # 
+  scale_fill_gradient(low = "white", high = "blue") +  # Color scale
+  labs(x = "Nr of agreeing BIO12 climatologies (max 15)", y = "Effect Size", fill = "Count") +  # Axis labels
+  ggtitle("Heatmap showing distribution of Hedge's g categories (precip.)\nacross climatologies (out of 15) predicting >100mm increase\nin precipitation (2041-2070 compared to baseline)") +  # Title
+  theme_minimal() +  # Clean theme
+  theme(axis.text.x = element_text(angle = 10, hjust = 1, size = 14),
+        axis.text.y = element_text(angle = 10, hjust = 1, size = 11),
+        axis.title.x = element_text(size = 15))
+```
+
+```{r echo=FALSE}
+# Prepare the data for BIO12 less than -100mm
+tbl_bio12_less_than_minus_100 <- table(df_prec$es_cat, df_prec$bio12.less_than_minus_100)
+df_long_bio12_less_minus <- melt(tbl_bio12_less_than_minus_100)
+
+# Convert Var2 in df_long_bio12_less_minus to character to match full_grid's Var2
+df_long_bio12_less_minus$Var2 <- as.character(df_long_bio12_less_minus$Var2)
+
+# Create a full grid of all possible combinations of Var1 and Var2
+full_grid <- expand.grid(
+  Var1 = unique(df_long_bio12_less_minus$Var1),
+  Var2 = as.character(0:15)  # Ensure Var2 includes all climatology categories from 0 to 15
+)
+
+# Left join the original data with the full grid to ensure all combinations are included
+df_expanded <- full_grid %>%
+  left_join(df_long_bio12_less_minus, by = c("Var1", "Var2"))
+
+# Replace NA values in the 'value' column with 0
+df_expanded$value[is.na(df_expanded$value)] <- 0
+
+# Ensure Var2 is a factor with levels ordered numerically (from 0 to 15)
+df_expanded$Var2 <- factor(df_expanded$Var2, levels = as.character(0:15), ordered = TRUE)
+
+# Plot heatmap for BIO12 less than -100mm
+ggplot(df_expanded, aes(Var2, Var1, fill = value)) +
+  geom_tile(color = "black") +  # Color the tiles
+  scale_fill_gradient(low = "white", high = "blue") +  # Color scale
+  labs(x = "Nr of agreeing BIO12 climatologies (max 15)", y = "Effect Size", fill = "Count") +  # Axis labels
+  ggtitle("Heatmap showing distribution of Hedge's g categories (precip.)\nacross climatologies (out of 15) predicting < -100mm reduction in \nprecipitation (2041-2070 compared to baseline)") +  # Title
+  theme_minimal() +  # Clean theme
+  theme(axis.text.x = element_text(angle = 10, hjust = 1, size = 14),
+        axis.text.y = element_text(angle = 10, hjust = 1, size = 11),
+        axis.title.x = element_text(size = 15))
+```
+
+```{r echo=FALSE}
+# Prepare the data for BIO12 between -100mm and 100mm
+tbl_bio12_between <- table(df_prec$es_cat, df_prec$bio12.between_minus_100_and_100)
+df_long_bio12_between <- melt(tbl_bio12_between)
+
+# Plot heatmap for BIO12 between -100mm and +100mm
+ggplot(df_long_bio12_between, aes(Var2, Var1, fill = value)) +
+  geom_tile(color = "black") +  # Color the tiles
+  scale_fill_gradient(low = "white", high = "blue") +  # Color scale
+  scale_x_discrete(limits = c(3:15)) +  # 
+  labs(x = "Nr of agreeing BIO12 climatologies (max 15)", y = "Effect Size", fill = "Count") +  # Axis labels
+  ggtitle("Heatmap showing distribution of Hedge's g categories (precip.)\nacross climatologies (out of 15) predicting -100mm to +100mm \nchange in precipitation (2041-2070 compared to baseline)") +  # Title
+  theme_minimal() +  # Clean theme
+  theme(axis.text.x = element_text(angle = 10, hjust = 1, size = 14),
+        axis.text.y = element_text(angle = 10, hjust = 1, size = 11),
+        axis.title.x = element_text(size = 15))
+```
+
+# Statistical analysis
+
+```{r echo=FALSE}
+library(tidyverse)
+library(MASS)         # For ordinal logistic regression
+library(car)          # For the Brant test
+library(ggplot2)      # For visualizations
+library(knitr)        # For table formatting
+library(kableExtra)   # For enhanced table styling
+
+# Read in the data
+df <- read.csv(here('data', 'es_climvars_proportions.csv'))
+
+# Ensure 'es_cat' is a factor with ordered levels
+df <- df %>%
+  mutate(es_cat = factor(es_cat,
+                         levels = c('Negative effect (g < -0.2)', 'No effect', 'Positive effect (g > 0.2)'),
+                         ordered = TRUE))
+
+# Subset the data based on Environmental_condition
+df_temp <- df %>%
+  filter(Environmental_condition == "Temperature" & !is.na(es_cat))
+
+df_prec <- df %>%
+  filter(Environmental_condition == "Precipitation" & !is.na(es_cat))
+
+# Define a function to bin agreement variables with correct arguments
+bin_agreement <- function(x, breaks, labels) {
+  cut(x, breaks = breaks, labels = labels, include.lowest = TRUE, right = TRUE)
+}
+
+# Apply binning to temperature agreement variables with adjusted breaks
+df_temp <- df_temp %>%
+  mutate(
+    bio1_clim_bins_gt1 = bin_agreement(bio1.greater_than_1, 
+                                       breaks = c(-0.1, 3, 7, 10 ,15), 
+                                       labels = c("0-3", "4-7","8-10","11-15")),
+    bio1_clim_bins_lt1 = bin_agreement(bio1.less_than_1, 
+                                       breaks = c(-0.1, 3, 7, 10 ,15), 
+                                       labels = c("0-3", "4-7","8-10","11-15"))
+  )
+
+# Apply binning to precipitation agreement variables with adjusted breaks
+df_prec <- df_prec %>%
+  mutate(
+    bio12_clim_bins_gt100 = bin_agreement(bio12.greater_than_100, 
+                                        breaks = c(-0.1, 3, 7, 10 ,15), 
+                                       labels = c("0-3", "4-7","8-10","11-15")),
+    bio12_clim_bins_btw = bin_agreement(bio12.between_minus_100_and_100, 
+                                       breaks = c(-0.1, 3, 7, 10 ,15), 
+                                       labels = c("0-3", "4-7","8-10","11-15")),
+    bio12_clim_bins_lt100 = bin_agreement(bio12.less_than_minus_100, 
+                                        breaks = c(-0.1, 3, 7, 10 ,15), 
+                                       labels = c("0-3", "4-7","8-10","11-15"))
+  )
+```
+
+```{r}
+# Function to perform statistical tests within a subset
+perform_stat_tests_subset <- function(data, effect_cat, agreement_var, bin_var, climate_type) {
+  
+  # Create contingency table
+  cont_table <- table(data[[effect_cat]], data[[bin_var]])
+  
+  # Check if all expected counts are >= 5
+  chi_test <- chisq.test(cont_table)
+  expected <- chi_test$expected
+  if (all(expected >= 5)) {
+    test_used <- "Chi-Square Test"
+    test_result <- chi_test
+  } else {
+    test_used <- "Fisher's Exact Test"
+    test_result <- fisher.test(cont_table)
+  }
+  
+  # Compile results
+  results <- list(
+    contingency_table = cont_table,
+    test_used = test_used,
+    test_result = test_result
+  )
+  
+  # Print the results
+  cat("\n============================\n")
+  cat(paste("Climate Type:", climate_type, "| Agreement Variable:", agreement_var, "\n"))
+  cat("============================\n")
+  
+  cat("\nContingency Table:\n")
+  print(cont_table)
+  
+  cat("\n", test_used, "Results:\n")
+  print(test_result)
+
+  return(results)
+}
+
+
+# Apply the function to temperature agreement variables
+temp_results_gt1 <- perform_stat_tests_subset(
+  data = df_temp,
+  effect_cat = "es_cat",
+  agreement_var = "bio1.greater_than_1",
+  bin_var = "bio1_clim_bins_gt1",
+  climate_type = "Temperature (>1ºC)"
+)
+
+temp_results_lt1 <- perform_stat_tests_subset(
+  data = df_temp,
+  effect_cat = "es_cat",
+  agreement_var = "bio1.less_than_1",
+  bin_var = "bio1_clim_bins_lt1",
+  climate_type = "Temperature (<1ºC)"
+)
+
+# Apply the function to precipitation agreement variables
+precip_results_gt100 <- perform_stat_tests_subset(
+  data = df_prec,
+  effect_cat = "es_cat",
+  agreement_var = "bio12.greater_than_100",
+  bin_var = "bio12_clim_bins_gt100",
+  climate_type = "Precipitation (>100mm)"
+)
+
+precip_results_btw <- perform_stat_tests_subset(
+  data = df_prec,
+  effect_cat = "es_cat",
+  agreement_var = "bio12.between_minus_100_and_100",
+  bin_var = "bio12_clim_bins_btw",
+  climate_type = "Precipitation (-100mm to +100mm)"
+)
+
+precip_results_lt100 <- perform_stat_tests_subset(
+  data = df_prec,
+  effect_cat = "es_cat",
+  agreement_var = "bio12.less_than_minus_100",
+  bin_var = "bio12_clim_bins_lt100",
+  climate_type = "Precipitation (<-100mm)"
+)
+```
+
+
+```{r}
+# Create a summary dataframe to collect test results
+test_summary <- data.frame(
+  Climate_Type = character(),
+  Agreement_Variable = character(),
+  Test_Used = character(),
+  Chi_Square_p = numeric(),
+  Fisher_p = numeric(),
+  stringsAsFactors = FALSE
+)
+
+# Define a helper function to extract results
+extract_results <- function(result_list, climate_type, agreement_var) {
+  # Extract p-value from contingency test
+  if(result_list$test_used == "Chi-Square Test") {
+    p_contingency <- result_list$test_result$p.value
+    p_fisher <- NA
+  } else {
+    p_contingency <- NA
+    p_fisher <- result_list$test_result$p.value
+  }
+  
+  # Return a dataframe row
+  return(data.frame(
+    Climate_Type = climate_type,
+    Agreement_Variable = agreement_var,
+    Test_Used = result_list$test_used,
+    Chi_Square_p = p_contingency,
+    Fisher_p = p_fisher,
+    stringsAsFactors = FALSE
+  ))
+}
+
+# Append results to the summary dataframe
+test_summary <- bind_rows(
+  test_summary,
+  extract_results(temp_results_gt1, "Temperature (>1ºC)", "bio1.greater_than_1"),
+  extract_results(temp_results_lt1, "Temperature (<1ºC)", "bio1.less_than_1"),
+  extract_results(precip_results_gt100, "Precipitation (>100mm)", "bio12.greater_than_100"),
+  extract_results(precip_results_btw, "Precipitation (-100mm to +100mm)", "bio12.between_minus_100_and_100"),
+  extract_results(precip_results_lt100, "Precipitation (<-100mm)", "bio12.less_than_minus_100")
+)
+
+# Display the summary table
+kable(test_summary, caption = "Summary of Statistical Tests") %>%
+  kable_styling(full_width = FALSE)
+```
+
+#Heatmaps with bins
+
+```{r}
+# Load the necessary libraries
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(reshape2)
+library(gridExtra)
+library(here)
+
+# Function to create contingency tables ensuring all categories are represented
+create_contingency_table <- function(data, effect_cat, bin_var) {
+  # Define all possible categories for effect size and bin variables
+  all_effect_cats <- c("Negative effect (g < -0.2)", "No effect", "Positive effect (g > 0.2)")
+  all_bins <- unique(data[[bin_var]]) # Get all unique bins from the data
+  
+  data %>%
+    count(!!sym(effect_cat), !!sym(bin_var)) %>%
+    complete(!!sym(effect_cat) := all_effect_cats, !!sym(bin_var) := all_bins, fill = list(n = 0)) %>%
+    pivot_wider(names_from = !!sym(bin_var), values_from = n, values_fill = 0)
+}
+
+# Create contingency tables for all climate categories
+cont_temp_gt1 <- create_contingency_table(df_temp, "es_cat", "bio1_clim_bins_gt1")
+cont_temp_lt1 <- create_contingency_table(df_temp, "es_cat", "bio1_clim_bins_lt1")
+cont_precip_gt100 <- create_contingency_table(df_prec, "es_cat", "bio12_clim_bins_gt100")
+cont_precip_btw <- create_contingency_table(df_prec, "es_cat", "bio12_clim_bins_btw")
+cont_precip_lt100 <- create_contingency_table(df_prec, "es_cat", "bio12_clim_bins_lt100")
+
+# Function to create a heatmap from a contingency table with ordered x-axis and customizable color
+# Now with text labels on the tiles
+create_heatmap <- function(cont_table, climate_type, x_label, y_label, low_color = "white", high_color = "steelblue") {
+  
+  # Reshape the data for ggplot2
+  cont_long <- cont_table %>%
+    pivot_longer(-es_cat, names_to = "Agreement_Bin", values_to = "Count")
+  
+  # Specify the order of the x-axis bins
+  cont_long$Agreement_Bin <- factor(cont_long$Agreement_Bin, 
+                                    levels = c("0-3", "4-7", "8-10", "11-15"))
+  
+  # Create the heatmap with customizable colors and text labels
+  heatmap_plot <- ggplot(cont_long, aes(x = Agreement_Bin, y = es_cat, fill = Count)) +
+    geom_tile(color = "black") +
+    geom_text(aes(label = Count), color = "black", size = 4, alpha = 0.5) +  # Add text labels for the count values
+    scale_fill_gradient(low = low_color, high = high_color) +
+    labs(title = paste("Heatmap:", climate_type),
+         x = x_label,
+         y = y_label,
+         fill = "Count") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 10, hjust = 1, size = 11),
+          axis.text.y = element_text(angle = 10, hjust = 1, size = 11))
+  
+  return(heatmap_plot)
+}
+```
+
+```{r}
+# Generate heatmaps for each climate category
+heatmap_temp_gt1 <- create_heatmap(cont_temp_gt1, 
+                                   "Temperature (>1ºC)", 
+                                   "Nr of BIO1 climatologies agreeing",
+                                   "Effect Size Category",
+                                   high_color = "orangered4", 
+                                   low_color = "ivory")
+
+heatmap_temp_lt1 <- create_heatmap(cont_temp_lt1, 
+                                   "Temperature (<1ºC)", 
+                                   "Nr of BIO1 climatologies agreeing",
+                                   "Effect Size Category",
+                                   high_color = "orangered4",
+                                   low_color = "ivory")
+
+heatmap_precip_gt100 <- create_heatmap(cont_precip_gt100, 
+                                      "Precipitation (>100mm)", 
+                                      "Nr of BIO12 climatologies agreeing",
+                                      "Effect Size Category",
+                                      high_color = "slateblue4",
+                                      low_color = "ivory")
+
+heatmap_precip_btw <- create_heatmap(cont_precip_btw, 
+                                    "Precipitation (-100mm to +100mm)", 
+                                    "Nr of BIO12 climatologies agreeing",
+                                    "Effect Size Category",
+                                    high_color = "slateblue4",
+                                      low_color = "ivory")
+
+heatmap_precip_lt100 <- create_heatmap(cont_precip_lt100, 
+                                      "Precipitation (<-100mm)", 
+                                      "Nr of BIO12 climatologies agreeing",
+                                      "Effect Size Category",
+                                      high_color = "slateblue4",
+                                      low_color = "ivory")
+```
+
+```{r}
+# Display individual heatmaps
+print(heatmap_temp_gt1)
+print(heatmap_temp_lt1)
+print(heatmap_precip_gt100)
+print(heatmap_precip_btw)
+print(heatmap_precip_lt100)
+```
+
+
