@@ -358,7 +358,134 @@ calculated_differences <- calculated_differences %>%
 # Step 3: View the updated dataframe
 head(calculated_differences)
 
-## Specific ranges -----
+## Specific ranges v1 -----
+# # Step 1: Identify the bio1.diff and bio12.diff columns
+# bio1_diff_cols <- grep("bio1.diff", names(calculated_differences), value = TRUE)
+# bio12_diff_cols <- grep("bio12.diff", names(calculated_differences), value = TRUE)
+# 
+# # Step 2: Create new columns for deeper thresholds
+# calculated_differences <- calculated_differences %>%
+#   rowwise() %>%
+#   mutate(
+#     # bio1 specific thresholds
+#     bio1.greater_than_1 = sum(c_across(all_of(bio1_diff_cols)) >= 1), #/ length(bio1_diff_cols),
+#     bio1.less_than_1 = sum(c_across(all_of(bio1_diff_cols)) < 1),# / length(bio1_diff_cols),
+#     
+#     # bio12 specific thresholds
+#     bio12.greater_than_100 = sum(c_across(all_of(bio12_diff_cols)) > 100), # / length(bio12_diff_cols),
+#     bio12.between_minus_100_and_100 = sum(c_across(all_of(bio12_diff_cols)) > -100 & c_across(all_of(bio12_diff_cols)) < 100), #/ length(bio12_diff_cols),
+#     bio12.less_than_minus_100 = sum(c_across(all_of(bio12_diff_cols)) < -100)# / length(bio12_diff_cols)
+#   ) %>%
+#   ungroup()
+# 
+# # Step 3: View the updated dataframe with the new columns
+# head(calculated_differences)
+# 
+# .tmp = calculated_differences %>% select(row_unique, Data_ID, Reference_ID, Environmental_condition, bio1.1981.2010, bio12.1981.2010, bio1.positive.prop, bio1.negative.prop,bio1.greater_than_1, bio1.less_than_1, bio12.positive.prop, bio12.negative.prop, bio12.greater_than_100, bio12.between_minus_100_and_100, bio12.less_than_minus_100)
+# 
+# View(.tmp)
+# 
+# #write.csv(.tmp, here('data','climatology_proportions.csv'), row.names = FALSE)
+# 
+# # group effect sizes
+# df = calculated_differences %>%
+#   mutate(es_cat = ifelse(es < -0.2, 'Negative effect (g < -0.2)', #if CI contains 0
+#                          ifelse(abs(es) < 0.2, 'No effect', # otherwise negative
+#                                 'Positive effect (g > 0.2)')) # or positive
+#   ) %>% filter(!is.na(es))
+# 
+# write.csv(df, here('data', 'es_climvars_proportions.csv'), row.names = FALSE)
+# 
+# # Temperature climate sensitivity
+# df_temp = df %>% filter(Environmental_condition=="Temperature" & !is.na(es))
+# cat("Nr of SSP x Climate model combinations (out of 15) predicting >1ºC increase")
+# table(df_temp$es_cat, df_temp$bio1.greater_than_1)
+# table(df_temp$es_cat, df_temp$bio1.less_than_1)
+# 
+# # Precipitation climate sensitivity
+# df_prec = df %>% filter(Environmental_condition=="Precipitation" & !is.na(es))
+# cat("Nr of SSP x Climate model combinations (out of 15) predicting \n>100mm increase in annual rainfall versus categories of effect\nsizes of precipitation climate sensitivity")
+# table(df_prec$es_cat, df_prec$bio12.greater_than_100)
+# table(df_prec$es_cat, df_prec$bio12.less_than_minus_100)
+# table(df_prec$es_cat, df_prec$bio12.between_minus_100_and_100)
+
+## Specific ranges v2 -----
+# calculated_differences = read.csv(here('data', 'es_climvars_proportions.csv'))
+# # Step 1: Identify the bio1.diff and bio12.diff columns
+# bio1_diff_cols <- grep("bio1.diff", names(calculated_differences), value = TRUE)
+# bio12_diff_cols <- grep("bio12.diff", names(calculated_differences), value = TRUE)
+# 
+# # Step 2: Create new columns for deeper thresholds
+# calculated_differences <- calculated_differences %>%
+#   rowwise() %>%
+#   mutate(
+#     # bio1 specific thresholds
+#     bio1.less_than_1 = sum(c_across(all_of(bio1_diff_cols)) < 1),# / length(bio1_diff_cols),
+#     bio1.greater_than_1 = sum(c_across(all_of(bio1_diff_cols)) >= 1), #/ length(bio1_diff_cols),
+#     bio1.btw_1_and_05 = sum(c_across(all_of(bio1_diff_cols)) < 1 & c_across(all_of(bio1_diff_cols)) >= 0.5),
+#     bio1.less_than_05 = sum(c_across(all_of(bio1_diff_cols)) < 0.5),
+#     
+#     # bio12 specific thresholds
+#     bio12.between_minus_100_and_100 = sum(c_across(all_of(bio12_diff_cols)) > -100 & c_across(all_of(bio12_diff_cols)) < 100),
+#     bio12.greater_than_100 = sum(c_across(all_of(bio12_diff_cols)) >= 100), 
+#     bio12.less_than_minus_100 = sum(c_across(all_of(bio12_diff_cols)) <= -100),
+#     bio12.between_p50_and_p100 = sum(c_across(all_of(bio12_diff_cols)) < 100 & c_across(all_of(bio12_diff_cols)) >= 50),
+#     bio12.between_m50_and_m100 = sum(c_across(all_of(bio12_diff_cols)) > -100 & c_across(all_of(bio12_diff_cols)) <= -50),
+#     bio12.between_minus_50_and_50 = sum(c_across(all_of(bio12_diff_cols)) > -50 & c_across(all_of(bio12_diff_cols)) < 50)
+#   ) %>%
+#   ungroup()
+# 
+# # Step 3: Identify dominant change per row
+# 
+# # For BIO1 
+# calculated_differences <- calculated_differences %>%
+#   rowwise() %>%
+#   mutate(
+#     # Find the max value for bio1 ranges
+#     bio1_most_frequent = case_when(
+#       bio1.greater_than_1 == max(bio1.greater_than_1, bio1.btw_1_and_05, bio1.less_than_05) ~ "bio1 > 1",
+#       bio1.btw_1_and_05 == max(bio1.greater_than_1, bio1.btw_1_and_05, bio1.less_than_05) ~ "0.5 <= bio1 < 1",
+#       bio1.less_than_05 == max(bio1.greater_than_1, bio1.btw_1_and_05, bio1.less_than_05) ~ "bio1 < 0.5"
+#     )
+#   )
+# 
+# # For BIO12 
+# calculated_differences <- calculated_differences %>%
+#   rowwise() %>%
+#   mutate(
+#     # Find the max value for bio12 ranges
+#     bio12_most_frequent = case_when(
+#       bio12.greater_than_100 == max(bio12.greater_than_100, 
+#                                     bio12.between_p50_and_p100, 
+#                                     bio12.between_m50_and_m100, 
+#                                     bio12.between_minus_50_and_50, 
+#                                     bio12.less_than_minus_100) ~ "bio12 > 100",
+#       bio12.between_p50_and_p100 == max(bio12.greater_than_100, 
+#                                         bio12.between_p50_and_p100,
+#                                         bio12.between_m50_and_m100, 
+#                                         bio12.between_minus_50_and_50, 
+#                                         bio12.less_than_minus_100) ~ "50 <= bio12 < 100",
+#       bio12.between_minus_50_and_50 == max(bio12.greater_than_100,
+#                                        bio12.between_p50_and_p100, 
+#                                        bio12.between_m50_and_m100, 
+#                                        bio12.between_minus_50_and_50, 
+#                                        bio12.less_than_minus_100) ~ "-50 <= bio12 < 50",
+#       bio12.between_m50_and_m100 == max(bio12.greater_than_100, 
+#                                         bio12.between_p50_and_p100, 
+#                                         bio12.between_m50_and_m100, 
+#                                         bio12.between_minus_50_and_50, 
+#                                         bio12.less_than_minus_100) ~ "-100 <= bio12 < -50",
+#       bio12.less_than_minus_100 == max(bio12.greater_than_100, bio12.between_p50_and_p100, bio12.between_m50_and_m100, bio12.between_minus_50_and_50, bio12.less_than_minus_100) ~ "bio12 < -100"
+#     )
+#   )
+#write.csv(.tmp, here('data','climatology_proportions.csv'), row.names = FALSE)
+
+#write.csv(calculated_differences, here('data', 'es_climvars_proportions.csv'), row.names = FALSE)
+
+## Specific ranges v3 - final ? -----
+
+#calculated_differences = read.csv(here('data', 'es_climvars_proportions.csv'))
+
 # Step 1: Identify the bio1.diff and bio12.diff columns
 bio1_diff_cols <- grep("bio1.diff", names(calculated_differences), value = TRUE)
 bio12_diff_cols <- grep("bio12.diff", names(calculated_differences), value = TRUE)
@@ -367,25 +494,108 @@ bio12_diff_cols <- grep("bio12.diff", names(calculated_differences), value = TRU
 calculated_differences <- calculated_differences %>%
   rowwise() %>%
   mutate(
-    # bio1 specific thresholds
-    bio1.greater_than_1 = sum(c_across(all_of(bio1_diff_cols)) >= 1), #/ length(bio1_diff_cols),
-    bio1.less_than_1 = sum(c_across(all_of(bio1_diff_cols)) < 1),# / length(bio1_diff_cols),
     
+    # bio1 specific thresholds
+    bio1.greater_than_1 = sum(c_across(all_of(bio1_diff_cols)) > 1), 
+    bio1.greater_than_05 = sum(c_across(all_of(bio1_diff_cols)) > 0.5),
+    bio1.less_than_05 = sum(c_across(all_of(bio1_diff_cols)) <= 0.5),
+    bio1.less_than_1 = sum(c_across(all_of(bio1_diff_cols)) <= 1),
+  
     # bio12 specific thresholds
-    bio12.greater_than_100 = sum(c_across(all_of(bio12_diff_cols)) > 100), # / length(bio12_diff_cols),
-    bio12.between_minus_100_and_100 = sum(c_across(all_of(bio12_diff_cols)) > -100 & c_across(all_of(bio12_diff_cols)) < 100), #/ length(bio12_diff_cols),
-    bio12.less_than_minus_100 = sum(c_across(all_of(bio12_diff_cols)) < -100)# / length(bio12_diff_cols)
+    bio12.greater_than_100 = sum(c_across(all_of(bio12_diff_cols)) > 100), 
+    bio12.greater_than_50 = sum(c_across(all_of(bio12_diff_cols)) > 50),
+    bio12.greater_than_25 = sum(c_across(all_of(bio12_diff_cols)) > 25), 
+    bio12.less_than_minus_100 = sum(c_across(all_of(bio12_diff_cols)) < -100),
+    bio12.less_than_minus_50 = sum(c_across(all_of(bio12_diff_cols)) < -50),
+    bio12.less_than_minus_25 = sum(c_across(all_of(bio12_diff_cols)) < -25),
+    bio12.between_minus_50_and_50 = sum(c_across(all_of(bio12_diff_cols)) >= -50  & c_across(all_of(bio12_diff_cols)) <= 50),
+    bio12.between_minus_100_and_100 = sum(c_across(all_of(bio12_diff_cols)) >= -100 & c_across(all_of(bio12_diff_cols)) <= 100),
+    bio12.between_minus_25_and_25 = sum(c_across(all_of(bio12_diff_cols)) >= -25 & c_across(all_of(bio12_diff_cols)) <= 25),
   ) %>%
   ungroup()
 
-# Step 3: View the updated dataframe with the new columns
-head(calculated_differences)
+# Step 3: Identify dominant change per row
 
-.tmp = calculated_differences %>% select(row_unique, Data_ID, Reference_ID, Environmental_condition, bio1.1981.2010, bio12.1981.2010, bio1.positive.prop, bio1.negative.prop,bio1.greater_than_1, bio1.less_than_1, bio12.positive.prop, bio12.negative.prop, bio12.greater_than_100, bio12.between_minus_100_and_100, bio12.less_than_minus_100)
+# For BIO1 
 
-View(.tmp)
+calculated_differences <- calculated_differences %>%
+  rowwise() %>%
+  mutate(
+    # Find the max value for bio1 ranges
+    bio1_most_frequent_1 = case_when(
+      bio1.less_than_1 == max(bio1.greater_than_1, bio1.less_than_1) ~ "bio1 < 1",
+      bio1.greater_than_1 == max(bio1.greater_than_1, bio1.less_than_1) ~ "bio1 > 1"
+    )
+  )
 
-#write.csv(.tmp, here('data','climatology_proportions.csv'), row.names = FALSE)
+calculated_differences <- calculated_differences %>%
+  rowwise() %>%
+  mutate(
+    # Find the max value for bio1 ranges
+    bio1_most_frequent_05 = case_when(
+      bio1.less_than_05 == max(bio1.less_than_05, bio1.greater_than_05) ~ "bio1 < 0.5",
+      bio1.greater_than_05 == max(bio1.less_than_05, bio1.greater_than_05) ~ "bio1 > 0.5"
+    )
+  )
+
+# For BIO12 
+calculated_differences <- calculated_differences %>%
+  rowwise() %>%
+  mutate(
+    # Find the max value for bio12 ranges
+    bio12_most_frequent_100cat = case_when(
+      bio12.greater_than_100 == max(bio12.greater_than_100, 
+                                    bio12.between_minus_100_and_100, 
+                                    bio12.less_than_minus_100) ~ "bio12 > 100",
+      bio12.between_minus_100_and_100 == max(bio12.greater_than_100, 
+                                             bio12.between_minus_100_and_100, 
+                                             bio12.less_than_minus_100) ~ "-100 < bio12 < 100",
+      bio12.less_than_minus_100 == max(bio12.greater_than_100,
+                                       bio12.between_minus_100_and_100,
+                                       bio12.less_than_minus_100) ~ "bio12 < -100"
+    )
+  )
+
+calculated_differences <- calculated_differences %>%
+  rowwise() %>%
+  mutate(
+    # Find the max value for bio12 ranges
+    bio12_most_frequent_50cat = case_when(
+      bio12.greater_than_50 == max(bio12.greater_than_50, 
+                                    bio12.between_minus_50_and_50, 
+                                    bio12.less_than_minus_50) ~ "bio12 > 50",
+      bio12.between_minus_50_and_50 == max(bio12.greater_than_50, 
+                                           bio12.between_minus_50_and_50,
+                                             bio12.less_than_minus_50) ~ "-50 < bio12 < 50",
+      bio12.less_than_minus_50 == max(bio12.greater_than_50,
+                                      bio12.between_minus_50_and_50,
+                                       bio12.less_than_minus_50) ~ "bio12 < -50"
+    )
+  )
+
+calculated_differences <- calculated_differences %>%
+  rowwise() %>%
+  mutate(
+    # Find the max value for bio12 ranges
+    bio12_most_frequent_25cat = case_when(
+      bio12.greater_than_25 == max(bio12.greater_than_25, 
+                                   bio12.between_minus_25_and_25, 
+                                   bio12.less_than_minus_25) ~ "bio12 > 25",
+      bio12.between_minus_25_and_25 == max(bio12.greater_than_25, 
+                                           bio12.between_minus_25_and_25,
+                                       bio12.less_than_minus_25) ~ "-25 < bio12 < 25",
+      bio12.less_than_minus_25 == max(bio12.greater_than_25,
+                                      bio12.between_minus_25_and_25,
+                                      bio12.less_than_minus_25) ~ "bio12 < -25"
+    )
+  )
+calculated_differences %<>%
+  mutate(es_cat = ifelse(es < -0.2, 'Negative effect (g < -0.2)', #if CI contains 0
+                         ifelse(abs(es) < 0.2, 'No effect', # otherwise negative
+                         'Positive effect (g > 0.2)'))) # or positive
+write.csv(calculated_differences, here('data', 'es_climvars_proportions.csv'), row.names = FALSE)
+
+# Sensitivity ------------------------------------------------------------------
 
 # group effect sizes
 df = calculated_differences %>%
@@ -393,8 +603,6 @@ df = calculated_differences %>%
                          ifelse(abs(es) < 0.2, 'No effect', # otherwise negative
                                 'Positive effect (g > 0.2)')) # or positive
   ) %>% filter(!is.na(es))
-
-write.csv(df, here('data', 'es_climvars_proportions.csv'), row.names = FALSE)
 
 # Temperature climate sensitivity
 df_temp = df %>% filter(Environmental_condition=="Temperature" & !is.na(es))
@@ -408,4 +616,5 @@ cat("Nr of SSP x Climate model combinations (out of 15) predicting \n>100mm incr
 table(df_prec$es_cat, df_prec$bio12.greater_than_100)
 table(df_prec$es_cat, df_prec$bio12.less_than_minus_100)
 table(df_prec$es_cat, df_prec$bio12.between_minus_100_and_100)
+
 
