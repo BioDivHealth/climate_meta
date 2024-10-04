@@ -246,8 +246,6 @@ df_prec <- df %>%
 ```
 
 ```{r}
-
-
 # Function to perform statistical tests within a subset
 perform_stat_tests_subset <- function(data, effect_cat, agreement_var, bin_var, climate_type) {
   
@@ -286,6 +284,23 @@ perform_stat_tests_subset <- function(data, effect_cat, agreement_var, bin_var, 
   return(results)
 }
 
+
+# Apply the function to temperature agreement variables
+temp_results_2 <- perform_stat_tests_subset(
+  data = df_temp,
+  effect_cat = "es_cat",
+  agreement_var = "bio1_most_frequent_2",
+  bin_var = "bio1_most_frequent_2",
+  climate_type = "Temperature (2ºC change)"
+)
+
+temp_results_15 <- perform_stat_tests_subset(
+  data = df_temp,
+  effect_cat = "es_cat",
+  agreement_var = "bio1_most_frequent_15",
+  bin_var = "bio1_most_frequent_15",
+  climate_type = "Temperature (1.5ºC change)"
+)
 
 # Apply the function to temperature agreement variables
 temp_results_1 <- perform_stat_tests_subset(
@@ -338,6 +353,8 @@ print(precip_results_100)
 
 print(temp_results_05)
 print(temp_results_1)
+print(temp_results_15)
+print(temp_results_2)
 ```
 
 
@@ -377,6 +394,8 @@ extract_results <- function(result_list, climate_type, agreement_var) {
 # Append results to the summary dataframe
 test_summary <- bind_rows(
   test_summary,
+  extract_results(temp_results_2, "Temperature (+-2ºC)", "bio1_most_frequent_2"),
+  extract_results(temp_results_15, "Temperature (+-1.5ºC)", "bio1_most_frequent_15"),
   extract_results(temp_results_1, "Temperature (+-1ºC)", "bio1_most_frequent_1"),
   extract_results(temp_results_05, "Temperature (+-0.5ºC)", "bio1_most_frequent_05"),
   extract_results(precip_results_100, "Precipitation (+- 100mm)", "bio12_most_frequent_100cat"),
@@ -416,22 +435,29 @@ create_contingency_table <- function(data, effect_cat, bin_var) {
 }
 
 # Create contingency tables for all climate categories
+cont_temp_2 <- create_contingency_table(df_temp , "es_cat", "bio1_most_frequent_2")
+cont_temp_2 %<>% rename("> 2ºC" = "bio1 > 2", "< 2ºC" = "bio1 < 2")
+
+cont_temp_15 <- create_contingency_table(df_temp , "es_cat", "bio1_most_frequent_15")
+cont_temp_15 %<>% rename("> 1.5ºC" = "bio1 > 1.5", "< 1.5ºC" = "bio1 < 1.5")
+
 cont_temp_1 <- create_contingency_table(df_temp , "es_cat", "bio1_most_frequent_1")
-cont_temp_1 $`biol1 < 1` = 0
-names(cont_temp_1) = c("es_cat", "> 1ºC", "< 1ºC")
+cont_temp_1 $`bio1 < 1` = 0
+cont_temp_1 %<>% rename("> 1ºC" = "bio1 > 1", "< 1ºC" = "bio1 < 1")
 
 cont_temp_05 <- create_contingency_table(df_temp, "es_cat", "bio1_most_frequent_05")
-cont_temp_05 $`biol1 < 0.5` = 0
-names(cont_temp_05) = c("es_cat", "> 0.5ºC", "< 0.5ºC")
+cont_temp_05 $`bio1 < 0.5` = 0
+cont_temp_05 %<>% rename("> 0.5ºC" = "bio1 > 0.5", "< 0.5ºC" = "bio1 < 0.5")
 
 cont_precip_100 <- create_contingency_table(df_prec %>% filter(bio12_most_frequent_100cat!="-100 < bio12 < 100"), "es_cat", "bio12_most_frequent_100cat")
-names(cont_precip_100) = c("es_cat", "< -100mm", "> +100mm")
+cont_precip_100 %<>% rename("< -100mm" = "bio12 < -100", "> +100mm" = "bio12 > 100")
 
 cont_precip_50 <- create_contingency_table(df_prec %>% filter(bio12_most_frequent_50cat!="-50 < bio12 < 50"), "es_cat", "bio12_most_frequent_50cat")
-names(cont_precip_50) = c("es_cat", "< -50mm", "> +50mm")
+#names(cont_precip_50) = c("es_cat", "< -50mm", "> +50mm")
+cont_precip_50 %<>% rename("< -50mm" = "bio12 < -50", "> +50mm" = "bio12 > 50")
 
 cont_precip_25 <- create_contingency_table(df_prec %>% filter(bio12_most_frequent_25cat!="-25 < bio12 < 25"), "es_cat", "bio12_most_frequent_25cat")
-names(cont_precip_25) = c("es_cat", "< -25mm", "> +25mm")
+cont_precip_25 %<>% rename("< -25mm" = "bio12 < -25", "> +25mm" = "bio12 > 25")
 
 # Function to create a heatmap from a contingency table with ordered x-axis and customizable color
 # Now with text labels on the tiles
@@ -448,7 +474,7 @@ create_heatmap <- function(cont_table, climate_type, x_label, y_label, low_color
   heatmap_plot <- ggplot(cont_long, aes(x = Agreement_Bin, y = es_cat, fill = Count)) +
     geom_tile(color = "black") +
     geom_text(aes(label = Count), color = "black", size = 4, alpha = 0.9) +  # Add text labels for the count values
-    scale_fill_gradient(low = low_color, high = high_color) +
+    scale_fill_gradient2(low = low_color, high = high_color, midpoint = 0) +
     labs(title = paste("Heatmap:", climate_type),
          x = x_label,
          y = y_label,
@@ -463,6 +489,20 @@ create_heatmap <- function(cont_table, climate_type, x_label, y_label, low_color
 
 ```{r}
 # Generate heatmaps for each climate category
+heatmap_temp_2 <- create_heatmap(cont_temp_2, 
+                                   "Temperature (+- 2ºC)", 
+                                   "Consensus temperature change",
+                                   "Effect Size Category",
+                                   high_color = "orangered4", 
+                                   low_color = "ivory")
+
+heatmap_temp_15 <- create_heatmap(cont_temp_15, 
+                                   "Temperature (+- 1.5ºC)", 
+                                   "Consensus temperature change",
+                                   "Effect Size Category",
+                                   high_color = "orangered4", 
+                                   low_color = "ivory")
+
 heatmap_temp_1 <- create_heatmap(cont_temp_1, 
                                    "Temperature (+- 1ºC)", 
                                    "Consensus temperature change",
@@ -502,8 +542,24 @@ heatmap_precip_25 <- create_heatmap(cont_precip_25,
 
 ```{r}
 # Display individual heatmaps
+print(heatmap_temp_2)
+print(heatmap_temp_15)
 print(heatmap_temp_1)
 print(heatmap_temp_05)
+
+# Load patchwork
+library(patchwork)
+
+# Combine the four heatmaps in a 2x2 grid using patchwork
+combined_heatmaps_temperature <- (heatmap_temp_1 + heatmap_temp_15 + heatmap_temp_2)/(heatmap_precip_25 + heatmap_precip_50 + heatmap_precip_100) +
+                     #plot_layout(guides = "collect") & 
+                     theme(plot.margin = margin(1, 1, 1))  # Adjust margins
+
+# Print the combined plot
+print(combined_heatmaps_temperature)
+
+
+
 print(heatmap_precip_100)
 print(heatmap_precip_50)
 print(heatmap_precip_25)
@@ -529,9 +585,6 @@ combined_heatmaps <- plot_grid(
 
 # Print the combined heatmap
 print(combined_heatmaps)
-
-# Install patchwork package if not installed
-if (!require(patchwork)) install.packages("patchwork", dependencies=TRUE)
 
 # Load patchwork
 library(patchwork)
