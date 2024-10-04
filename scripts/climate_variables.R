@@ -496,10 +496,14 @@ calculated_differences <- calculated_differences %>%
   mutate(
     
     # bio1 specific thresholds
+    bio1.greater_than_2 = sum(c_across(all_of(bio1_diff_cols)) > 2), 
+    bio1.greater_than_15 = sum(c_across(all_of(bio1_diff_cols)) > 1.5), 
     bio1.greater_than_1 = sum(c_across(all_of(bio1_diff_cols)) > 1), 
     bio1.greater_than_05 = sum(c_across(all_of(bio1_diff_cols)) > 0.5),
     bio1.less_than_05 = sum(c_across(all_of(bio1_diff_cols)) <= 0.5),
     bio1.less_than_1 = sum(c_across(all_of(bio1_diff_cols)) <= 1),
+    bio1.less_than_15 = sum(c_across(all_of(bio1_diff_cols)) <= 1.5),
+    bio1.less_than_2 = sum(c_across(all_of(bio1_diff_cols)) <= 2),
   
     # bio12 specific thresholds
     bio12.greater_than_100 = sum(c_across(all_of(bio12_diff_cols)) > 100), 
@@ -517,6 +521,28 @@ calculated_differences <- calculated_differences %>%
 # Step 3: Identify dominant change per row
 
 # For BIO1 
+
+calculated_differences <- calculated_differences %>%
+  rowwise() %>%
+  mutate(
+    # Find the max value for bio1 ranges
+    bio1_most_frequent_2 = case_when(
+      bio1.less_than_2 == max(bio1.greater_than_2, bio1.less_than_2) ~ "bio1 < 2",
+      bio1.greater_than_2 == max(bio1.greater_than_2, bio1.less_than_2) ~ "bio1 > 2"
+    )
+  )
+
+
+calculated_differences <- calculated_differences %>%
+  rowwise() %>%
+  mutate(
+    # Find the max value for bio1 ranges
+    bio1_most_frequent_15 = case_when(
+      bio1.less_than_15 == max(bio1.greater_than_15, bio1.less_than_15) ~ "bio1 < 1.5",
+      bio1.greater_than_15 == max(bio1.greater_than_15, bio1.less_than_15) ~ "bio1 > 1.5"
+    )
+  )
+
 
 calculated_differences <- calculated_differences %>%
   rowwise() %>%
