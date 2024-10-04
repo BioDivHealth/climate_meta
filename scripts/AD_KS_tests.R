@@ -93,12 +93,10 @@ categories = list(Transmission_type = c('Vectored', 'Non-vectored'),
                   Principal_reservoir = c('Rodents', 'Mammals (multispecies)', 'Livestock', 'Birds'), 
                   Pathogen = c('Virus', 'Bacteria'), 
                   vector = c('Mosquito', 'Tick', 'Mite'),
-                  Country = c('China','Iran','USA','Argentina','India') #added temporarily
+                  Country = c('China','Iran','USA','Argentina','India'), #added temporarily
+                  Disease = c('Haemorrhagic fever with renal syndrome', 'Brucellosis', 'Scrub typhus',
+                              'Leptospirosis')
 )
-
-# random number seed
-set.seed(123)
-
 
 #AD Test: without subset removal ----
   
@@ -183,7 +181,7 @@ results_df = results_df%>%
                        names = c("Environmental_condition", "Category", "Group"))
 
 rownames(results_df) = NULL
-write.csv(results_df, here('outputs','tables','DistributionADTest_Results_Birds_andCountries.csv'), row.names = F)
+write.csv(results_df, here('outputs','tables','DistributionADTest_Results_Birds_andCountriesandDiseases.csv'), row.names = F)
 #results_df 
 
 # Comparison of Vector and Non-vector borne disease ----
