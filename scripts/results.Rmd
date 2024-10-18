@@ -428,7 +428,7 @@ for (name in names(list_of_dfs)) {
   writeData(wb, name, list_of_dfs[[name]])
 }
 
-# write.csv(as.data.frame(list_of_dfs[["Overall"]]),'outputs/tables/chisq_results_overall2.csv', row.names = F)
+# write.csv(as.data.frame(list_of_dfs[["Overall"]]),'outputs/tables/TableS2_ChiSquare.csv', row.names = F)
 # write.csv(as.data.frame(list_of_dfs[["Temperature"]]),'outputs/tables/chisq_results_temperature2.csv', row.names = F)
 # write.csv(as.data.frame(list_of_dfs[["Humidity"]]),'outputs/tables/chisq_results_humidity2.csv', row.names = F)
 # write.csv(as.data.frame(list_of_dfs[["Precipitation"]]),'outputs/tables/chisq_results_precipitation2.csv', row.names = F)
