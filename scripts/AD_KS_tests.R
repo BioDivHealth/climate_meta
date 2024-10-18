@@ -156,12 +156,9 @@ for(condition in unique(df$Environmental_condition)){
       
       ad = perm_comp_test(temp_filtered$es, group_df$es)
       
-      #ad = ad2_stat(nonvec$es, vec$es)
-      
       pvals[[paste(condition, category, group, sep='.')]] = ad$p.value
       test_stats[[paste(condition, category, group, sep='.')]] = ad$statistic
-      #pvals[[paste(condition, category, group, sep='.')]] = 1- goftest::pAD(q=ad)
-      #test_stats[[paste(condition, category, group, sep='.')]] = ad
+      
     }
   }
 }
@@ -181,8 +178,9 @@ results_df = results_df%>%
                        names = c("Environmental_condition", "Category", "Group"))
 
 rownames(results_df) = NULL
-write.csv(results_df, here('outputs','tables','DistributionADTest_Results_Birds_andCountriesandDiseases.csv'), row.names = F)
-#results_df 
+#write.csv(results_df, here('outputs','tables','TableS456_ADTests.csv'), row.names = F)
+
+results_df 
 
 # Comparison of Vector and Non-vector borne disease ----
 
@@ -215,3 +213,14 @@ for(condition in unique(df$Environmental_condition)){
   pvals_ks[[condition]] = ks$p.value
   test_stats_ks[[condition]] = ks$statistic
 }
+
+# Combine the lists into a dataframe
+ks_results <- data.frame(
+  Variable = names(pvals_ks),
+  P_Value = unlist(pvals_ks),
+  Test_Statistic = unlist(test_stats_ks)
+)
+
+# Print the dataframe
+print(ks_results)
+#write.csv(ks_results, here('outputs', 'tables', 'KS_Tests.csv'), row.names = FALSE)
