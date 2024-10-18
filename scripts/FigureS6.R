@@ -13,21 +13,21 @@ library(patchwork)
 
 # Data setup -------
 # Read in the data
-df = read.csv(here('data', 'es_climvars_proportions.csv'))
+tmp = read.csv(here('data', 'es_climvars_proportions.csv'))
 
 # Ensure 'es_cat' is a factor with ordered levels
-df <- df %>%
+tmp <- tmp %>%
   mutate(es_cat = factor(es_cat,
                          levels = c('Negative effect (g < -0.2)', 'Positive effect (g > 0.2)'),
                          ordered = TRUE))
 
-df %<>% filter(es_cat!="No effect")
+tmp %<>% filter(es_cat!="No effect")
 
 # Subset the data based on Environmental_condition
-df_temp <- df %>%
+df_temp <- tmp %>%
   filter(Environmental_condition == "Temperature" & !is.na(es_cat))
 
-df_prec <- df %>%
+df_prec <- tmp %>%
   filter(Environmental_condition == "Precipitation" & !is.na(es_cat))
 
 # Rename values
@@ -110,17 +110,17 @@ draw_facet_heatmap <- function(data, column_names, titles, low_color = "ivory2",
   
   # Fill in missing combinations with Count = 0 for each facet separately
   combined_heat_data <- do.call(rbind, lapply(split(combined_heat_data,
-                                                    combined_heat_data$Category_Type), function(df) {
+                                                    combined_heat_data$Category_Type), function(tmp) {
     all_combinations <- expand.grid(
-      Temperature_Category = unique(df$Temperature_Category),
-      Effect_Size = unique(df$Effect_Size),
-      Category_Type = unique(df$Category_Type)
+      Temperature_Category = unique(tmp$Temperature_Category),
+      Effect_Size = unique(tmp$Effect_Size),
+      Category_Type = unique(tmp$Category_Type)
     )
-    df <- merge(all_combinations, df, by = c("Temperature_Category",
+    tmp <- merge(all_combinations, tmp, by = c("Temperature_Category",
                                              "Effect_Size",
                                              "Category_Type"), all.x = TRUE)
-    df$Count[is.na(df$Count)] <- 0
-    return(df)
+    tmp$Count[is.na(tmp$Count)] <- 0
+    return(tmp)
   }))
   
   # Create the heatmap using facet_wrap
@@ -191,17 +191,17 @@ draw_facet_heatmap_prec <- function(data, column_names, titles, low_color = "ivo
   
   # Fill in missing combinations with Count = 0 for each facet separately
   combined_heat_data <- do.call(rbind, lapply(split(combined_heat_data,
-                                                    combined_heat_data$Category_Type), function(df) {
+                                                    combined_heat_data$Category_Type), function(tmp) {
                                                       all_combinations <- expand.grid(
-                                                        Precipitation_Category = unique(df$Precipitation_Category),
-                                                        Effect_Size = unique(df$Effect_Size),
-                                                        Category_Type = unique(df$Category_Type)
+                                                        Precipitation_Category = unique(tmp$Precipitation_Category),
+                                                        Effect_Size = unique(tmp$Effect_Size),
+                                                        Category_Type = unique(tmp$Category_Type)
                                                       )
-                                                      df <- merge(all_combinations, df, by = c("Precipitation_Category",
+                                                      tmp <- merge(all_combinations, tmp, by = c("Precipitation_Category",
                                                                                                "Effect_Size",
                                                                                                "Category_Type"), all.x = TRUE)
-                                                      df$Count[is.na(df$Count)] <- 0
-                                                      return(df)
+                                                      tmp$Count[is.na(tmp$Count)] <- 0
+                                                      return(tmp)
                                                     }))
   
   # Create the heatmap using facet_wrap
