@@ -1,0 +1,7 @@
+"list_name","TestType","ClimVar","MeanPVal","PVal.CI.Lo","PVal.CI.Up","PropPValSignif","MeanStat","StatCI.Lo","StatCI.Up"
+"temp_1","Chi-Square","Temperature (1ºC change)",0.06,0.05,0.07,78,7.58,7.27,7.9
+"temp_15","Fisher's Exact","Temperature (1.5ºC change)",0.43,0.4,0.45,16.7,NA,NA,NA
+"temp_2","Chi-Square","Temperature (2ºC change)",0.59,0.57,0.61,3.3,0.76,0.68,0.84
+"precip_25","Fisher's Exact","Precipitation (+- 25mm)",0.34,0.32,0.36,17.1,NA,NA,NA
+"precip_50","Fisher's Exact","Precipitation (+- 50mm)",0.22,0.21,0.23,20.1,NA,NA,NA
+"precip_100","Fisher's Exact","Precipitation (+- 100mm)",0.19,0.17,0.2,43.1,NA,NA,NA
