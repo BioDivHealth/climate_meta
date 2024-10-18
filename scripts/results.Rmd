@@ -755,12 +755,9 @@ spearman_corr <- cor.test(dat_pub2$P.value_specific, dat_pub2$Journal_5yr_Impact
 print(spearman_corr)
 ```
 
-
-
-
 # Results Section 3: Strength of climate effects of zoonotic diseases
 
-##Effect Size Category Grouping 
+##Effect Size Category Grouping
 
 ```{r numpergroup}
 
@@ -969,7 +966,6 @@ results_df
 #write.csv(results_df, here('outputs','tables','DistributionADTest_Results.csv'), row.names = F)
 ```
 
-
 ## Results Section: Comparison of Vector and Non-vector borne disease
 
 ```{r}
@@ -1010,6 +1006,7 @@ for(condition in unique(df$Environmental_condition)){
 ```
 
 ## Original vs transformed stats
+
 ```{r}
 
 new_stats = df%>% filter(Direction!="" & es_cat!="" & 
@@ -1041,6 +1038,22 @@ for (i in 1:num_bootstrap_samples) {
 p_value_summary <- summary(p_values)
 p_value_summary
 mean(p_values)
+```
+
+# Results section 4: Spatial Climate Data
+
+First need to run the `climate_variables.R` script and get the `es_climvars_proportions.csv` dataframe. 
+The script below run the Chi-square & Fisher's Exact tests for Count Data on the contingency tables describing
+The dominant climate change ranges for sites where disease climate sensitivity was reported. 
+
+Produces `dat_results` table summarising test results. 
+```{r}
+source(here('scripts','Hedge_vs_ClimChange_Tests.R'))
+print(dat_results)
+
+# Save the summary table.
+dat_results %<>% filter(list_name!="temp_05")
+# write.csv(dat_results, here('outputs', 'tables', 'climvars_hedge_tests.csv'), row.names = F)
 ```
 
 
@@ -1090,10 +1103,10 @@ f4
 ggsave(f4, file=here('outputs','Figure4.png'), device="png", units="in", width=8, height=6, dpi=300, scale=1.25)
 ```
 
-
 # Supplementary figures
 
 ## Figure S2: Impact Factors
+
 ```{r FigS2}
 
 source(here('scripts','FigureS2.R'))
@@ -1110,7 +1123,7 @@ p3_rm
 #ggsave(p3_rm, file=here('outputs','FigureS2_CD.png'), device="png", units="in", width=9.3, height=4, dpi=1000, scale=1)
 ```
 
-## Figure S3: Funnel plots 
+## Figure S3: Funnel plots
 
 ```{r FigS3}
 
@@ -1136,5 +1149,15 @@ combined_plot <- ggdraw() +
 combined_plot
 
 #ggsave(combined_plot, file="outputs/FigureS4.png", device="png", units="in", width=6.3, height=3.8, dpi=1000, scale=0.95)
+```
+
+## Figure S6: Hedge's g categories vs climate change ranges
+```{r Fig S6}
+# Produces combined_plot_S6
+source(here('scripts','FigureS6.R'))
+print(combined_plot_S6)
+
+# Save the plot
+# ggsave(combined_plot_S6, file="outputs/FigureS6.png", device="png", units="in", width=11, height=8, dpi=1000, scale=1)
 ```
 
