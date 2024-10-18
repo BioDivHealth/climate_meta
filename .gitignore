@@ -1,8 +1,10 @@
 .Rproj.user
 .Rhistory
 .RData
+.DS_Store
 .Ruserdata
 results_text_files/
 .results_text.md
 .chisq_results.xlsx
+ignore/
 Random.R
