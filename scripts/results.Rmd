@@ -607,7 +607,7 @@ results_regtests <- data.frame(
   P_value = c(pval_all, pval_temp, pval_prec, pval_hum)
 )
 
-#write.csv(results_regtests, 'outputs/tables/eggers_funnel_tests.csv', row.names = F)
+#write.csv(results_regtests, 'outputs/tables/TableS3_eggers_funnel_tests.csv', row.names = F)
 ```
 
 ## IF vs Effect Size
@@ -787,183 +787,10 @@ df%>%#
 
 ## Determining how category distributions differ from full dataset
 
-### Defining statistical test
-
+Sourced scripts creates two objects: `results_df` for AD Tests and `ks_results` for Two-sample Kolmogorov-Smirnov test.  
 ```{r}
-ad2_stat <- function(x, y) {
+source(here('scripts', 'AD_KS_tests.R'))
 
-  # Sample sizes
-  n <- length(x)
-  m <- length(y)
-
-  # Pooled sample and pooled ecdf
-  z <- c(x, y)
-  z <- z[-which.max(z)] # Exclude the largest point
-  H <- rank(z) / (n + m)
-
-  # Statistic computation via ecdf()
-  (n * m / (n + m)^2) * sum((ecdf(x)(z) - ecdf(y)(z))^2 / ((1 - H) * H))
-
-}
-
-```
-
-```{r}
-# A homogeneity test using the Anderson-Darling statistic
-perm_comp_test <- function(x, y, B = 1e3) {
-
-  # Sizes of x and y
-  n <- length(x)
-  m <- length(y)
-
-  # Test statistic function. Requires TWO arguments, one being the original
-  # data (X_1, ..., X_n, Y_1, ..., Y_m) and the other containing the random
-  # index for permuting the sample
-  Tn <- function(data, perm_index) {
-
-    # Permute sample by perm_index
-    data <- data[perm_index]
-
-    # Split into two samples
-    x <- data[1:n]
-    y <- data[(n + 1):(n + m)]
-
-    # Test statistic -- MODIFY DEPENDING ON THE PROBLEM
-    ad2_stat(x = x, y = y)
-
-  }
-
-  # Perform permutation resampling with the aid of boot::boot
-  Tn_star <- boot::boot(data = c(x, y), statistic = Tn,
-                        sim = "permutation", R = B)
-
-  # Test information -- MODIFY DEPENDING ON THE PROBLEM
-  method <- "Permutation-based Anderson-Darling test of homogeneity"
-  alternative <- "any alternative to homogeneity"
-
-  # p-value: modify if rejection does not happen for large values of the
-  # test statistic
-  pvalue <- mean(Tn_star$t > Tn_star$t0)
-
-  # Construct an "htest" result
-  result <- list(statistic = c("stat" = Tn_star$t0), p.value = pvalue,
-                 statistic_perm = drop(Tn_star$t),
-                 B = B, alternative = alternative, method = method,
-                 data.name = deparse(substitute(x)))
-  class(result) <- "htest"
-
-  # Return "htest"
-  return(result)
-
-}
-
-```
-
-Defining categories and parameters to use in procedure.
-
-```{r catdefine}
-categories = list(Transmission_type = c('Vectored', 'Non-vectored'), 
-                  Principal_reservoir = c('Rodents', 'Mammals (multispecies)', 'Livestock', 'Birds'), 
-                  Pathogen = c('Virus', 'Bacteria'), 
-                  vector = c('Mosquito', 'Tick', 'Mite')
-                  )
-
-# random number seed
-set.seed(123)
-```
-
-**Anderson Darling Test: without subset removal**
-
-```{r ad1}
-
-# create named list for results
-pvals  = vector("list")
-test_stats = vector('list')
-
-for(condition in unique(df$Environmental_condition)){
-  # separate out climate factor
-  temp = df%>%
-    subset(Linear_Nonlinear == 'Linear')%>%
-    subset(Environmental_condition == condition)
-  
-  for(category in names(categories)){
-    for(group in categories[[category]]){
-      # separate out category  
-      group_df = temp%>%
-        filter(.data[[category]] == group)
-      
-      ad = perm_comp_test(temp$es, group_df$es)
-
-      pvals[[paste(condition, category, group, sep='.')]] = ad$p.value
-      test_stats[[paste(condition, category, group, sep='.')]] = ad$statistic
-    }
-  }
-}
-```
-
-**Create Dataframe**
-
-```{r}
-results_df = data.frame(id = names(pvals),
-                        p_val = unlist(pvals),
-                        stat = unlist(test_stats))
-
-```
-
-**Anderson-Darling Test with subset removal**
-
-```{r ad2}
-
-# create named list for results
-pvals  = vector("list")
-test_stats = vector('list')
-
-for(condition in unique(df$Environmental_condition)){
-  # separate out climate factor
-  temp = df%>%
-    subset(Linear_Nonlinear == 'Linear')%>%
-    subset(Environmental_condition == condition)
-  
-  for(category in names(categories)){
-    for(group in categories[[category]]){
-      # separate out category  
-      group_df = temp%>%
-        filter(.data[[category]] == group)
-      
-      # filter out group for random sample
-      temp_filtered = temp%>%
-        filter(.data[[category]] != group)
-      
-      ad = perm_comp_test(temp_filtered$es, group_df$es)
-      
-      #ad = ad2_stat(nonvec$es, vec$es)
-
-      pvals[[paste(condition, category, group, sep='.')]] = ad$p.value
-      test_stats[[paste(condition, category, group, sep='.')]] = ad$statistic
-      #pvals[[paste(condition, category, group, sep='.')]] = 1- goftest::pAD(q=ad)
-      #test_stats[[paste(condition, category, group, sep='.')]] = ad
-    }
-  }
-}
-```
-
-**Combine and save dataframes**
-
-```{r}
-results_df2 = data.frame(id = names(pvals),
-                        p_val_removed = unlist(pvals),
-                        stat_removed = unlist(test_stats))
-
-results_df = left_join(results_df, results_df2)
-
-results_df = results_df%>%
-  separate_wider_delim(cols = id, delim = ".", names = c("Environmental_condition", "Category", "Group"))
-
-rownames(results_df) = NULL
-
-results_df 
-
-#write.csv(results_df, here('outputs','tables','DistributionADTest_Results.csv'), row.names = F)
 ```
 
 ## Results Section: Comparison of Vector and Non-vector borne disease
@@ -977,35 +804,7 @@ df%>%
 
 ```
 
-Testing vectored vs non-vectored
-
-```{r ad2}
-
-# create named list for results
-pvals  = vector("list")
-test_stats = vector('list')
-
-for(condition in unique(df$Environmental_condition)){
-  # separate out climate factor
-  vec = df%>%
-    subset(Linear_Nonlinear == 'Linear')%>%
-    subset(Environmental_condition == condition)%>%
-    subset(Transmission_type == 'Vectored')
-  
-  nonvec = df%>%
-    subset(Linear_Nonlinear == 'Linear')%>%
-    subset(Environmental_condition == condition)%>%
-    subset(Transmission_type == 'Non-vectored')
-  
-      
-  #ad = ad_test(vec$es, nonvec$es, nboots=10000)
-  ks = ks.test(nonvec$es, vec$es, alternative = 'greater')
-  pvals[[condition]] = ks$p.value
-  test_stats[[condition]] = ks$statistic
-}
-```
-
-## Original vs transformed stats
+## Original vs transformed stats - checking agreement
 
 ```{r}
 
