@@ -360,10 +360,11 @@ design2 = "
 
 Fig1_old = combined_plot_old + (comb) + plot_layout(nrow=2, heights=c(1, 0.8), widths=c(0.05, 1), design=design2)
 Fig1_new = combined_plot_new + (comb) + plot_layout(nrow=2, heights=c(1, 0.8), widths=c(0.05, 1), design=design2)
-print(Fig1)
+
+print(Fig1_new)
 
 # save
-#ggsave(Fig1, file="Figure1.jpg", device="jpg", units="in", width=10.5, height=9.5, dpi=600, scale=0.93)
+#ggsave(Fig1_new, file="Figure1.jpg", device="jpg", units="in", width=10.5, height=9.5, dpi=600, scale=0.93)
 
 
 

@@ -1,0 +1,617 @@
+---
+title: "Climate impacts on zoonotic disease meta-analysis results"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE, results='asis'}
+# deps
+library(tidyr)
+#library(twosamples)
+library(here)
+library(magrittr)
+library(tidyverse)
+
+knitr::opts_chunk$set(echo = FALSE)
+
+# load dataset
+df = read.csv(here::here("data","dataset_final.csv"))
+df = unique(df) #ensure all rows are unique
+
+# change vector names
+df = df%>%
+  mutate(Transmission_type = ifelse(Transmission_type == 'HVH', 'Vectored', 'Non-vectored'))
+
+# add parasite group
+df = df%>%
+  mutate(Pathogen = ifelse(Pathogen == 'P', 'Parasite',
+                                ifelse(Pathogen == 'V', 'Virus',
+                                        'Bacteria')))
+
+cat(paste('Number of unique studies:', length(unique(df$Reference_ID))))
+cat(paste('Number of pathogens:', length(unique(df$Disease))))
+cat(paste('Number of countries:', length(unique(df$Country))))
+```
+
+# Results Section 1: Literature search results
+
+**Climate variables assessed - 3 categories**
+
+```{r climatevars1}
+ df%>%
+  select(Reference_ID, Environmental_condition)%>%
+  distinct() %>% 
+  count(Environmental_condition) %>%  
+  group_by(Environmental_condition) %>% 
+  mutate(prop = n/length(unique(df$Reference_ID)))
+```
+
+**Climate variables assessed**
+
+```{r climatevars2}
+
+df%>%
+  select(Reference_ID, Environmental_condition)%>%
+  distinct()%>%
+  mutate(measured = Environmental_condition)%>%
+  mutate(measured = ifelse(measured == 'Temperature', 'T', ifelse(measured == 'Precipitation', 'P', 'H')))%>%
+  pivot_wider(names_from=Environmental_condition, values_from=measured ,values_fill='')%>%
+  relocate(any_of(c('Reference_ID', 'Temperature', 'Precipitation', 'Humidity')))%>%
+  mutate(ClimMeasured = paste0(Temperature, Precipitation, Humidity))%>%
+  group_by(ClimMeasured)%>%
+    summarise(N = n_distinct(Reference_ID)) %>%#
+  mutate(P = N/sum(N))%>%
+  arrange(desc(N)) 
+  
+```
+
+**Proportion of each disease group in dataset**
+
+```{r studycounts1}
+
+df%>%
+  filter(General_Disease != "Multiple") %>%
+  group_by(General_Disease) %>%
+  summarise(N = n_distinct(Reference_ID)) %>%#
+  mutate(P = N/sum(N))%>%
+  arrange(desc(N))
+
+```
+
+**Proportion of specific diseases in dataset**
+
+```{r studycounts2}
+
+tmp = df%>%
+  filter(General_Disease != "Multiple") %>%
+  group_by(Disease, General_Disease) %>%
+  summarise(N = n_distinct(Reference_ID)) %>%#
+  mutate(P = N/sum(N))%>%
+  arrange(desc(N))
+print(tmp,n = length(tmp$N))
+
+```
+
+**Response variables examined**
+
+```{r responsecounts}
+
+df%>%
+  group_by(General_response) %>%
+  summarise(N = n_distinct(Reference_ID)) %>%#
+  mutate(P = N/sum(N))%>%
+  arrange(desc(N)) 
+
+```
+
+**Host Taxonomic Groups**
+
+```{r taxgroups}
+df%>%
+  group_by(Principal_reservoir) %>%
+  summarise(N = n_distinct(Reference_ID)) %>%#
+  mutate(P = N/sum(N))%>%
+  arrange(desc(N)) 
+
+```
+
+**Type of Pathogen**
+
+```{r pathtype}
+
+df%>%
+  group_by(Pathogen) %>%
+  summarise(N = n_distinct(Reference_ID)) %>%#
+  mutate(P = N/sum(N))%>%
+  arrange(desc(N)) 
+```
+
+**Linear vs Non-linear**
+
+```{r lnl}
+df%>%
+  group_by(Linear_Nonlinear) %>%
+  summarise(N = n_distinct(Reference_ID)) %>%#
+  mutate(P = N/sum(N))%>%
+  arrange(desc(N)) 
+
+```
+
+**Statistical Method**
+
+```{r statsmeth2}
+tmp = df%>%
+  group_by(General_Stats_Method) %>%
+  summarise(N = n_distinct(Reference_ID)) %>%#
+  mutate(P = N/sum(N))%>%
+  arrange(desc(N)) 
+
+print(tmp, n = length(tmp$N))
+```
+
+**Statistical Method**
+
+```{r statsmeth}
+tmp = df%>%
+  group_by(Statistical_method) %>%
+  summarise(N = n_distinct(Reference_ID)) %>%#
+  mutate(P = N/sum(N))%>%
+  arrange(desc(N)) 
+
+print(tmp, n = length(tmp$N))
+
+```
+
+# Results Section 2: General findings
+
+
+### Repoted significance
+Calculates reported significance of studies at different thresholds of p-value
+```{r repsignificance}
+
+#filter out records without P values
+tmp = df %>% filter(P.value_general!="" & !is.na(P.value_general))
+tmp %<>% filter(!is.na(Value))
+#unify P-values
+tmp$P.value_general[tmp$P.value_general=="<.0.05" |
+                    tmp$P.value_general=="<0..05"] = "<0.05"
+tmp = as.data.frame(table(tmp$P.value_general)); names(tmp) = c("significance","freq")
+
+#calculate proportions
+tmp %<>% mutate(P = freq/sum(freq))
+
+#Proportion of studies significant at different levels
+cat("Proportion of studies significant at alfa = 0.05: ", tmp %>% filter(significance!=">0.05") %>% summarise(total_sum = sum(P, na.rm = TRUE)) %>% pull(total_sum), "\n")
+
+cat("Proportion of studies significant at alfa = 0.01: ", tmp %>% filter(!significance %in% c("<0.05",">0.05")) %>% summarise(total_sum = sum(P, na.rm = TRUE)) %>% pull(total_sum),"\n")
+
+cat("Proportion of studies significant at alfa = 0.001: ", tmp %>% filter(!significance %in% c("<0.05",">0.05","<0.01")) %>% summarise(total_sum = sum(P, na.rm = TRUE)) %>% pull(total_sum),"\n")
+
+```
+
+### Chi-square direction reported + groups removed
+Calculates chi-square tests looking into differences in proprortions of reported
+increased and decreases in zoonotic risk across different groups.
+
+```{r chi_square}
+source(here::here('scripts', '01_Direction_ChiSquare_Tests.R'))
+
+print(list_of_dfs)
+```
+
+### Secondary reporting rates
+Looks into proportions of studies that report more than 1 statistic and how many of these are statistically significant. 
+```{r secondary_reporting_rates}
+# Filter out records without P values
+second <- df %>% 
+  filter(P.value_general != "" & !is.na(P.value_general))
+
+# Unify P-values
+second <- second %>%
+  mutate(P.value_general = ifelse(P.value_general %in% c("<.0.05", "<0..05", 
+                            "<0.0001", "<0.001","<0.01"), "<0.05", P.value_general))
+# Save IDs of unique studies
+studies <- unique(second$Reference_ID)
+
+# Create a dataframe to store results
+studies_with_secondary <- data.frame(studies = studies, secondary = NA, 
+                                     any_significant = NA,two_or_more_significant = NA)
+# Evaluate reporting rates
+for(i in studies_with_secondary$studies) {
+  
+  sub <- second %>% filter(Reference_ID == i) # Subset records for one study
+  levels <- sub$P.value_general # List significance levels within the study
+  
+  # Note studies with 2 or more significance values reported
+  studies_with_secondary$secondary[studies_with_secondary$studies == i] <- length(levels) > 1
+  
+  # Note studies with at least 1 significant result
+  studies_with_secondary$any_significant[studies_with_secondary$studies == i] <- "<0.05" %in% levels
+  
+  # Note studies with more than 1 significant result
+  studies_with_secondary$two_or_more_significant[studies_with_secondary$studies == i] <- sum(levels == "<0.05") > 1
+}
+
+cat(sum(studies_with_secondary$secondary), "studies with secondary reporting")
+
+cat(sum(studies_with_secondary$any_significant[studies_with_secondary$secondary==TRUE]), "studies with secondary reporting had at least 1 stat, with p < 0.05")
+
+cat(sum(studies_with_secondary$two_or_more_significant[studies_with_secondary$secondary==TRUE]), "had 2 or more stats. significant at <0.05")
+```
+
+# Results Section 3: Effect Size analysis
+
+##Effect Size Category Grouping
+
+```{r numpergroup}
+
+# group effect sizes
+df = df%>%
+  mutate(es_cat = ifelse(es < -0.2, 'Negative effect (g < -0.2)', #if CI contains 0
+                         ifelse(abs(es) < 0.2, 'No effect', # otherwise negative
+                                'Positive effect (g > 0.2)')) # or positive
+  )
+
+df%>%#
+  #subset(Linear_Nonlinear == 'Linear')%>%
+  count(es_cat, Environmental_condition)%>%
+  group_by(Environmental_condition)%>%
+  mutate(prop = n /sum(n), tot = sum(n))
+```
+
+## Determining how category distributions differ from full dataset
+
+Sourced scripts creates two objects: `results_df` for AD Tests and `ks_results` for Two-sample Kolmogorov-Smirnov test.  
+```{r}
+source(here('scripts', '01_AD_KS_tests.R'))
+
+```
+
+## Original vs transformed stats - checking agreement
+
+```{r}
+
+new_stats = df%>% filter(Direction!="" & es_cat!="" & 
+                     !is.na(Direction) & !is.na(es_cat)) #filter(P.value_general!=">0.05")
+
+# Set the number of bootstrap samples
+num_bootstrap_samples <- 1000
+
+# Initialize vectors to store p-values
+p_values <- numeric(num_bootstrap_samples)
+
+# Perform bootstrapping with 80% of the data
+set.seed(123)  # For reproducibility
+for (i in 1:num_bootstrap_samples) {
+  # Resample 80% of the data with replacement
+  resampled_data <- new_stats %>% sample_frac(size = 0.8, replace = TRUE)
+  
+  # Create a contingency table
+  contingency_table <- table(resampled_data$Direction, resampled_data$es_cat)
+  
+  # Perform Fisher's exact test with increased workspace
+  fisher_test <- fisher.test(contingency_table, workspace = 2e8)
+  
+  # Store the p-value
+  p_values[i] <- fisher_test$p.value
+}
+
+# Summarize the results
+p_value_summary <- summary(p_values)
+p_value_summary
+mean(p_values)
+```
+
+# Results section 4: Spatial Climate Data
+
+First need to run the `02_climate_variables.R` script and get the `es_climvars_proportions.csv` dataframe. 
+The script below run the Chi-square & Fisher's Exact tests for Count Data on the contingency tables describing
+The dominant climate change ranges for sites where disease climate sensitivity was reported. 
+
+Produces `dat_results` table summarising test results. 
+```{r}
+source(here::here('scripts','03_Hedge_vs_ClimChange_Tests.R'))
+print(dat_results)
+
+# Save the summary table.
+dat_results %<>% filter(list_name!="temp_05")
+# write.csv(dat_results, here('outputs', 'tables', 'TableS8_climvars_hedge_tests.csv'), row.names = F)
+```
+
+# Results section 5: Publication bias & limitations
+
+### Eggers test
+
+```{r eggers_tests}
+
+f1 <- df %>% filter(!is.na(se) & !is.na(es))
+f2 <- df %>% filter(!is.na(se) & !is.na(es)) %>% filter(Environmental_condition == "Temperature")
+f3 <- df %>% filter(!is.na(se) & !is.na(es)) %>% filter(Environmental_condition == "Precipitation")
+f4 <- df %>% filter(!is.na(se) & !is.na(es)) %>% filter(Environmental_condition == "Humidity")
+
+regtest_all = regtest(f1$es, sei=f1$se)
+regtest_temp = regtest(f2$es, sei=f2$se)
+regtest_prec = regtest(f3$es, sei=f3$se)
+regtest_hum = regtest(f4$es, sei=f4$se)
+
+list_regtest = list(All = regtest_all$pval, Temperature = regtest_temp$pval, Precipitation = regtest_prec$pval, Humidity = regtest_hum$pval)
+
+print("P-values of regtests:")
+print(list_regtest)
+
+#--------------------------------------
+# Extract the p-values and z-values
+pval_all <- regtest_all$pval
+zval_all <- regtest_all$zval
+est_all <- regtest_all$est
+
+pval_temp <- regtest_temp$pval
+zval_temp <- regtest_temp$zval
+est_temp <- regtest_temp$est
+
+pval_prec <- regtest_prec$pval
+zval_prec <- regtest_prec$zval
+est_prec <- regtest_prec$est
+
+pval_hum <- regtest_hum$pval
+zval_hum <- regtest_hum$zval
+est_hum <- regtest_hum$est
+
+# Create a data frame
+results_regtests <- data.frame(
+  Data = c("Overall_dataset", "Temperature", "Precipitation", "Humidity"),
+  Intercept = c(est_all, est_temp, est_prec, est_hum),
+  Z_value = c(zval_all, zval_temp, zval_prec, zval_hum),
+  P_value = c(pval_all, pval_temp, pval_prec, pval_hum)
+)
+
+#write.csv(results_regtests, 'outputs/tables/TableS9_eggers_funnel_tests.csv', row.names = F)
+```
+
+## IF vs Effect Size - looking for publication bias
+
+```{r journals, echo=TRUE, message=TRUE, warning=TRUE}
+
+library(ggplot2)
+library(dplyr)
+
+# ES VS IF ---
+
+## Prepare data
+pub1 = df %>% filter(!is.na(es) & !is.na(Journal_5yr_Impact))
+pub1 %<>% dplyr::select(es, Journal_5yr_Impact, Environmental_condition)
+dat_pub1 = pub1
+dat_pub1$es = abs(dat_pub1$es)
+
+## Perform Shapiro-Wilk test for normality ----
+print(shapiro.test(abs(dat_pub1$es)))
+print(shapiro.test((dat_pub1$Journal_5yr_Impact)))
+
+# Do correlation test for all data points
+spearman_corr <- cor.test(dat_pub1$Journal_5yr_Impact, 
+                          abs(dat_pub1$es), 
+                          method = "spearman", 
+                          exact = FALSE)
+print(spearman_corr)
+
+## Check outliers-------------
+# IF 
+# Calculate IQR
+Q1 <- quantile(dat_pub1$Journal_5yr_Impact, 0.25)
+Q3 <- quantile(dat_pub1$Journal_5yr_Impact, 0.75)
+IQR <- Q3 - Q1
+
+# Check outliers using IQR
+lower_bound <- Q1 - 1.5 * IQR
+upper_bound <- Q3 + 1.5 * IQR
+iqr_outliers <- dat_pub1 %>% filter(Journal_5yr_Impact < lower_bound |
+                                     Journal_5yr_Impact > upper_bound)
+# Print the number of outliers among Impact Factors
+cat("Number of outliers detected by IQR method:", nrow(iqr_outliers), "\n")
+
+# Print the outliers detected
+cat("Outliers detected by IQR method:\n")
+print(unique(iqr_outliers$Journal_5yr_Impact))
+
+# Remove outliers
+dat_pub1 %<>% filter(!Journal_5yr_Impact %in% unique(iqr_outliers1$Journal_5yr_Impact))
+
+# ES ! ----
+# Calculate IQR
+Q1 <- quantile(dat_pub1$es, 0.25)
+Q3 <- quantile(dat_pub1$es, 0.75)
+IQR <- Q3 - Q1
+
+# Check outliers using IQR
+lower_bound <- Q1 - 1.5 * IQR
+upper_bound <- Q3 + 1.5 * IQR
+iqr_outliers1 <- dat_pub1 %>% filter(es < lower_bound | es > upper_bound)
+
+# Print the number of outliers
+cat("Number of outliers detected by IQR method:", nrow(iqr_outliers1), "\n")
+
+# Print the outliers detected
+cat("Outliers detected by IQR method:\n")
+print(unique(iqr_outliers1$es))
+
+dat_pub1 %<>% filter(!es %in% unique(iqr_outliers1$es))
+
+# Calculate Spearman's rank correlation --
+
+spearman_corr <- cor.test(dat_pub1$Journal_5yr_Impact, 
+                          abs(dat_pub1$es), 
+                          method = "spearman", 
+                          exact = FALSE)
+print(spearman_corr)
+```
+
+
+## IF vs p-value
+
+```{r}
+# p-VALUE VS IF ------------------------------------------------
+## Prepare data
+pub2 = df %>% filter(!is.na(P.value_specific) & !is.na(Journal_5yr_Impact))
+pub2 %<>% dplyr::select(P.value_specific, Journal_5yr_Impact, Environmental_condition)
+dat_pub2 = pub2
+dat_pub2$P.value_specific = abs(dat_pub2$P.value_specific)
+
+# Perform Shapiro-Wilk test for normality
+shapiro_test_es <- shapiro.test((dat_pub2$P.value_specific))
+shapiro_test_impact <- shapiro.test(dat_pub2$Journal_5yr_Impact)
+
+# Print the Shapiro-Wilk test results
+print(shapiro_test_es)
+print(shapiro_test_impact)
+
+# Calculate Spearman's rank correlation with outliers
+spearman_corr <- cor.test(dat_pub2$P.value_specific, dat_pub2$Journal_5yr_Impact, method = "spearman", exact = FALSE)
+print(spearman_corr)
+
+## Check outliers ---------------------------------------------
+# IF ! ----|
+# Calculate IQR
+Q1 <- quantile(dat_pub2$Journal_5yr_Impact, 0.25)
+Q3 <- quantile(dat_pub2$Journal_5yr_Impact, 0.75)
+IQR <- Q3 - Q1
+
+# Check outliers using IQR
+lower_bound <- Q1 - 1.5 * IQR
+upper_bound <- Q3 + 1.5 * IQR
+iqr_outliers2 <- dat_pub2 %>% filter(Journal_5yr_Impact < lower_bound | Journal_5yr_Impact > upper_bound)
+
+# Print the number of outliers
+cat("Number of outliers detected by IQR method:", nrow(iqr_outliers2), "\n")
+
+# Print the outliers detected
+cat("Outliers detected by IQR method:\n")
+print(unique(iqr_outliers2$Journal_5yr_Impact))
+
+dat_pub2 %<>% filter(!Journal_5yr_Impact %in% unique(iqr_outliers2$Journal_5yr_Impact))
+
+# P.value_specific ! ----|
+# Calculate IQR
+Q1 <- quantile(dat_pub2$P.value_specific, 0.25)
+Q3 <- quantile(dat_pub2$P.value_specific, 0.75)
+IQR <- Q3 - Q1
+
+# Check outliers using IQR
+lower_bound <- Q1 - 1.5 * IQR
+upper_bound <- Q3 + 1.5 * IQR
+iqr_outliers2 <- dat_pub2 %>% filter(P.value_specific < lower_bound | P.value_specific > upper_bound)
+
+# Print the number of outliers
+cat("Number of outliers detected by IQR method:", nrow(iqr_outliers2), "\n")
+
+# Print the outliers detected
+cat("Outliers detected by IQR method:\n")
+print(unique(iqr_outliers2$P.value_specific))
+
+dat_pub2 %<>% filter(!P.value_specific %in% unique(iqr_outliers2$P.value_specific))
+
+# Calculate Spearman's rank correlation without outliers
+spearman_corr <- cor.test(dat_pub2$P.value_specific, dat_pub2$Journal_5yr_Impact, method = "spearman", exact = FALSE)
+print(spearman_corr)
+```
+
+
+# Main figures
+
+## Figure 1
+
+```{r fig1, echo=TRUE, fig.height=9.5, fig.width=10.5}
+source(here::here('scripts','Figure1.R'))
+
+plot(Fig1_new)
+
+ggsave(Fig1_new, file=here('outputs', 'Figure1.jpg'), device="jpg", units="in", width=10.5, height=9.5, dpi=600, scale=0.93)
+```
+
+## Figure 2
+
+```{r fig2, include=FALSE}
+source(here::here('scripts', '01_AD_KS_tests.R'))
+source(here::here('scripts','Figure2.R'))
+
+print(f2)
+
+#ggsave(f2, file=here('outputs', 'Figure2_new.png'), device="png", units="in", width=12, height=9, dpi=600, scale=0.92)
+```
+
+## Figure 3
+
+```{r fig3, echo=FALSE}
+source(here::here('scripts','Figure3.R'))
+
+print(f3)
+
+#ggsave(f3, file=here('outputs','Figure3.png'), device="png", units="in", width=8, height=6, dpi=300, scale=1.25)
+```
+
+## Figure 4
+
+```{r fig4, echo=FALSE}
+source(here::here('scripts','Figure4.R'))
+
+print(f4)
+
+#ggsave(f4, file=here('outputs','Figure4.png'), device="png", units="in", width=8, height=6, dpi=300, scale=1.25)
+```
+
+# Supplementary figures
+
+## Figure S2: Impact Factors
+
+```{r FigS2}
+source(here::here('scripts','FigureS2.R'))
+
+print(p3)
+print(p3_rm)
+
+#ggsave(p3, file=here('outputs','FigureS2_AB.png'), device="png", units="in", width=9.3, height=4, dpi=1000, scale=1)
+#ggsave(p3_rm, file=here('outputs','FigureS2_CD.png'), device="png", units="in", width=9.3, height=4, dpi=1000, scale=1)
+```
+
+## Figure S3: Funnel plots
+
+```{r FigS3}
+
+source(here::here('scripts','FigureS3.R'))
+
+print(s3)
+
+#ggsave(s3, file=here('outputs','FigureS3.png'), device="png", units="in", width=8.5, height=5, dpi=1000, scale=1)
+```
+
+## Figure S4: p-val distribution
+
+```{r FigS4}
+source(here::here('scripts','FigureS4.R'))
+
+print(combined_plot_s4)
+
+#ggsave(combined_plot_s4, file="outputs/FigureS4.png", device="png", units="in", width=6.3, height=3.8, dpi=1000, scale=0.95)
+```
+
+## Figure S5: Original vs transformed stats
+
+```{r FigS4}
+source(here::here('scripts','FigureS5.R'))
+
+print(plot_s5)
+
+#ggsave(here::here('outputs','FigureS5_new.png'), plot_s5, width = 5.5, height = 6.7, units = "in", dpi = 300, scale = 1.7)
+```
+
+## Figure S6: Hedge's g categories vs climate change ranges
+```{r Fig S6}
+# Produces combined_plot_S6
+source(here::here('scripts','FigureS6.R'))
+
+print(combined_plot_S6)
+
+# Save the plot
+# ggsave(combined_plot_S6, file="outputs/FigureS6.png", device="png", units="in", width=11, height=8, dpi=1000, scale=1)
+```
+

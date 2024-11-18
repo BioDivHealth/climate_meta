@@ -1,23 +1,12 @@
+# =========== GENERATE FIGURE 2 ==========
+
 # load packages 
 library(ggplot2)
 library(dplyr)
 library(patchwork)
 
-# Create a function to add images to facet labels
-# create labeller for pictograms
-# picture_labeller <- function(value, pic_first=TRUE) {
-#   image =  paste0('~/Projects/climate_meta/images/', value, '.png')
-#   
-#   if(pic_first){
-#     label_with_image = paste0("<img src='", image, "' height='8' width='8' />&emsp;&emsp;", value)
-#   }
-#   else{
-#     label_with_image = paste0(value,  "&emsp;&emsp;&emsp;<img src='", image, "' height='15' width='15' />")
-#   }
-#   
-#   
-#   return(label_with_image)
-# }
+df = read.csv(here::here("data","dataset_final.csv"))
+df = unique(df) #ensure all rows are unique
 
 # group effect sizes
 df = df%>%
@@ -25,6 +14,15 @@ df = df%>%
                          ifelse(abs(es) < 0.2, 'No effect', # otherwise negative
                                 'Positive effect (g > 0.2)')) # or positive
   )
+
+# change vector names
+df = df%>%
+  mutate(Transmission_type = ifelse(Transmission_type == 'HVH', 'Vectored', 'Non-vectored'))
+
+df = df%>%
+  mutate(Pathogen = ifelse(Pathogen == 'P', 'Parasite',
+                           ifelse(Pathogen == 'V', 'Virus',
+                                  'Bacteria')))
 
 createFig2  = function(df, stats, colors){
   # -------------------- Format data --------------------
@@ -101,7 +99,7 @@ createFig2  = function(df, stats, colors){
 
   # 1. All together
   p1 = df%>%
-    count(Environmental_condition, es_cat)%>%
+    dplyr::count(Environmental_condition, es_cat)%>%
     group_by(Environmental_condition)%>%
     mutate(prop = n /sum(n), tot = sum(n))%>%
     ggplot(aes(x=prop, y="Full Dataset"))+
@@ -131,10 +129,10 @@ createFig2  = function(df, stats, colors){
 # 2. Transmission type
   pv = stats%>%
    subset(Category == 'Transmission_type')%>%
-   rename(Transmission_type = Group)
+   dplyr::rename(Transmission_type = Group)
 
   p2 = df%>%
-    count(Transmission_type, Environmental_condition, es_cat)%>%
+    dplyr::count(Transmission_type, Environmental_condition, es_cat)%>%
     group_by(Transmission_type, Environmental_condition)%>%
     mutate(prop = n /sum(n), tot = sum(n))%>%
     ggplot(aes(x=prop, y=Transmission_type))+
@@ -164,11 +162,11 @@ createFig2  = function(df, stats, colors){
   # 3. Parasite type
   pv = stats%>%
     subset(Category == 'Pathogen')%>%
-    rename(Pathogen = Group)
+    dplyr::rename(Pathogen = Group)
   
   p3 = df%>%
     subset(Pathogen %in% parasites)%>%
-    count(Pathogen, Environmental_condition, es_cat)%>%
+    dplyr::count(Pathogen, Environmental_condition, es_cat)%>%
     group_by(Pathogen, Environmental_condition)%>%
     mutate(prop = n /sum(n), tot = sum(n))%>%
     ggplot(aes(x=prop, y=Pathogen))+
@@ -204,12 +202,12 @@ createFig2  = function(df, stats, colors){
   # get pvals
   pv = stats%>%
     subset(Category == 'vector')%>%
-    rename(vector = Group)
+    dplyr::rename(vector = Group)
   
   p4 = df%>%
     subset(vector %in% vectors)%>%
     mutate(vector = factor(vector, levels=rev(vectors)))%>%
-    count(vector, Environmental_condition, es_cat)%>%
+    dplyr::count(vector, Environmental_condition, es_cat)%>%
     group_by(vector, Environmental_condition)%>%
     mutate(prop = n /sum(n), tot = sum(n))%>%
     ggplot(aes(x=prop, y=vector))+
@@ -240,12 +238,12 @@ createFig2  = function(df, stats, colors){
   # 2. Reservoir hosts
   pv = stats%>%
     subset(Category == 'Principal_reservoir')%>%
-    rename(Principal_reservoir = Group)
+    dplyr::rename(Principal_reservoir = Group)
   
   p5 = df%>%
     subset(Principal_reservoir %in% hosts)%>%
     mutate(Principal_reservoir = factor(Principal_reservoir, levels=rev(hosts)))%>%
-    count(Principal_reservoir, Environmental_condition, es_cat)%>%
+    dplyr::count(Principal_reservoir, Environmental_condition, es_cat)%>%
     group_by(Principal_reservoir, Environmental_condition)%>%
     mutate(prop = n /sum(n), tot = sum(n))%>%
     ggplot(aes(x=prop, y=Principal_reservoir))+
@@ -282,9 +280,8 @@ createFig2  = function(df, stats, colors){
 }
 
 # -------------------- Create Figure  --------------------
+colors = c( "#00A8A5" , '#fee8c8', '#A80003')
+f2 = createFig2(df, results_df, colors)
+f2
 
-# colors = c( "#29A1AB" , '#fee8c8', '#AB3329')
-# arch palette"#88a0dc" "#381a61" "#7c4b73" "#ed968c" "#ab3329" "#e78429" "#f9d14a"
-
-#createFig2(df, results_df, colors)
-
+#ggsave(f2, file=here::here('outputs', 'Figure2_new.png'), device="png", units="in", width=12, height=9, dpi=600, scale=0.92)

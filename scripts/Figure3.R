@@ -1,25 +1,26 @@
-# Code for Figure 3 of Gourlay et al
+# =========== GENERATE FIGURE 3 ==========
 
 # dependencies:
 library(ggplot2)
 library(dplyr)
 library(patchwork)
 library(ggridges)
-
-# loadData = function(infile){
-#   df = read.csv(here('data', 'dataset_final.csv'))
-#   df = unique(df)
-#   
-#   # Change vector names
-#   df = df%>%
-#     mutate(Transmission_type = ifelse(Transmission_type == 'HVH', 'Vectored', 'Non-vectored'))
-#   
-#   df$Transmission_type = factor(df$Transmission_type, levels=c('Vectored', 'Non-vectored'))
-# }
-
-
+library(magrittr)
 
 # -------------------- Load data --------------------
+df = read.csv(here::here("data","dataset_final.csv"))
+df %<>% filter(!is.na(es))
+
+# change vector names
+df = df%>%
+  mutate(Transmission_type = ifelse(Transmission_type == 'HVH', 'Vectored', 'Non-vectored'))
+
+df$Transmission_type = factor(df$Transmission_type, levels=c('Non-vectored','Vectored'))
+
+df = df%>%
+  mutate(Pathogen = ifelse(Pathogen == 'P', 'Parasite',
+                           ifelse(Pathogen == 'V', 'Virus',
+                                  'Bacteria')))
 
 createFig3  = function(df, colors){
 # Load effect size data
@@ -127,3 +128,7 @@ createFig3  = function(df, colors){
   return(fig)
 }
 
+colors = c('#A80003',"#00A8A5")
+f3 = createFig3(df, colors)
+f3
+#ggsave(f3, file=here('outputs','Figure3.png'), device="png", units="in", width=8, height=6, dpi=300, scale=1.25)

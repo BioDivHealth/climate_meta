@@ -1,10 +1,13 @@
-# Code for Figure 4 of Gourlay et al
+# =========== GENERATE FIGURE 4 ==========
 
 # dependencies:
 library(ggplot2)
 library(dplyr)
 library(patchwork)
 library(ggridges)
+library(here)
+
+df = read.csv(here::here("data","dataset_final.csv"))
 
 df4 = df %>% filter(!is.na(es))
 df4$Disease[df4$Disease=="Haemorrhagic fever with renal syndrome"] = "HFRS"
@@ -187,3 +190,8 @@ createFig4  = function(df4, colors){
   return(fig)
 }
 
+f4 = createFig4(data, colors)
+
+print(f4)
+
+#ggsave(f4, file=here('outputs','Figure4.png'), device="png", units="in", width=8, height=6, dpi=300, scale=1.25)

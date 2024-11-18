@@ -1,9 +1,12 @@
-## Code for Figure S3 ----------------
+# =========== GENERATE FIGURE S3 ==========
 
 # Libraries -------------------------
 library(patchwork)
 library(ggplot2)
 library(dplyr)
+
+df = read.csv(here::here("data","dataset_final.csv"))
+df = unique(df) #ensure all rows are unique
 
 # Define the function to create the funnel plot
 create_funnel_plot <- function(tmp, point_color, title_plot, subplot_tag, positions) {
@@ -56,3 +59,8 @@ funnel_plot_4 <- create_funnel_plot(f4, "#FCC237", "Humidity",
                                     subplot_tag="D", 
                                     positions = c(0.01,1.05)) + 
   xlab("Effect Size (Hedge's g)") + ylab("") + geom_point(shape = 1, color = "#FAA209")   # Scatter plot of effect sizes vs. standard errors
+
+s3 = ggarrange(funnel_plot_1, funnel_plot_2, funnel_plot_3, funnel_plot_4, nrow = 2, ncol = 2)
+s3 = s3 + theme(plot.margin = unit(c(0.7,0,0,0.3),"cm"))
+
+print(s3)

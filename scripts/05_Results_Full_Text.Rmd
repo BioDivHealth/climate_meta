@@ -1,0 +1,416 @@
+---
+title: "Climate impacts on zoonotic disease meta-analysis: text"
+output:
+  html_notebook: 
+    theme: flatly
+    fig_caption: yes
+  html_document: 
+    keep_md: yes
+editor_options:
+  chunk_output_type: inline
+  markdown: 
+    wrap: sentence
+---
+
+```{r setup, include=FALSE, results='asis'}
+# depss
+
+if (!require(tidyverse, quietly = TRUE)) {
+  install.packages("tidyverse")
+  library(tidyverse)
+}
+library(magrittr)
+if (!require(here, quietly = TRUE)) {
+  install.packages("here")
+  library(tidyverse)
+}
+
+if (!require(twosamples, quietly = TRUE)) {
+  install.packages("twosamples")
+  library(twosamples)
+}
+
+if (!require(magrittr, quietly = TRUE)) {
+  install.packages("magrittr")
+  library(magrittr)
+}
+
+if (!require(knitr, quietly = TRUE)) {
+  install.packages("library(knitr)")
+  library(knitr)
+}
+
+if (!require(ggpubr, quietly = TRUE)) {
+  install.packages("library(ggpubr)")
+  library(ggpubr)
+}
+
+if (!require(metafor, quietly = TRUE)) {
+  install.packages("metafor")
+  library(metafor)
+}
+
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, include=FALSE)
+
+# load dataset
+df = read.csv(here('data','dataset_final.csv'))
+
+# change vector names
+df = df%>%
+  mutate(Transmission_type = ifelse(Transmission_type == 'HVH', 'Vectored', 'Non-vectored'))
+
+# add parasite group
+df = df%>%
+  mutate(Pathogen = ifelse(Pathogen == 'P', 'Parasite',
+                                ifelse(Pathogen == 'V', 'Virus',
+                                        'Bacteria')))
+# keep only unique rows
+df = unique(df)
+```
+
+```{r}
+extracted_stats = df %>% filter(!is.na(Value))
+
+extracted_stats %<>% 
+  select(Environmental_condition) %>% 
+  count(Environmental_condition) %>% 
+  group_by(Environmental_condition) %>% 
+  mutate(prop = n/length(extracted_stats$Environmental_condition))
+
+disease_txt = df%>%
+  filter(General_Disease != "Multiple") %>%
+  group_by(General_Disease) %>%
+  summarise(N = n_distinct(Reference_ID)) %>%#
+  mutate(P = N/sum(N))%>%
+  arrange(desc(N))
+
+linear_nonlinear = df%>%
+  group_by(Linear_Nonlinear) %>%
+  summarise(N = n_distinct(Reference_ID)) %>%#
+  mutate(P = N/sum(N))%>%
+  arrange(desc(N)) 
+```
+
+## Literature search results
+
+The search criteria isolated 13,468 article titles, which were narrowed down through a four-step screening process (Fig. S1) to `r length(unique(df$Reference_ID))` (1.3% of total titles) independent, empirical studies that could be included in the final dataset.
+These studies, representing `r length(unique(df$Disease))` diseases (Table S9) from `r length(unique(df$Country))` countries, provided `r length(df$Value[!is.na(df$Value)])` statistics quantifying the relationship between climate variables and various measures of zoonotic disease risk.
+Temperature was the most commonly studied variable `r paste0("(",paste0(round(extracted_stats$prop[extracted_stats$Environmental_condition=="Temperature"],2)*100,"%"),", ","n=",extracted_stats$n[extracted_stats$Environmental_condition=="Temperature"],")")`, followed by precipitation `r paste0("(",paste0(round(extracted_stats$prop[extracted_stats$Environmental_condition=="Precipitation"],2)*100,"%"),", ","n=",extracted_stats$n[extracted_stats$Environmental_condition=="Precipitation"],")")`, and humidity `r paste0("(",paste0(round(extracted_stats$prop[extracted_stats$Environmental_condition=="Humidity"],2)*100,"%"),", ","n=",extracted_stats$n[extracted_stats$Environmental_condition=="Humidity"],")")`.
+The studies had close to global coverage, with areas of high sampling in South and East Asia and Europe, and more limited sampling in Central and North Asia and Eastern Africa (Fig. 1A).
+Hantaviruses were the most frequently studied group of pathogens `r paste0("(",paste0(round(disease_txt$P[disease_txt$General_Disease=="Hantaviral diseases"],3)*100,"%"),", ","n=",disease_txt$N[disease_txt$General_Disease=="Hantaviral diseases"],")")`, followed by arboviruses `r paste0("(",paste0(round(disease_txt$P[disease_txt$General_Disease=="Arboviral diseases"],3)*100,"%"),", ","n=",disease_txt$N[disease_txt$General_Disease=="Arboviral diseases"],")")` and Leptospira spp.
+`r paste0("(",paste0(round(disease_txt$P[disease_txt$General_Disease=="Leptospirosis"],3)*100,"%"),", ","n=",disease_txt$N[disease_txt$General_Disease=="Leptospirosis"],")")` (see Fig. 1B).
+
+## Zoonotic risks are generally higher in warm and wet conditions
+
+```{r reppvalsignificance_text, include=FALSE}
+
+#filter out records without P values
+pvals = df %>% filter(P.value_general!="" & !is.na(P.value_general))
+pvals = pvals %>% filter(!is.na(Value))
+
+#unify P-values
+pvals$P.value_general[pvals$P.value_general=="<.0.05" |
+                    pvals$P.value_general=="<0..05"] = "<0.05"
+pvals = as.data.frame(table(pvals$P.value_general)); names(pvals) = c("pval","freq")
+
+# Calculate proportions
+pvals %<>% mutate(P = freq/sum(freq))
+
+# Proportion of studies with P-values at different levels
+alfa_005_p = pvals %>% filter(pval!=">0.05") %>% summarise(total_sum = sum(P, na.rm = TRUE)) %>% pull(total_sum)
+
+alfa_001_p = pvals %>% filter(!pval %in% c("<0.05",">0.05")) %>% summarise(total_sum = sum(P, na.rm = TRUE)) %>% pull(total_sum)
+
+alfa_0001_p = pvals %>% filter(!pval %in% c("<0.05",">0.05","<0.01")) %>% summarise(total_sum = sum(P, na.rm = TRUE)) %>% pull(total_sum)
+
+signif = df %>% filter(Direction!="") %>% filter(P.value_general!="") %>%  filter(P.value_general!=">0.05")
+```
+
+```{r hedges_summary}
+df = df %>%
+  mutate(es_cat = ifelse(es < -0.2, 'Negative effect (g < -0.2)', #if CI contains 0
+                         ifelse(abs(es) < 0.2, 'No effect', # otherwise negative
+                                'Positive effect (g > 0.2)'))) # or positive
+es_categories = df %>%
+  subset(Linear_Nonlinear == 'Linear')%>%
+  count(es_cat, Environmental_condition)%>%
+  group_by(Environmental_condition)%>%
+  mutate(prop = n /sum(n), tot = sum(n))
+
+# summary tables 
+
+# full dataset
+tmp_all <- es_categories %>%
+  group_by(es_cat) %>%
+  summarise(total_n = sum(n)) %>%
+  mutate(prop = total_n / sum(total_n))
+
+tmp_comb_all <- tmp_all %>%
+  mutate(effect_type = ifelse(es_cat == 'No effect', 'No effect', 'Non-zero effect')) %>%
+  group_by(effect_type) %>%
+  summarise(total_n = sum(total_n)) %>%
+  mutate(prop = total_n / sum(total_n))
+
+# temperature
+tmp_temp <- es_categories %>%
+  filter(Environmental_condition=="Temperature") %>% 
+  group_by(es_cat) %>%
+  summarise(total_n = sum(n)) %>%
+  mutate(prop = total_n / sum(total_n))
+
+tmp_comb_temp <- tmp_temp %>%
+  mutate(effect_type = ifelse(es_cat == 'No effect', 'No effect', 'Non-zero effect')) %>%
+  group_by(effect_type) %>%
+  summarise(total_n = sum(total_n)) %>%
+  mutate(prop = total_n / sum(total_n))
+
+# precipitation
+tmp_prec <- es_categories %>%
+  filter(Environmental_condition=="Precipitation") %>% 
+  group_by(es_cat) %>%
+  summarise(total_n = sum(n)) %>%
+  mutate(prop = total_n / sum(total_n))
+
+tmp_comb_prec <- tmp_prec %>%
+  mutate(effect_type = ifelse(es_cat == 'No effect', 'No effect', 'Non-zero effect')) %>%
+  group_by(effect_type) %>%
+  summarise(total_n = sum(total_n)) %>%
+  mutate(prop = total_n / sum(total_n))
+
+# humidity
+tmp_hum <- es_categories %>%
+  filter(Environmental_condition=="Humidity") %>% 
+  group_by(es_cat) %>%
+  summarise(total_n = sum(n)) %>%
+  mutate(prop = total_n / sum(total_n))
+
+tmp_comb_hum <- tmp_hum %>%
+  mutate(effect_type = ifelse(es_cat == 'No effect', 'No effect', 'Non-zero effect')) %>%
+  group_by(effect_type) %>%
+  summarise(total_n = sum(total_n)) %>%
+  mutate(prop = total_n / sum(total_n))
+```
+
+```{r secondary_reporting}
+# Filter out records without P values
+second <- df %>% 
+  filter(P.value_general != "" & !is.na(P.value_general))
+
+# Unify P-values
+second <- second %>%
+  mutate(P.value_general = ifelse(P.value_general %in% c("<.0.05", "<0..05", 
+                            "<0.0001", "<0.001","<0.01"), "<0.05", P.value_general))
+# Save IDs of unique studies
+studies <- unique(second$Reference_ID)
+
+# Create a dataframe to store results
+studies_with_secondary <- data.frame(studies = studies, secondary = NA, 
+                                     any_significant = NA,two_or_more_significant = NA)
+# Evaluate reporting rates
+for(i in studies_with_secondary$studies) {
+  
+  sub <- second %>% filter(Reference_ID == i) # Subset records for one study
+  levels <- sub$P.value_general # List significance levels within the study
+  
+  # Note studies with 2 or more significance values reported
+  studies_with_secondary$secondary[studies_with_secondary$studies == i] <- length(levels) > 1
+  
+  # Note studies with at least 1 significant result
+  studies_with_secondary$any_significant[studies_with_secondary$studies == i] <- "<0.05" %in% levels
+  
+  # Note studies with more than 1 significant result
+  studies_with_secondary$two_or_more_significant[studies_with_secondary$studies == i] <- sum(levels == "<0.05") > 1
+}
+```
+
+In general, climate factors influence zoonotic disease risk to some extent, according to the majority of measures assessed (n = `r length(df$Value[!is.na(df$Value)])`; `r paste0(round(alfa_005_p,3)*100, "%")` significant at α=0.05, `r paste0(round(alfa_001_p,2)*100, "%")` at α=0.01, `r paste0(round(alfa_0001_p,2)*100, "%")` at α=0.001).
+Out of the `r length(unique(df$Reference_ID))` source studies, `r sum(studies_with_secondary$secondary)` (`r paste0(round(sum(studies_with_secondary$secondary)/length(unique(df$Reference_ID)),2)*100,"%")`) reported more than one measure of zoonotic risk with an associated p-value.
+Among these `r sum(studies_with_secondary$secondary)` studies with secondary reporting, `r sum(studies_with_secondary$any_significant[studies_with_secondary$secondary==TRUE])` (`r paste0(round(sum(studies_with_secondary$any_significant[studies_with_secondary$secondary==TRUE])/sum(studies_with_secondary$secondary),2)*100, "%")`) had at least one measure of zoonotic disease risk significant at the α=0.05 level, while `r sum(studies_with_secondary$two_or_more_significant[studies_with_secondary$secondary==TRUE])` (`r paste0(round(sum(studies_with_secondary$two_or_more_significant[studies_with_secondary$secondary==TRUE])/sum(studies_with_secondary$secondary),2)*100,"%")`) reported two or more significant measures of zoonotic risk at the α=0.05 level.
+
+```{r}
+chi_overall <- read.csv(here('outputs', 'tables', 'TableS2_ChiSquare.csv'))
+
+chi = df %>%
+        filter(Direction != "") %>%
+        filter(P.value_general != "") %>%
+        filter(P.value_general != ">0.05")
+
+chi_vectored = chi %>% filter(Transmission_type=="Vectored")
+chi_nonvectored = chi %>% filter(Transmission_type=="Non-vectored")
+
+table(chi_vectored$Direction)['increase']
+table(chi_nonvectored$Direction)['increase']
+```
+
+There were significantly more positive relationships between climatic factors and a measure of risk (`r round((table(signif$Direction))[["increase"]]/(table(signif$Direction))[["decrease"]],1)` times more) reported than negative relationships ($\overline{\chi^2}$ = `r round(subset(chi_overall, Group == "none_removed")$Chi_Square,2)`, df = 1, 95% CI = `r round(subset(chi_overall, Group == "none_removed")$Chi_Lower_CI,2)` -- `r round(subset(chi_overall, Group == "none_removed")$Chi_Upper_CI,2)`, p = `r round(subset(chi_overall, Group == "none_removed")$P_value,3)`, from 1000 bootstraps of 80% of the data).
+The proportions seen within the overall dataset were robust to dropping most major regions, disease groups, pathogen types, statistical methods and hosts from the calculations (Table S2).
+When dividing the dataset into vectored and non-vectored diseases, only the subset containing vectored diseases showed significantly more positive relationships (n = `r table(chi_vectored$Direction)['increase']`) than negative relationships (n = `r table(chi_vectored$Direction)['decrease']`) (Non-vectored diseases: $\overline{\chi^2}$ = `r round(subset(chi_overall, Group == "Vectored")$Chi_Square,2)`, df=1, p= `r round(subset(chi_overall, Group == "Vectored")$P_value,3)`; Vectored diseases: $\overline{\chi^2}$ = `r round(subset(chi_overall, Group == "Non.vectored")$Chi_Square,2)`, df=1, p= `r format(round(subset(chi_overall, Group == "Non.vectored")$P_value,5), scientific = FALSE)`, Table S2).
+However, non-vectored diseases also exhibited a substantial number of positive relationships (Positive: n = `r table(chi_nonvectored$Direction)['increase']`; Negative: n = `r table(chi_nonvectored$Direction)['decrease']`).
+
+## Reported climate-risk relationships are highly variable in size and direction both between and within different zoonotic disease systems
+
+```{r}
+# Filter effect sizes
+es = df%>%
+  mutate(es_cat = ifelse(es < -0.2, 'Negative effect (g < -0.2)', #if CI contains 0
+                         ifelse(abs(es) < 0.2, 'No effect', # otherwise negative
+                                'Positive effect (g > 0.2)')) # or positive
+  )
+
+es %<>% filter(!is.na(es_cat))
+
+es_none = es %>%
+  count(es_cat, Environmental_condition)%>%
+  group_by(Environmental_condition)%>%
+  mutate(prop = n /sum(n), tot = sum(n)) %>% filter(es_cat=="No effect")
+
+es_categories = es %>%
+  count(es_cat, Environmental_condition)%>%
+  group_by(Environmental_condition)%>%
+  mutate(prop = n /sum(n), tot = sum(n))
+```
+
+After standardising the measures of disease risk by transforming them into Hedge's g, studies still reported an effect of climatic factors on zoonotic disease risk more often than no effect (`r paste0(round(1 - table(es$es_cat)['No effect'] / sum(table(es$es_cat)), 2)*100, "%")` Non-zero effect sizes; Fig.
+2).
+However, when splitting the dataset into the three climatic factors separately, only temperature reported a non-zero effect more often than no effect (`r paste0(round(1 - es_none$prop[es_none$Environmental_condition=="Temperature"], 3)*100, "%")` Non-zero effect sizes), with less than half of precipitation (`r paste0(round(1 - es_none$prop[es_none$Environmental_condition=="Precipitation"], 3)*100, "%")`; n=107) or humidity (`r paste0(round(1 - es_none$prop[es_none$Environmental_condition=="Humidity"], 3)*100, "%")`; n=47) observations reporting a non-zero effect on disease risk.
+
+Overall, temperature appears to be the most consistent in terms of the direction of climate effects on disease risk (`r paste0(round(es_categories$prop[es_categories$Environmental_condition=="Temperature" & es_categories$es_cat=="Positive effect (g > 0.2)"], 3)*100, "%")` positive effects, `r paste0(round(es_categories$prop[es_categories$Environmental_condition=="Temperature" & es_categories$es_cat=="No effect"], 3)*100, "%")` no effects, `r paste0(round(es_categories$prop[es_categories$Environmental_condition=="Temperature" & es_categories$es_cat=="Negative effect (g < -0.2)"], 3)*100, "%")` negative effects). Across the three climatic factors separately, temperature showed the highest proportion of positive effects on measures of disease risk, with `r paste0(round(es_categories$prop[es_categories$Environmental_condition=="Temperature" & es_categories$es_cat=="Positive effect (g > 0.2)"], 3)*100, "%")` (n=90) of observations having a value of Hedge's g greater than 0.2 (Fig. 2), with precipitation and humidity having more balanced positive and negative effects (Precipitation: `r paste0(round(es_categories$prop[es_categories$Environmental_condition=="Precipitation" & es_categories$es_cat=="Positive effect (g > 0.2)"], 3)*100, "%")` Positive and `r paste0(round(es_categories$prop[es_categories$Environmental_condition=="Precipitation" & es_categories$es_cat=="Negative effect (g < -0.2)"], 3)*100, "%")` Negative effects; Humidity: `r paste0(round(es_categories$prop[es_categories$Environmental_condition=="Humidity" & es_categories$es_cat=="Positive effect (g > 0.2)"], 3)*100, "%")` Positive and `r paste0(round(es_categories$prop[es_categories$Environmental_condition=="Humidity" & es_categories$es_cat=="Negative effect (g < -0.2)"], 3)*100, "%")`Negative effects). Furthermore, when grouping the effect sizes by disease and climatic factor, we observe a greater number of positive effects in certain diseases, such as temperature impacts on West Nile Virus and Japanese encephalitis risk (Fig. 3A), and precipitation impacts on Japanese encephalitis, Scrub typhus and Leptospirosis risk (Fig. 3B).
+
+## Vector-borne zoonoses show the strongest and most consistent evidence for climate-sensitivity
+
+```{r}
+source(here('scripts','01_AD_KS_tests.R'))
+# Creates: 
+# - results_df (for AD tests)
+# - es_summaries (for KS)
+# - pvals_ks (for KS)
+# - test_stats_ks (for KS)
+results_df
+es_summaries
+pvals_ks
+test_stats_ks
+
+es_transmission_temp = es %>% filter(Environmental_condition=="Temperature") %>% 
+  count(es_cat, Transmission_type)%>%
+  group_by(Transmission_type)%>%
+  mutate(prop = n /sum(n), tot = sum(n))
+
+paste0(es_transmission_temp$prop[es_transmission_temp$es_cat=="Positive effect (g > 0.2)" & es_transmission_temp$Transmission_type=="Vectored"]*100,"%")
+
+paste0(round(es_transmission_temp$prop[es_transmission_temp$es_cat=="Positive effect (g > 0.2)" & es_transmission_temp$Transmission_type=="Non-vectored"]*100,0),"%")
+```
+
+The effect size distributions for vector-borne diseases, diseases vectored by mosquitoes and diseases with birds as principal reservoir significantly differed from the overall effect size distribution for temperature, suggesting a positive influence of temperature on disease risk among these groups (Anderson-Darling Test; vector borne disease: AD = `r round(results_df$stat[results_df$Environmental_condition=="Temperature" & results_df$Group=="Vectored"],2)`; p=`r round(results_df$p_val[results_df$Environmental_condition=="Temperature" & results_df$Group=="Vectored"],3)`; mosquito vectored disease: AD = `r round(results_df$stat[results_df$Environmental_condition=="Temperature" & results_df$Group=="Mosquito"],2)`; p=`r round(results_df$p_val[results_df$Environmental_condition=="Temperature" & results_df$Group=="Mosquito"],3)`; birds as principal reservoir: AD = `r round(results_df$stat[results_df$Environmental_condition=="Temperature" & results_df$Group=="Birds"],2)`; p=`r round(results_df$p_val[results_df$Environmental_condition=="Temperature" & results_df$Group=="Birds"],3)`).
+
+When the subsets were compared to the full distributions with the subset removed, a few more categories were significantly different: non-vectored diseases and diseases located in Iran significantly differed from the overall temperature distribution (Table S4).
+Importantly, vector-borne zoonotic diseases had significantly more positive effects (mean=`r round(es_summaries$mn[es_summaries$Transmission_type=="Vectored" & es_summaries$Environmental_condition=="Temperature"],2)`; sd=`r round(es_summaries$sd[es_summaries$Transmission_type=="Vectored" & es_summaries$Environmental_condition=="Temperature"],2)`; n=`r es_summaries$n[es_summaries$Transmission_type=="Vectored" & es_summaries$Environmental_condition=="Temperature"]`) reported for temperature when compared to solely animal-hosted diseases (mean=`r round(es_summaries$mn[es_summaries$Transmission_type=="Non-vectored" & es_summaries$Environmental_condition=="Temperature"],2)`; sd=`r round(es_summaries$sd[es_summaries$Transmission_type=="Non-vectored" & es_summaries$Environmental_condition=="Temperature"],2)`; n=`r es_summaries$n[es_summaries$Transmission_type=="Non-vectored" & es_summaries$Environmental_condition=="Temperature"]`) (Two-sample Kolmogorov-Smirnov test; D=`r round(test_stats_ks$Temperature[[1]],2)`; p = `r round(pvals_ks$Temperature,3)`; Fig.
+4).
+While the trends for non-vectored diseases were less pronounced, `r paste0(round(es_transmission_temp$prop[es_transmission_temp$es_cat=="Positive effect (g > 0.2)" & es_transmission_temp$Transmission_type=="Non-vectored"]*100,0),"%")` of temperature effect sizes for these diseases were positive (compared to `r paste0(es_transmission_temp$prop[es_transmission_temp$es_cat=="Positive effect (g > 0.2)" & es_transmission_temp$Transmission_type=="Vectored"]*100,"%")` for vector-borne diseases), indicating that temperature increases may still elevate the risk for a range of non-vectored zoonotic diseases.
+
+The effect size distributions for both precipitation and humidity centred around zero, with no significant differences observed between the distributions of vectored and non-vectored subsets (Two-sample Kolmogorov-Smirnov test for precipitation: D=`r round(test_stats_ks$Precipitation[[1]],2)`; p = `r round(pvals_ks$Precipitation,3)`; and humidity: D=`r round(test_stats_ks$Humidity[[1]],2)`; p = `r round(pvals_ks$Humidity,3)`, Fig.
+2 & Fig.
+4).
+We note the distribution of effect sizes for precipitation had visually larger tails for non-vectored diseases compared to vectored diseases (Fig. 4B), but the available data was too limited to perform robust statistical tests.
+Moreover, while the majority of observations on the impacts of humidity on disease risk showed no significant effects, a subset of studies on diseases with livestock as the principal reservoir and studies in Iran did exhibit significantly different distributions of effect sizes for humidity (Anderson-Darling Test; Livestock: AD = `r round(results_df$stat[results_df$Environmental_condition=="Humidity" & results_df$Group=="Livestock"],2)`; p=`r round(results_df$p_val[results_df$Environmental_condition=="Humidity" & results_df$Group=="Livestock"],3)`; Iran: AD = `r round(results_df$stat[results_df$Environmental_condition=="Humidity" & results_df$Group=="Iran"],2)`; p=`r round(results_df$p_val[results_df$Environmental_condition=="Humidity" & results_df$Group=="Iran"],3)`; Fig.
+2, Table S6).
+When the distribution of effect sizes within specific subsets were compared to the full distributions with the subset removed, diseases with a livestock principal reservoir differed from the overall precipitation distribution (Table S5).
+
+## Future climatological changes at study locations may favour increases in zoonotic transmission risk
+
+We identified that many study sites associated with climate-sensitive diseases (those with Hedge's g \> 0.2 or \< -0.2) are located in areas where future climatologies consistently predict substantial changes in temperature (BIO1, mean annual air temperature) or precipitation (BIO12, annual precipitation amount).
+These predictions, based on the CHELSA V2.1 CMIP6 dataset, were assessed across three SSP scenarios (SSP1-RCP2.6, SSP3-RCP7.0, SSP5-RCP8.5) and five GCMs for the period 2041--2070, compared to baseline conditions (1981--2010).
+Climate shifts were categorised using thresholds for temperature (1ºC, 1.5ºC, and 2ºC) and precipitation changes (±25 mm, ±50 mm, ±100 mm), identifying the most congruent range of predictions for each location at each threshold.
+
+```{r}
+# First need to run the `02_climate_variables.R` script and get the 
+# `es_climvars_proportions.csv` dataframe. 
+
+# The script below run the Chi-square & Fisher's Exact tests for Count Data 
+# on the contingency tables describing the dominant climate change ranges for 
+# sites where disease climate sensitivity was reported. 
+
+dat = read.csv(here('data', 'es_climvars_proportions.csv'))
+
+# Produces `dat_results` table summarising test results. 
+source(here('scripts','03_Hedge_vs_ClimChange_Tests.R'))
+print(dat_results)
+
+# Save the summary table.
+dat_results %<>% filter(list_name!="temp_05")
+
+# Temperature sites with positive effects
+tab_1c = prop.table(table(dat$bio1_most_frequent_1[dat$es_cat=="Positive effect (g > 0.2)" & dat$Environmental_condition=="Temperature"]))
+tab_15c = prop.table(table(dat$bio1_most_frequent_15[dat$es_cat=="Positive effect (g > 0.2)" & dat$Environmental_condition=="Temperature"]))
+tab_2c = prop.table(table(dat$bio1_most_frequent_2[dat$es_cat=="Positive effect (g > 0.2)" & dat$Environmental_condition=="Temperature"]))
+
+# Precipitation sites with positive effects
+tab_25mm = prop.table(table(dat$bio12_most_frequent_25cat[dat$es_cat=="Positive effect (g > 0.2)" & dat$Environmental_condition=="Precipitation"]))
+tab_50mm = prop.table(table(dat$bio12_most_frequent_50cat[dat$es_cat=="Positive effect (g > 0.2)" & dat$Environmental_condition=="Precipitation"]))
+tab_100mm = prop.table(table(dat$bio12_most_frequent_100cat[dat$es_cat=="Positive effect (g > 0.2)" & dat$Environmental_condition=="Precipitation"]))
+
+# Precipitation sites with negative effects
+tab_25mm_neg = prop.table(table(dat$bio12_most_frequent_25cat[dat$es_cat=="Negative effect (g < -0.2)" & dat$Environmental_condition=="Precipitation"]))
+tab_50mm_neg = prop.table(table(dat$bio12_most_frequent_50cat[dat$es_cat=="Negative effect (g < -0.2)" & dat$Environmental_condition=="Precipitation"]))
+tab_100mm_neg = prop.table(table(dat$bio12_most_frequent_100cat[dat$es_cat=="Negative effect (g < -0.2)" & dat$Environmental_condition=="Precipitation"]))
+```
+
+A majority of study sites for which we identified positive disease risk effects are located in areas expected to see substantial increase in temperature (`r paste0(tab_1c[["bio1 > 1"]]*100,"%")` of studies were in sites predicting \>1ºC increase, `r paste0(round(tab_15c[["bio1 > 1.5"]]*100,0),"%")` above 1.5ºC and `r paste0(round(tab_2c[["bio1 > 2"]]*100,0),"%")` above 2ºC; Fig.
+S6).
+Negative effect sizes observed a similar relationship, with most sites also seeing future temperature increases, meaning there was no association between effect size categories (Positive/Negative) and temperature change (Table S7).
+
+The projected changes in precipitation across sites revealed more variability compared to temperature shifts, though again with no clear association between precipitation climate sensitivity categories (Positive/Negative) and predicted changes in annual precipitation (Table S7).
+For sites with positive precipitation effect sizes, `r paste0(round(tab_25mm[["bio12 > 25"]]*100,0),"%")` saw an above +25mm increase in annual precipitation, `r paste0(round(tab_50mm[["bio12 > 50"]]*100,0),"%")` above +50mm and `r paste0(round(tab_100mm[["bio12 > 100"]]*100,0),"%")` above 100mm (Fig. S6).
+Substantial decreases in precipitation were rarely predicted, meaning few sites with negative precipitation sensitivity were located in areas expected to see lower precipitation (`r paste0(round(tab_25mm_neg[["bio12 < -25"]]*100,0),"%")` of study sites showing negative effects were predicted a 25mm reduction, 0% a 50mm or 100mm reduction; Fig.
+S6).
+For both positive and negative rainfall effects, many sites are expected to see intermediate shifts in precipitation.
+
+## Data biases and methodological inconsistencies across studies hinder a clear synthesis of climate-sensitivity in zoonoses
+
+```{r}
+diseases = df%>%
+  filter(Disease != "Multiple") %>%
+  group_by(Disease) %>%
+  summarise(N = n_distinct(Reference_ID)) %>%#
+  mutate(P = N/sum(N))%>%
+  arrange(desc(N))
+
+linear_non = df%>%
+  group_by(Linear_Nonlinear) %>%
+  summarise(N = n_distinct(Reference_ID)) %>%#
+  mutate(P = N/sum(N))%>%
+  arrange(desc(N))
+
+paste0(round(linear_non$P[linear_non$Linear_Nonlinear=="Non-linear"],2)*100,"%")
+```
+
+Several inconsistencies and methodological limitations were identified within the collated dataset and source studies.
+While Hedge's g was able to be calculated for a total of `r sum(!is.na(df$es))` measures (`r paste0(round(sum(!is.na(df$es))/sum(!is.na(df$Value)),2)*100,"%")` of the extracted measures), the confidence intervals around Hedge's g were able to be calculated for only `r df %>% filter(!is.na(ci.lo) & !is.na(ci.hi)) %>% count() %>% pull()` effect sizes, due to limited reporting of statistics within source studies and a lack of clearly reported sample sizes, standard errors or confidence intervals.
+
+The dataset analysed contains considerable diversity in both the number of data points per disease and the statistical methods employed across studies.
+For example, certain diseases were well-represented including haemorrhagic fever with renal syndrome (n=`r diseases$N[diseases$Disease=="Haemorrhagic fever with renal syndrome"]` studies) and leptospirosis (n=`r diseases$N[diseases$Disease=="Leptospirosis"]`), while eight diseases (anaplasmosis, bartonellosis, Ebola, MERS, mPox, Q-fever, theileriosis, and toxoplasmosis) were represented by just one study each, limiting generalisability of the analysis.
+However, even among well represented diseases, effects were highly variable in both magnitude and direction (regardless of transmission type), further limiting the identification of clear patterns of climate sensitivity (Fig. 3).
+
+In terms of methodology, the collated dataset represented `r length(unique(df$Statistical_method))` specific statistical methods used in the source studies, many of which lacked consistent and detailed reporting of methods used.
+The vast majority applied linear regression or time-series modelling approaches (e.g. OLS regression, generalised linear mixed effects models, SARIMA), with fewer studies applying spatially-explicit (e.g. Zero-inflated Poisson Bayesian conditional autoregressive models, Spatial lag regression models), nonlinear (e.g. GAMs) or explicitly causal inference-based modelling methodologies.
+The heavy reliance on linear regression and time-series models may oversimplify the complexities of climate-disease relationships.
+Strikingly, the use of non-linear models was relatively rare, with only `r paste0(round(linear_non$P[linear_non$Linear_Nonlinear=="Non-linear"],2)*100,"%")` of studies investigating non-linear relationships between climatic variables and measures of zoonotic disease risk (Fig. 1F).
+
+```{r eggers_test}
+f1 <- df %>% filter(!is.na(se) & !is.na(es))
+f2 <- df %>% filter(!is.na(se) & !is.na(es)) %>% filter(Environmental_condition == "Temperature")
+f3 <- df %>% filter(!is.na(se) & !is.na(es)) %>% filter(Environmental_condition == "Precipitation")
+f4 <- df %>% filter(!is.na(se) & !is.na(es)) %>% filter(Environmental_condition == "Humidity")
+
+regtest_all = regtest(f1$es, sei=f1$se)
+regtest_temp = regtest(f2$es, sei=f2$se)
+regtest_prec = regtest(f3$es, sei=f3$se)
+regtest_hum = regtest(f4$es, sei=f4$se)
+
+list_regtest = list(All = regtest_all$pval, Temperature = regtest_temp$pval, Precipitation = regtest_prec$pval, Humidity = regtest_hum$pval)
+```
+
+There was some degree of publication bias inferred from funnel plots showing standard errors against respective effect sizes (Fig. S3).
+Egger's regression tests for funnel plot asymmetry showed significant asymmetry in the overall dataset (z = `r round(regtest_all$zval,2)`, p = `r round(list_regtest$All,3)`) and precipitation data (z = `r round(regtest_prec$zval,2)`, p = `r round(list_regtest$Precipitation,3)`), but none within humidity and temperature data (Fig. S3, Table S3).
+Pearson's product-moment correlation analysis showed no significant correlation between 5-Year Journal Impact Factors and Hedge's g or reported p-values, even after removing outliers among Hedge's g and p-values (Fig. S2).
+Furthermore, p-values extracted from the studies were examined to check for potential evidence of "p-hacking".
+Visual inspection of the distribution of p-values surrounding p = 0.05 found limited evidence of p-hacking, with a small spike in the number of studies with p-values just under p = 0.05 (Fig. S4).

@@ -1,4 +1,5 @@
-#Figure 
+# =========== GENERATE FIGURE S6 ==========
+
 #Artur Trebski
 #10 Oct 2024
 
@@ -248,13 +249,10 @@ titles_prec <- c("100mm Threshold",
 plot_temp = draw_facet_heatmap(df_temp, column_names_temp, titles_temp)
 plot_prec = draw_facet_heatmap_prec(df_prec, column_names_prec, titles_prec)
 
-
-# Combine the two plots into a single figure using gridExtra
-# Combine the plots using patchwork with increased spacing
 library(gridExtra)
 
 combined_plot_S6 <- plot_temp / plot_spacer() / plot_prec + 
   plot_layout(nrow = 3, heights = c(1, 0.05, 1))  # Add spacer in the middle and adjust heights
-combined_plot_S6
+
 print(combined_plot_S6)
 #ggsave(combined_plot_S6, file="outputs/FigureS6.png", device="png", units="in", width=11, height=8, dpi=1000, scale=1)

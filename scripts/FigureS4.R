@@ -1,4 +1,4 @@
-# Code for Figure S4 of Gourlay et al
+# =========== GENERATE FIGURE S4 ==========
 
 # Libraries
 library(ggplot2)
@@ -6,6 +6,9 @@ library(dplyr)
 library(cowplot)
 
 # Filter and unify P-values
+df = read.csv(here::here("data","dataset_final.csv"))
+df = unique(df) #ensure all rows are unique
+
 tmp = df %>% filter(P.value_general != "")
 
 # Filter specific P-values for the plots
@@ -39,3 +42,10 @@ pl2 = ggplot(pv2, aes(x = P_value_specific, y = after_stat(count))) +
   labs(x = "p-value", y = "Count", title = "Histogram of p-values") +
   theme_minimal() +
   xlim(0, 1)   # Adjust the x-axis limit based on your data range
+
+combined_plot_s4 <- ggdraw() +
+  draw_plot(pl2) +
+  draw_plot(pl1, x = 0.43, y = 0.34, width = 0.49, height = 0.53) +
+  draw_plot_label(label = "Zoomed-in view", x = 0.55, y = 0.925, size = 9)
+
+print(combined_plot_s4)

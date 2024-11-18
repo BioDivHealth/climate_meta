@@ -1,11 +1,14 @@
-# Code for Figure S2 ----------------
+# =========== GENERATE FIGURE S2 ==========
 
 # Libraries -------------------------
 library(patchwork)
 library(ggplot2)
 library(dplyr)
+library(here)
 
 # ALL DATA -------------------------- 
+df = read.csv(here::here("data","dataset_final.csv"))
+df = unique(df) #ensure all rows are unique
 ## Data filtering and preparation-----
 s2_method = "pearson"
 stats_label = ifelse(s2_method=="spearman","Spearman's ρ:", "Pearson's r:")
@@ -276,3 +279,12 @@ p2_rm = p2_rm + labs(tag = "D")+
 p2_rm = p2_rm + coord_cartesian(ylim = c(0, max(dat_pub2$P.value_specific)))
 p2_rm
 
+# Combine plots
+p3 = ggarrange(p1, p2, ncol = 2, nrow = 1)
+p3 = p3  + theme(plot.margin = unit(c(0.5,0,0,0.2),"cm"))
+
+p3_rm = ggarrange(p1_rm, p2_rm, ncol = 2, nrow = 1)
+p3_rm = p3_rm  + theme(plot.margin = unit(c(0.5,0,0,0.2),"cm"))
+
+print(p3)
+print(p3_rm)
