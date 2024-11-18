@@ -1,0 +1,61 @@
+"Environmental_condition","Category","Group","p_val","stat","p_val_removed","stat_removed"
+"Temperature","Transmission_type","Vectored",0.047,2.32771249468886,0.003,5.56107646414523
+"Temperature","Transmission_type","Non-vectored",0.212,1.42747180934332,0.002,5.56107646414523
+"Temperature","Principal_reservoir","Rodents",0.298,1.11919016322001,0.053,2.37936430389116
+"Temperature","Principal_reservoir","Mammals (multispecies)",0.256,1.22655809032688,0.056,2.29762808137766
+"Temperature","Principal_reservoir","Livestock",0.126,1.6161775607749,0.091,2.18844510410186
+"Temperature","Principal_reservoir","Birds",0.025,3.0970342516291,0.005,4.25126729946213
+"Temperature","Pathogen","Virus",0.998,0.184905957644689,0.58,0.687704809016227
+"Temperature","Pathogen","Bacteria",0.988,0.184678386381065,0.849,0.401112565586629
+"Temperature","vector","Mosquito",0.008,3.62650902788576,0.004,5.03516588665007
+"Temperature","vector","Tick",0.145,1.60454910516446,0.059,2.19394829839746
+"Temperature","vector","Mite",0.274,1.14437882858336,0.223,1.35674735874697
+"Temperature","Country","China",0.569,0.708860712420662,0.283,1.145143502747
+"Temperature","Country","Iran",0.092,2.26564251408928,0.034,2.72073845984218
+"Temperature","Country","USA",0.548,0.71324090048089,0.478,0.79680264969851
+"Temperature","Country","Argentina",0.174,1.46467529906684,0.16,1.51271603274776
+"Temperature","Country","India",0.719,0.527768024665332,0.705,0.542751453209161
+"Temperature","Disease","Haemorrhagic fever with renal syndrome",0.555,0.674385627313847,0.435,0.805737225850341
+"Temperature","Disease","Brucellosis",0.271,1.20599763114806,0.16,1.48035721899199
+"Temperature","Disease","Scrub typhus",0.297,1.14437882858336,0.238,1.35674735874697
+"Temperature","Disease","Leptospirosis",0.34,1.04492396354021,0.218,1.33125122908733
+"Precipitation","Transmission_type","Vectored",0.755,0.484359959963105,0.368,0.99715572005719
+"Precipitation","Transmission_type","Non-vectored",0.981,0.219938607121225,0.358,0.99715572005719
+"Precipitation","Principal_reservoir","Rodents",0.814,0.405946157576702,0.334,1.03574789440603
+"Precipitation","Principal_reservoir","Mammals (multispecies)",1,0.100772406348826,0.999,0.165837625042355
+"Precipitation","Principal_reservoir","Livestock",0.077,2.17006015436193,0.018,3.02165521597796
+"Precipitation","Principal_reservoir","Birds",0.237,1.27243631587166,0.125,1.71606154626987
+"Precipitation","Pathogen","Virus",0.568,0.685309942167618,0.096,2.03457930962287
+"Precipitation","Pathogen","Bacteria",0.723,0.535774316541999,0.207,1.39983117670656
+"Precipitation","vector","Mosquito",0.455,0.829975183026937,0.345,1.1073147201056
+"Precipitation","vector","Tick",0.392,0.936051721027995,0.315,1.08677829137068
+"Precipitation","vector","Mite",0.477,0.84656939365718,0.385,1.00398978904198
+"Precipitation","Country","China",0.776,0.473940178739771,0.438,0.8768142426226
+"Precipitation","Country","Iran",0.242,1.25212115017592,0.157,1.59083820086069
+"Precipitation","Country","USA",0.329,1.09975691785372,0.26,1.21049641234194
+"Precipitation","Country","Argentina",0.241,1.26667281648797,0.222,1.32239639354072
+"Precipitation","Country","India",0.955,0.284458980201993,0.942,0.29289645052039
+"Precipitation","Disease","Haemorrhagic fever with renal syndrome",0.494,0.800973121405115,0.374,0.958291013018435
+"Precipitation","Disease","Brucellosis",0.174,1.61475009207034,0.098,2.0293905428144
+"Precipitation","Disease","Scrub typhus",0.454,0.84656939365718,0.35,1.00398978904198
+"Precipitation","Disease","Leptospirosis",0.095,1.97555220956281,0.027,2.82556886770145
+"Humidity","Transmission_type","Vectored",0.898,0.35258485127934,0.427,0.881969663946043
+"Humidity","Transmission_type","Non-vectored",0.977,0.235758926885572,0.442,0.881969663946042
+"Humidity","Principal_reservoir","Rodents",0.796,0.442721765554926,0.432,0.876656803734988
+"Humidity","Principal_reservoir","Mammals (multispecies)",0.4,0.891568476692317,0.127,1.64064487164335
+"Humidity","Principal_reservoir","Livestock",0.036,2.7361700608215,0.002,4.7480570263988
+"Humidity","Principal_reservoir","Birds",0.731,0.516536760551292,0.651,0.587909747978418
+"Humidity","Pathogen","Virus",0.964,0.263825762835332,0.662,0.610570422069972
+"Humidity","Pathogen","Bacteria",0.966,0.241401156809557,0.433,0.829191437417288
+"Humidity","vector","Mosquito",0.444,0.922526133227634,0.273,1.20407057915629
+"Humidity","vector","Tick",0.586,0.673497103466667,0.403,0.863589959013698
+"Humidity","vector","Mite",0.754,0.499502397005357,0.605,0.677125907281219
+"Humidity","Country","China",0.248,1.25063357734025,0.051,2.48373017714512
+"Humidity","Country","Iran",0.016,3.42845758239068,0.002,5.0192377300887
+"Humidity","Country","USA",0.328,0.984649445517047,0.322,1.03059313071651
+"Humidity","Country","Argentina",NA,NA,NA,NA
+"Humidity","Country","India",0.958,0.275934026406522,0.923,0.32097801550474
+"Humidity","Disease","Haemorrhagic fever with renal syndrome",0.234,1.19853243277072,0.138,1.62150268943304
+"Humidity","Disease","Brucellosis",0.078,2.20449593592727,0.015,3.31964445840653
+"Humidity","Disease","Scrub typhus",0.742,0.499502397005357,0.589,0.677125907281219
+"Humidity","Disease","Leptospirosis",0.762,0.499967401455193,0.551,0.702832140977514
