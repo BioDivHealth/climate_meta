@@ -136,10 +136,13 @@ chisq_remove_groups <- function(df, grouping_factor, percentage = 0.8, n_samples
   }
   
   # Transform P-values to significance levels
-  levels_means_pval <- as.data.frame(lapply(means_pval, function(x) {
-    ifelse(x < 0.01, "**",
-           ifelse(x < 0.05, "*", ">0.05"))
-  }))
+  levels_means_pval <- as.data.frame(means_pval) %>%
+    mutate(across(everything(), ~ case_when(
+      . < 0.001 ~ "***",
+      . < 0.01  ~ "**",
+      . < 0.05  ~ "*",
+      TRUE      ~ ">0.05"
+    )))
   
   means_pval <- as.data.frame(means_pval)
   rownames(levels_means_pval) <- rownames(means_pval)
@@ -151,6 +154,7 @@ chisq_remove_groups <- function(df, grouping_factor, percentage = 0.8, n_samples
     means_chi = means_chi
   ))
 }
+
 
 # ----------------------------------------------------------------|
 # Section 3: Main Analysis Workflow ----
@@ -326,12 +330,24 @@ list_of_dfs <- list(
 # 4.2 Display the List of Data Frames
 print(list_of_dfs)
 
+# 4.2.1 Get main results and adjust p-values
+chi_all <- list_of_dfs[["Overall"]] %>%
+  mutate(
+    P_value_adjusted = p.adjust(P_value, method = "BH"),
+    P_level_adjusted = case_when(
+      P_value_adjusted < 0.001 ~ "***",
+      P_value_adjusted < 0.01  ~ "**",
+      P_value_adjusted < 0.05  ~ "*",
+      TRUE                     ~ ">0.05"
+    )
+  )
+
 # 4.3 Export Overall Results to CSV
-# write.csv(
-#   as.data.frame(list_of_dfs[["Overall"]]),
-#   'outputs/tables/TableS3_ChiSquare.csv',
-#   row.names = FALSE
-# )
+ write.csv(
+   as.data.frame(chi_all),
+   'outputs/tables/TableS3_ChiSquare.csv',
+   row.names = FALSE
+ )
 
 # 4.4 Export Additional Environmental Condition Results (Uncomment as Needed)
 # write.csv(as.data.frame(list_of_dfs[["Temperature"]]), 'outputs/tables/chisq_results_temperature2.csv', row.names = FALSE)
