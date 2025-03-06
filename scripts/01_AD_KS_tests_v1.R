@@ -22,6 +22,8 @@ df = df%>%
                            ifelse(Pathogen == 'V', 'Virus',
                                   'Bacteria')))
 
+df %<>% filter(!is.na(es))
+
 # Determining how category distributions differ from full dataset ----
 
 ### Defining statistical test 
@@ -30,6 +32,7 @@ ad2_stat <- function(x, y) {
   
   # Sample sizes
   n <- length(x)
+  
   m <- length(y)
   
   # Pooled sample and pooled ecdf
@@ -100,6 +103,17 @@ categories = list(Transmission_type = c('Vectored', 'Non-vectored'),
                   Disease = c('Haemorrhagic fever with renal syndrome', 'Brucellosis', 'Scrub typhus',
                               'Leptospirosis')
 )
+
+categories_temp = list(Transmission_type = c('Vectored', 'Non-vectored'), 
+                       Principal_reservoir = c('Rodents', 'Mammals (multispecies)', 'Livestock', 'Birds'), 
+                       Pathogen = c('Virus', 'Bacteria'), 
+                       vector = c('Mosquito', 'Tick'),
+                       Country = c('China', 'USA') #added temporarily
+                       #Disease = c('Haemorrhagic fever with renal syndrome', 'Brucellosis',
+                       #            'Leptospirosis')
+)
+
+categories = categories_temp
 
 #AD Test: without subset removal ----
   
@@ -183,7 +197,65 @@ results_df = results_df%>%
 rownames(results_df) = NULL
 #write.csv(results_df, here('outputs','tables','TableS467_ADTests.csv'), row.names = F)
 
-results_df 
+# **Filtering by Environmental Condition**
+results_df_temp = results_df %>% filter(Environmental_condition == 'Temperature')
+results_df_hum = results_df %>% filter(Environmental_condition == 'Humidity')
+results_df_prec = results_df %>% filter(Environmental_condition == 'Precipitation')
+
+results_df_temp = results_df_temp %>% filter(effects_in_a_group>=20)
+results_df_hum = results_df_hum %>% filter(effects_in_a_group>=20)
+results_df_prec = results_df_prec %>% filter(effects_in_a_group>=20)
+
+# Bonferroni correction (FWER control)
+results_df_temp$p_val_bonferroni <- p.adjust(results_df_temp$p_val, method = "bonferroni")
+results_df_hum$p_val_bonferroni <- p.adjust(results_df_hum$p_val, method = "bonferroni")
+results_df_prec$p_val_bonferroni <- p.adjust(results_df_prec$p_val, method = "bonferroni")
+
+
+
+
+
+tmp = results_df_temp %>% filter(Category=="vector")
+
+tmp$p_val_bonferroni <- p.adjust(tmp$p_val, method = "bonferroni")
+tmp$p_val_Holm <- p.adjust(tmp$p_val, method = "holm")
+tmp$p_val_BH <- p.adjust(tmp$p_val, method = "BH")
+
+
+# **Apply Multiple Testing Corrections for p_val**
+# Benjamini-Hochberg (FDR control)
+results_df_temp$p_val_adj <- p.adjust(results_df_temp$p_val, method = "BH")
+results_df_hum$p_val_adj <- p.adjust(results_df_hum$p_val, method = "BH")
+results_df_prec$p_val_adj <- p.adjust(results_df_prec$p_val, method = "BH")
+
+
+# Holm correction (FWER control)
+results_df_temp$p_val_Holm <- p.adjust(results_df_temp$p_val, method = "holm")
+results_df_hum$p_val_Holm <- p.adjust(results_df_hum$p_val, method = "holm")
+results_df_prec$p_val_Holm <- p.adjust(results_df_prec$p_val, method = "holm")
+
+# **Apply Multiple Testing Corrections for p_val_removed**
+# Benjamini-Hochberg (FDR control)
+results_df_temp$p_val_removed_BH <- p.adjust(results_df_temp$p_val_removed, method = "BH")
+results_df_hum$p_val_removed_BH <- p.adjust(results_df_hum$p_val_removed, method = "BH")
+results_df_prec$p_val_removed_BH <- p.adjust(results_df_prec$p_val_removed, method = "BH")
+
+# Bonferroni correction (FWER control)
+results_df_temp$p_val_removed_Bonferroni <- p.adjust(results_df_temp$p_val_removed, method = "bonferroni")
+results_df_hum$p_val_removed_Bonferroni <- p.adjust(results_df_hum$p_val_removed, method = "bonferroni")
+results_df_prec$p_val_removed_Bonferroni <- p.adjust(results_df_prec$p_val_removed, method = "bonferroni")
+
+# Holm correction (FWER control)
+results_df_temp$p_val_removed_Holm <- p.adjust(results_df_temp$p_val_removed, method = "holm")
+results_df_hum$p_val_removed_Holm <- p.adjust(results_df_hum$p_val_removed, method = "holm")
+results_df_prec$p_val_removed_Holm <- p.adjust(results_df_prec$p_val_removed, method = "holm")
+
+# **Combine the corrected dataframes back into one dataframe**
+results_df <- bind_rows(results_df_temp, results_df_hum, results_df_prec)
+
+# Print final dataframe
+print(results_df)
+
 
 # Comparison of Vector and Non-vector borne disease ----
 
