@@ -9,6 +9,7 @@
 library(dplyr)
 library(tidyr)
 library(stringr)
+library(tidyverse)
 
 # Load files
 
@@ -94,7 +95,7 @@ chisq_remove_groups <- function(df, grouping_factor, percentage = 0.8, n_samples
       arrange(desc(N))
     
     print(group_summary[1:3, 1])
-    
+    print(group_summary[1:3, ])
     # Extract top 3 groups
     top_groups <- group_summary %>%
       slice_head(n = 3) %>%
