@@ -343,11 +343,11 @@ chi_all <- list_of_dfs[["Overall"]] %>%
   )
 
 # 4.3 Export Overall Results to CSV
- write.csv(
-   as.data.frame(chi_all),
-   'outputs/tables/TableS3_ChiSquare.csv',
-   row.names = FALSE
- )
+ # write.csv(
+ #   as.data.frame(chi_all),
+ #   'outputs/tables/TableS3_ChiSquare.csv',
+ #   row.names = FALSE
+ # )
 
 # 4.4 Export Additional Environmental Condition Results (Uncomment as Needed)
 # write.csv(as.data.frame(list_of_dfs[["Temperature"]]), 'outputs/tables/chisq_results_temperature2.csv', row.names = FALSE)
