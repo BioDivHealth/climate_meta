@@ -32,6 +32,8 @@ df = df%>%
 cat(paste('Number of unique studies:', length(unique(df$Reference_ID))))
 cat(paste('Number of pathogens:', length(unique(df$Disease))))
 cat(paste('Number of countries:', length(unique(df$Country))))
+
+sort(table(df$Country))
 ```
 
 # Results Section 1: Literature search results
@@ -165,9 +167,10 @@ print(tmp, n = length(tmp$N))
 
 # Results Section 2: General findings
 
-
 ### Repoted significance
+
 Calculates reported significance of studies at different thresholds of p-value
+
 ```{r repsignificance}
 
 #filter out records without P values
@@ -191,8 +194,8 @@ cat("Proportion of studies significant at alfa = 0.001: ", tmp %>% filter(!signi
 ```
 
 ### Chi-square direction reported + groups removed
-Calculates chi-square tests looking into differences in proprortions of reported
-increased and decreases in zoonotic risk across different groups.
+
+Calculates chi-square tests looking into differences in proprortions of reported increased and decreases in zoonotic risk across different groups.
 
 ```{r chi_square}
 source(here::here('scripts', '01_Direction_ChiSquare_Tests.R'))
@@ -201,7 +204,9 @@ print(list_of_dfs)
 ```
 
 ### Secondary reporting rates
-Looks into proportions of studies that report more than 1 statistic and how many of these are statistically significant. 
+
+Looks into proportions of studies that report more than 1 statistic and how many of these are statistically significant.
+
 ```{r secondary_reporting_rates}
 # Filter out records without P values
 second <- df %>% 
@@ -262,9 +267,10 @@ df%>%#
 
 ## Determining how category distributions differ from full dataset
 
-Sourced scripts creates two objects: `results_df` for AD Tests and `ks_results` for Two-sample Kolmogorov-Smirnov test.  
+Sourced scripts creates two objects: `results_df` for AD Tests and `ks_results` for Two-sample Kolmogorov-Smirnov test.
+
 ```{r}
-source(here('scripts', '01_AD_KS_tests.R'))
+source(here('scripts', '01_AD_KS_Multiple_Testing_Correction.R'))
 
 ```
 
@@ -305,11 +311,10 @@ mean(p_values)
 
 # Results section 4: Spatial Climate Data
 
-First need to run the `02_climate_variables.R` script and get the `es_climvars_proportions.csv` dataframe. 
-The script below run the Chi-square & Fisher's Exact tests for Count Data on the contingency tables describing
-The dominant climate change ranges for sites where disease climate sensitivity was reported. 
+First need to run the `02_climate_variables.R` script and get the `es_climvars_proportions.csv` dataframe. The script below run the Chi-square & Fisher's Exact tests for Count Data on the contingency tables describing The dominant climate change ranges for sites where disease climate sensitivity was reported.
 
-Produces `dat_results` table summarising test results. 
+Produces `dat_results` table summarising test results.
+
 ```{r}
 source(here::here('scripts','03_Hedge_vs_ClimChange_Tests.R'))
 print(dat_results)
@@ -446,7 +451,6 @@ spearman_corr <- cor.test(dat_pub1$Journal_5yr_Impact,
 print(spearman_corr)
 ```
 
-
 ## IF vs p-value
 
 ```{r}
@@ -515,7 +519,6 @@ spearman_corr <- cor.test(dat_pub2$P.value_specific, dat_pub2$Journal_5yr_Impact
 print(spearman_corr)
 ```
 
-
 # Main figures
 
 ## Figure 1
@@ -525,13 +528,14 @@ source(here::here('scripts','Figure1.R'))
 
 plot(Fig1_new)
 
-ggsave(Fig1_new, file=here('outputs', 'Figure1.jpg'), device="jpg", units="in", width=10.5, height=9.5, dpi=600, scale=0.93)
+#ggsave(Fig1_new, file=here('outputs', 'Figure1.jpg'), device="jpg", units="in", width=10.5, height=9.5, dpi=600, scale=0.93)
+ggsave(Fig1_new, file=here('outputs', 'Figure1.pdf'), device="pdf", units="in", width=10.5, height=9.5, dpi=600, scale=0.93)
 ```
 
 ## Figure 2
 
 ```{r fig2, include=FALSE}
-source(here::here('scripts', '01_AD_KS_tests.R'))
+source(here::here('scripts', '01_AD_KS_Multiple_Testing_Correction.R'))
 source(here::here('scripts','Figure2.R'))
 
 print(f2)
@@ -546,7 +550,8 @@ source(here::here('scripts','Figure3.R'))
 
 print(f3)
 
-#ggsave(f3, file=here('outputs','Figure3.png'), device="png", units="in", width=8, height=6, dpi=300, scale=1.25)
+ggsave(f3, file=here('outputs','Figure3_2.png'), device="png", units="in", width=8, height=6, dpi=600, scale=1.1)
+ggsave(f3, file=here('outputs','Figure3_2.pdf'), device="pdf", units="in", width=8, height=6, dpi=600, scale=1.1)
 ```
 
 ## Figure 4
@@ -557,6 +562,7 @@ source(here::here('scripts','Figure4.R'))
 print(f4)
 
 #ggsave(f4, file=here('outputs','Figure4.png'), device="png", units="in", width=8, height=6, dpi=300, scale=1.25)
+ggsave(f4, file=here('outputs','Figure4.pdf'), device="pdf", units="in", width=8, height=6, dpi=600, scale=1.25)
 ```
 
 # Supplementary figures
@@ -566,8 +572,11 @@ print(f4)
 ```{r FigS2}
 source(here::here('scripts','FigureS2.R'))
 
-print(p3)
-print(p3_rm)
+
+FS2 <- (p3 / plot_spacer() /p3_rm) + plot_layout(heights = c(1,0.05,1))
+
+ggsave(FS2, file=here('outputs','FigureS2.pdf'), device="pdf", 
+       units="in", width=9, height=8, dpi=1000, scale=1.1)
 
 #ggsave(p3, file=here('outputs','FigureS2_AB.png'), device="png", units="in", width=9.3, height=4, dpi=1000, scale=1)
 #ggsave(p3_rm, file=here('outputs','FigureS2_CD.png'), device="png", units="in", width=9.3, height=4, dpi=1000, scale=1)
@@ -582,6 +591,7 @@ source(here::here('scripts','FigureS3.R'))
 print(s3)
 
 #ggsave(s3, file=here('outputs','FigureS3.png'), device="png", units="in", width=8.5, height=5, dpi=1000, scale=1)
+ggsave(s3, file=here('outputs','FigureS3.pdf'), device="pdf", units="in", width=7.5, height=5, dpi=1000, scale=1.2)
 ```
 
 ## Figure S4: p-val distribution
@@ -592,6 +602,7 @@ source(here::here('scripts','FigureS4.R'))
 print(combined_plot_s4)
 
 #ggsave(combined_plot_s4, file="outputs/FigureS4.png", device="png", units="in", width=6.3, height=3.8, dpi=1000, scale=0.95)
+ggsave(combined_plot_s4, file=here('outputs','FigureS4.pdf'), device="pdf", units="in", width=6.3, height=3.8, dpi=1000, scale=1.1)
 ```
 
 ## Figure S5: Original vs transformed stats
@@ -602,9 +613,13 @@ source(here::here('scripts','FigureS5.R'))
 print(plot_s5)
 
 #ggsave(here::here('outputs','FigureS5_new.png'), plot_s5, width = 5.5, height = 6.7, units = "in", dpi = 300, scale = 1.7)
+
+ggsave(here::here('outputs','FigureS5.pdf'), plot_s5, device = "pdf",
+       width = 5.5, height = 6.7, units = "in", dpi = 600, scale = 1.7)
 ```
 
 ## Figure S6: Hedge's g categories vs climate change ranges
+
 ```{r Fig S6}
 # Produces combined_plot_S6
 source(here::here('scripts','FigureS6.R'))
@@ -612,6 +627,5 @@ source(here::here('scripts','FigureS6.R'))
 print(combined_plot_S6)
 
 # Save the plot
-# ggsave(combined_plot_S6, file="outputs/FigureS6.png", device="png", units="in", width=11, height=8, dpi=1000, scale=1)
+ggsave(combined_plot_S6, file=here('outputs', 'FigureS6.pdf'), device="pdf", units="in", width=11, height=8, dpi=1000, scale=1) 
 ```
-
