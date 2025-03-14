@@ -5,10 +5,12 @@ library(patchwork)
 library(ggplot2)
 library(dplyr)
 library(here)
+library(ggpubr)
 
 # ALL DATA -------------------------- 
 df = read.csv(here::here("data","dataset_final.csv"))
 df = unique(df) #ensure all rows are unique
+
 ## Data filtering and preparation-----
 s2_method = "pearson"
 stats_label = ifelse(s2_method=="spearman","Spearman's ρ:", "Pearson's r:")
@@ -45,8 +47,8 @@ p1 <- p1 + annotate("text", x = max(dat_pub1$Journal_5yr_Impact) * 0.65, y = max
 p1 = p1 + labs(tag = "A")+
   theme(plot.tag = element_text(face = "bold",size = 14),
         plot.tag.position = c(0.0,1),
-        axis.title.x = element_text(size = 14),
-        axis.title.y = element_text(size = 14),
+        axis.title.x = element_text(size = 13),
+        axis.title.y = element_text(size = 13),
         axis.text=element_text(size=12))  # Bold y-axis text)
 
 p1 = p1 + coord_cartesian(ylim = c(0, max(abs(dat_pub1$es))))
@@ -82,8 +84,8 @@ p2 <- p2 + annotate("text", x = max(dat_pub2$Journal_5yr_Impact) * 0.62, y = max
 p2 = p2 + labs(tag = "B")+
   theme(plot.tag = element_text(face = "bold",size = 14),
         plot.tag.position = c(0,1),
-        axis.title.x = element_text(size = 14),
-        axis.title.y = element_text(size = 14),
+        axis.title.x = element_text(size = 13),
+        axis.title.y = element_text(size = 13),
         axis.text=element_text(size=12))
 #p2 = p2 + coord_cartesian((ylim = c(0, max(dat_pub2$P.value_specific))))
 p2
@@ -122,7 +124,7 @@ iqr_outliers_1 <- dat_pub1 %>% filter(Journal_5yr_Impact < lower_bound |
                                       Journal_5yr_Impact > upper_bound
 )
 # Print the number of outliers
-cat("Number of outliers detected by IQR method:", nrow(iqr_outliers), "\n")
+cat("Number of outliers detected by IQR method:", nrow(iqr_outliers_1), "\n")
 
 # Print the outliers detected
 cat("Outliers detected by IQR method:\n")
@@ -141,7 +143,7 @@ iqr_outliers_2 <- dat_pub1 %>% filter(es < lower_bound | es > upper_bound
 )
 
 # Print the number of outliers
-cat("Number of outliers detected by IQR method:", nrow(iqr_outliers), "\n")
+cat("Number of outliers detected by IQR method:", nrow(iqr_outliers_2), "\n")
 
 # Print the outliers detected
 cat("Outliers detected by IQR method:\n")
@@ -184,8 +186,8 @@ p1_rm <- p1_rm + annotate("text", x = max(dat_pub1$Journal_5yr_Impact) * 0.65, y
 p1_rm = p1_rm + labs(tag = "C")+
   theme(plot.tag = element_text(face = "bold",size = 14),
         plot.tag.position = c(0.0,1),
-        axis.title.x = element_text(size = 14),
-        axis.title.y = element_text(size = 14),
+        axis.title.x = element_text(size = 13),
+        axis.title.y = element_text(size = 13),
         axis.text=element_text(size=12))  # Bold y-axis text)
 p1_rm = p1_rm + coord_cartesian(ylim = c(0, max(dat_pub1$es)))
 p1_rm
@@ -219,11 +221,11 @@ upper_bound <- Q3 + 1.5 * IQR
 iqr_outliers_2 <- dat_pub2 %>% filter(Journal_5yr_Impact < lower_bound | Journal_5yr_Impact > upper_bound)
 
 # Print the number of outliers
-cat("Number of outliers detected by IQR method:", nrow(iqr_outliers2), "\n")
+cat("Number of outliers detected by IQR method:", nrow(iqr_outliers_2), "\n")
 
 # Print the outliers detected
 cat("Outliers detected by IQR method:\n")
-print(unique(iqr_outliers2$Journal_5yr_Impact))
+print(unique(iqr_outliers_2$Journal_5yr_Impact))
 
 
 
@@ -239,11 +241,11 @@ upper_bound <- Q3 + 1.5 * IQR
 iqr_outliers_1 <- dat_pub2 %>% filter(P.value_specific < lower_bound | P.value_specific > upper_bound)
 
 # Print the number of outliers
-cat("Number of outliers detected by IQR method:", nrow(iqr_outliers2), "\n")
+cat("Number of outliers detected by IQR method:", nrow(iqr_outliers_1), "\n")
 
 # Print the outliers detected
 cat("Outliers detected by IQR method:\n")
-print(unique(iqr_outliers2$P.value_specific))
+print(unique(iqr_outliers_2$P.value_specific))
 
 dat_pub2 %<>% filter(!P.value_specific %in% unique(iqr_outliers_1$P.value_specific))
 #dat_pub2 %<>% filter(!Journal_5yr_Impact %in% unique(iqr_outliers_1$Journal_5yr_Impact))
@@ -273,8 +275,8 @@ p2_rm <- p2_rm + annotate("text", x = max(dat_pub2$Journal_5yr_Impact) * 0.62, y
 p2_rm = p2_rm + labs(tag = "D")+
   theme(plot.tag = element_text(face = "bold",size = 14),
         plot.tag.position = c(0,1),
-        axis.title.x = element_text(size = 14),
-        axis.title.y = element_text(size = 14),
+        axis.title.x = element_text(size = 13),
+        axis.title.y = element_text(size = 13),
         axis.text=element_text(size=12))
 p2_rm = p2_rm + coord_cartesian(ylim = c(0, max(dat_pub2$P.value_specific)))
 p2_rm
@@ -288,3 +290,5 @@ p3_rm = p3_rm  + theme(plot.margin = unit(c(0.5,0,0,0.2),"cm"))
 
 print(p3)
 print(p3_rm)
+
+
