@@ -247,7 +247,7 @@ results_df_corrected %<>% relocate(
   .after = p_val
 )
 
-write.csv(results_df_corrected, here('ignore','outputs','tables','TableS467_ADTests_MultipleTestingCorrected.csv'), row.names = F)
+# write.csv(results_df_corrected, here('ignore','outputs','tables','TableS467_ADTests_MultipleTestingCorrected.csv'), row.names = F)
 
 # -----------------------------------------------------------------------------------|
 # KS Tests: Comparison of Vector and Non-vector borne disease ------------------
@@ -289,6 +289,12 @@ ks_results <- data.frame(
   Test_Statistic = unlist(test_stats_ks)
 )
 
-# Print the dataframe
-print(ks_results)
+# Merge the data based on environmental condition
+merged_data <- es_summaries %>%
+  left_join(ks_results, by = c("Environmental_condition" = "Variable"))
+
+# Relocate env. condition as first column
+merged_data %<>% relocate(Environmental_condition, .before = Transmission_type)
+
+#write.csv(merged_data, here('ignore','outputs','tables','TableS5_KS_Tests_Full.csv'), row.names = F)
 #write.csv(ks_results, here('outputs', 'tables', 'TableS5_KS_Tests.csv'), row.names = FALSE)
