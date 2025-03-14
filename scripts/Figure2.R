@@ -8,6 +8,7 @@ library(patchwork)
 df = read.csv(here::here("data","dataset_final.csv"))
 df = unique(df) #ensure all rows are unique
 
+df %<>% filter(!is.na(es))
 # group effect sizes
 df = df%>%
   mutate(es_cat = ifelse(es < -0.2, 'Negative effect (g < -0.2)', #if CI contains 0
@@ -29,6 +30,7 @@ createFig2  = function(df, stats, colors){
   # exclude non-eligible studies
   df = df%>%
     subset(Linear_Nonlinear == 'Linear')
+  stats$p_val = stats$p_val_removed_corrected
   
   # stats dataframe
   stats = stats%>%
@@ -38,7 +40,9 @@ createFig2  = function(df, stats, colors){
   ### Groups to include
   hosts = c('Rodents', 'Mammals (multispecies)', 'Livestock', 'Birds')
   parasites = c('Virus', 'Bacteria')
-  vectors = c('Mosquito', 'Tick', 'Mite')
+  vectors = c('Mosquito', 'Tick')
+  countries = c("China")
+  diseases = c("Haemorrhagic fever with renal syndrome","Brucellosis","Leptospirosis","Japanese encephalitis")
   
   
   ### Order for factors
@@ -159,7 +163,7 @@ createFig2  = function(df, stats, colors){
     theme(panel.spacing = unit(1, "lines"))
   
   
-  # 3. Parasite type
+  # 3. Pathogen type
   pv = stats%>%
     subset(Category == 'Pathogen')%>%
     dplyr::rename(Pathogen = Group)
@@ -188,7 +192,7 @@ createFig2  = function(df, stats, colors){
               )+
     facet_grid(.~Environmental_condition)+
     midplot+
-    scale_fill_manual(name="Hedges *g* Effect Size", values=colors)+
+    scale_fill_manual(name="Hedges' *g* Effect Size", values=colors)+
     theme(legend.position = "right")+
     scale_x_continuous(expand=c(0,0),limits=c(0,1), breaks=seq(0, 1, by=0.25), labels=c(0, 0.25, 0.5, 0.75, 1))+
     #scale_y_discrete(labels=picture_labeller(rev(parasites)))+
@@ -235,7 +239,7 @@ createFig2  = function(df, stats, colors){
     theme(panel.spacing = unit(1, "lines"),
           axis.text.y = ggtext::element_markdown())
 
-  # 2. Reservoir hosts
+  # 5. Reservoir hosts
   pv = stats%>%
     subset(Category == 'Principal_reservoir')%>%
     dplyr::rename(Principal_reservoir = Group)
@@ -263,25 +267,118 @@ createFig2  = function(df, stats, colors){
               hjust=0,
               vjust=0.1)+
     facet_grid(.~Environmental_condition)+
+    midplot+
+    scale_fill_manual(values=colors)+
+    theme(strip.background = element_blank())+
+    scale_x_continuous(expand=c(0,0),limits=c(0,1), breaks=seq(0, 1, by=0.25), labels=c(0, 0.25, 0.5, 0.75, 1))+
+    #scale_x_continuous(expand = expansion(mult = c(0, .15)))+
+    labs(y = 'Principal \n reservoir', x = '')+
+    theme(panel.spacing = unit(1, "lines"))
+  
+  # ## 6. Country -------------------------------------------
+  # pv = stats%>%
+  #   subset(Category == 'Country')%>%
+  #   dplyr::rename(Country = Group)
+  # 
+  # p6 = df%>%
+  #   subset(Country %in% countries)%>%
+  #   mutate(Country = factor(Country, levels=rev(countries)))%>%
+  #   dplyr::count(Country, Environmental_condition, es_cat)%>%
+  #   group_by(Country, Environmental_condition)%>%
+  #   mutate(prop = n /sum(n), tot = sum(n))%>%
+  #   ggplot(aes(x=prop, y=Country))+
+  #   geom_col(aes(fill=es_cat), position= position_fill(reverse=TRUE), width=0.75)+
+  #   geom_label( data = . %>% slice_head(n=1), 
+  #               aes(x=0.02, label=paste0('n = ', tot)), 
+  #               vjust=0.5,
+  #               hjust=0,
+  #               size=3,
+  #               alpha=0.5,
+  #               label.size=0
+  #   )+
+  #   geom_text(data=pv, aes(x=.02, y=Country, label=significance),
+  #             fontface="bold",
+  #             size=8,
+  #             alpha = 0.8,
+  #             hjust=0,
+  #             vjust=0.1)+
+  #   facet_grid(.~Environmental_condition)+
+  #   botplot+
+  #   scale_fill_manual(values=colors)+
+  #   theme(strip.background = element_blank())+
+  #   scale_x_continuous(expand=c(0,0),limits=c(0,1), breaks=seq(0, 1, by=0.25), labels=c(0, 0.25, 0.5, 0.75, 1))+
+  #   #scale_x_continuous(expand = expansion(mult = c(0, .15)))+
+  #   labs(y = 'Country', x="Proportion of measures")+
+  #   theme(panel.spacing = unit(1, "lines"))
+  # 
+  ## 7. Disease -------------------------------------------
+  pv = stats%>%
+    subset(Category == 'Disease')%>%
+    dplyr::rename(Disease = Group)
+  
+  p7 = df%>%
+    subset(Disease %in% diseases)%>%
+    mutate(Disease = factor(Disease, levels=rev(diseases)))%>%
+    dplyr::count(Disease, Environmental_condition, es_cat)%>%
+    group_by(Disease, Environmental_condition)%>%
+    mutate(prop = n /sum(n), tot = sum(n))%>%
+    ggplot(aes(x=prop, y=Disease))+
+    geom_col(aes(fill=es_cat), position= position_fill(reverse=TRUE), width=0.75)+
+    geom_label( data = . %>% slice_head(n=1), 
+                aes(x=0.02, label=paste0('n = ', tot)), 
+                vjust=0.5,
+                hjust=0,
+                size=3,
+                alpha=0.5,
+                label.size=0
+    )+
+    geom_text(data=pv, aes(x=.02, y=Disease, label=significance),
+              fontface="bold",
+              size=8,
+              alpha = 0.8,
+              hjust=0,
+              vjust=0.1)+
+    scale_y_discrete(labels = c("Haemorrhagic fever with renal syndrome" = "HFRS",
+                                "Brucellosis" = "Brucellosis",
+                                "Leptospirosis" = "Leptospirosis",
+                                "Japanese encephalitis" = "Japanese encephalitis"))+
+    facet_grid(.~Environmental_condition)+
     botplot+
     scale_fill_manual(values=colors)+
     theme(strip.background = element_blank())+
     scale_x_continuous(expand=c(0,0),limits=c(0,1), breaks=seq(0, 1, by=0.25), labels=c(0, 0.25, 0.5, 0.75, 1))+
     #scale_x_continuous(expand = expansion(mult = c(0, .15)))+
-    labs(y = 'Principal \n reservoir', x="Proportion of measures")+
+    labs(y = 'Disease', x="Proportion of measures")+
     theme(panel.spacing = unit(1, "lines"))
   
-  fig = p1+hl+p2+p3+p4+p5+plot_layout(ncol=1,
-                                   heights=c(2,0.25, 2,2,3,3),
-                                   guides="collect")
   
+  # Apply a small margin to each subplot:
+  combined <- (p1 + hl + p2 + p3 + p4 + p5 + p7 +
+                 plot_layout(ncol = 1, heights = c(2, 0.1, 2, 2, 2, 4, 4), guides = "collect")) &
+    theme(plot.margin = margin(0, 5, 0, 5))
+  
+  # Add an outer margin around the entire combined figure:
+  fig <- combined + plot_annotation(theme = theme(plot.margin = margin(10, 0, 10, 0, unit = "pt")))
+  
+  # fig = p1+hl+p2+p3+p4+p5+p7+plot_layout(ncol=1,
+  #                                  heights=c(2,0.1, 2,2,2,4,4),
+  #                                  guides="collect")+ #&
+  #   #theme(plot.margin = margin(0, 5, 2, 5))+
+  #   plot_annotation(theme = theme(plot.margin = margin(100, 100, 100, 100, unit = "pt")))
+  # 
   
   return(fig)
 }
 
+# 6. Prinipal reservoir
 # -------------------- Create Figure  --------------------
 colors = c( "#00A8A5" , '#fee8c8', '#A80003')
-f2 = createFig2(df, results_df, colors)
+f2 = createFig2(df, results_df_corrected, colors)
 f2
 
 #ggsave(f2, file=here::here('outputs', 'Figure2_new.png'), device="png", units="in", width=12, height=9, dpi=600, scale=0.92)
+ggsave(f2, file=here::here('outputs', 'Figure2.pdf'), 
+       device="pdf", units="in", width=11, height=10, dpi=600, scale=0.88)
+ggsave(f2, file=here::here('outputs', 'Figure2.png'), 
+       device="png", units="in", width=11, height=10, dpi=600, scale=0.88)
+
