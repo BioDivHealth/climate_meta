@@ -77,13 +77,14 @@ createFig3  = function(df, colors){
     scale_fill_manual(values=alpha(colors, 0.7))+
     scale_color_manual(values=colors)+
     facet_grid(~Environmental_condition)+
-    labs(x="Hedges g Effect Size", y="")+
+    labs(x="Hedges' *g* Effect Size", y="")+
     xlim(-2.5, 2.5)+
     #scale_y_continuous(expand = c(0,0))+
     #scale_x_continuous(expand = c(0,0))+
     plot_theme+
     labs(tag = "A")+
-    theme(axis.title.x=element_text(vjust=-2),
+    theme(#axis.title.x=element_text(vjust=-2),
+          axis.title.x = ggtext::element_markdown(margin = margin(t = 10)),
           axis.ticks.y=element_blank(),
           plot.tag.position = c(0.055, 0.95),
           plot.tag = element_text(face = "bold", size = 14),
