@@ -14,5 +14,5 @@ scripts/results_text_reworked_old.Rmd
 .chisq_results.xlsx
 ignore/
 Random.R
-data/
 Trebski_et_al_unlinked.pdf
+.gitignore
