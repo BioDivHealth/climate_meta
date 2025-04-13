@@ -1,0 +1,135 @@
+Statistical_method,Type,Linear_Nonlinear,Method2
+Poisson regression,Correlation coefficient,Linear,GL(M)M
+Spearman rank correlation,Correlation coefficient,Linear,Correlation
+Seasonal autoregressive integrated moving average models,Beta coefficient,Linear,(S)ARIMA
+Regression analysis,Beta coefficient,Linear,GL(M)M
+Multivariate poisson regression,Relative risk,Linear,GL(M)M
+Cross-correlation analysis,Correlation coefficient,Linear,Correlation
+Linear regression,Beta coefficient,Linear,GL(M)M
+Seasonal autoregressive time series models,Beta coefficient,Linear,(S)ARIMA
+Poisson model,Beta coefficient,Linear,GL(M)M
+Generalised linear model,Incidence rate ratio,Linear,GL(M)M
+Generalised linear model,Odds ratio,Linear,GL(M)M
+Bayesian hierarchal models,Odds ratio,Linear,ST
+Simple correlation,Correlation coefficient,Linear,Correlation
+Logistic regression,Beta coefficient,Linear,GL(M)M
+Negative binomial regression,Beta coefficient,Linear,GL(M)M
+General additiive model,,Non-linear,GAM
+Poisson regression,Incidence rate ratio,Linear,GL(M)M
+Multivariable logitstic regression,Odds ratio,Linear,GL(M)M
+Time-series poisson regression,Incidence rate ratio,Linear,GL(M)M
+Multiple linear regression,Correlation coefficient,Linear,GL(M)M
+Seasonal ARIMA,Beta coefficient,Linear,(S)ARIMA
+Time-series poisson regression,Relative risk,Linear,GL(M)M
+Multiple linear regression,Beta coefficient,Linear,GL(M)M
+Linear regression,Correlation coefficient,Linear,GL(M)M
+Generalised estimating equations,Percent change,Linear,GL(M)M
+Pearson correlation,Correlation coefficient,Linear,Correlation
+Negative binomial regression,Incidence rate ratio,Linear,GL(M)M
+Logistic regression,Z-score,Linear,GL(M)M
+Zero-inflated negative binomial model,Beta coefficient,Linear,GL(M)M
+Granger causality test,Maximum Relative Risk,Linear,Causal
+distributed lag nonlinear model,Relative risk,Non-linear,DLNM
+Univariate logistic regression,Odds ratio,Linear,GL(M)M
+Univariate analysis,Incidence rate ratio,Linear,GL(M)M
+Time-series adjusted negative binomial,Beta coefficient,Linear,GL(M)M
+Generalised models,Beta coefficient,Linear,GL(M)M
+Negative binomial regression,Relative risk,Linear,GL(M)M
+Zero-inflated poisson bayesian conditional autoregressive models,Beta coefficient,Linear,ST
+Univariate bayesian regression,Risk ratio,Linear,GL(M)M
+Zero-inflated negative binomial model,Incidence rate ratio,Linear,GL(M)M
+Bayesian hierarchal models,Incidence rate ratio,Linear,ST
+Univariate poisson regression,Incidence rate ratio,Linear,GL(M)M
+Univariate regression,Beta coefficient,Linear,GL(M)M
+Cross-correlation analysis,Maximum coefficient,Linear,Correlation
+Linear fixed-effect,Beta coefficient,Linear,GL(M)M
+Poisson regression,Percent change,Linear,GL(M)M
+Autoregressive distributed lag time-series regression,Beta coefficient,Linear,DLNM
+Ordinary least squares model,Beta coefficient,Linear,GL(M)M
+Generalised linear mixed models,Odds ratio,Linear,GL(M)M
+Generalised additive model,Relative risk,Linear,GL(M)M
+Dynamic regression analysis,Correlation coefficient,Linear,GL(M)M
+Bivariate regression analysis,Estimate,Linear,GL(M)M
+Poisson regression,Prevalence ratio,Linear,GL(M)M
+Regression analysis,Incidence rate ratio,Linear,GL(M)M
+Generalised linear mixed models,Log odds-ratio,Linear,GL(M)M
+Generalised linear mixed models,Beta coefficient,Linear,GL(M)M
+Cross-map causality,Unlagged cross-map skill,Linear,Causal
+Generalised additive model,Correlation coefficient,Linear,GAM
+Zero inflated poisson regression,Beta coefficient,Linear,GL(M)M
+Multi-level logistic regression,Beta coefficient,Linear,GL(M)M
+Bivariate generalised autoregressive moving average models,Relative risk,Linear,(S)ARIMA
+Poisson generalized linear regression,Beta coefficient,Linear,GL(M)M
+Generalised additive model,Beta coefficient,Linear,GAM
+Multiple-input single-output transfer function model,Sum of Parameter estimates,Linear,Dynamical
+generalized estimating equation regression,Odds ratio,Linear,GL(M)M
+Negative binomial regression,Percent change,Linear,GL(M)M
+Generalised additive model,Percent change,Linear,GAM
+Autoregressive integrated moving average model,Beta coefficient,Linear,(S)ARIMA
+Two-state Markov switching model,Beta coefficient,Linear,(S)ARIMA
+Generalised linear model,Beta coefficient,Linear,GL(M)M
+Log-linear regression,Relative risk,Linear,GL(M)M
+Generalised linear model,Correlation coefficient,Linear,GL(M)M
+Zero-inflated poisson regression,Beta coefficient,Linear,GL(M)M
+Multiple regression model,Odds ratio,Linear,GL(M)M
+Multivariate poisson regression,Risk ratio,Linear,GL(M)M
+Multiple-regression analysis,Beta coefficient,Linear,GL(M)M
+Granger causality test,F-statistic,Linear,Causal
+Bayesian additive regression model,Beta coefficient,Linear,GAM
+Best-fitting Autoregressive integrated moving average models,Beta coefficient,Linear,(S)ARIMA
+Multiple regression model,Beta coefficient,Linear,GL(M)M
+Negative binomial mixed model,Beta coefficient,Linear,GL(M)M
+Regression analysis,Correlation coefficient,Linear,GL(M)M
+Spatial lag regression,Beta coefficient,Linear,ST
+Spatial panel data model,Beta coefficient,Linear,Causal
+Univariate Poisson regression,Incidence rate ratio,Linear,GL(M)M
+Univariate analysis,Beta coefficient,Linear,GL(M)M
+Autoregressive moving average models,Beta coefficient,Linear,(S)ARIMA
+Univariate logistic regression,Beta coefficient,Linear,GL(M)M
+,Correlation coefficient,Linear,Correlation
+Logistic regression,Odds ratio,Linear,GL(M)M
+Univariable poisson regression analysis,Incidence rate ratio,Linear,GL(M)M
+Likelihood ratio Chi-square test,Chi-square,Linear,Other
+Linear mixed model,Odds ratio,Linear,GL(M)M
+Univariate negative binomial regression,Incidence rate ratio,Linear,GL(M)M
+Univariate generalised autoregressive poisson regressions,Beta coefficient,Linear,ST
+Generalised linear mixed-effects models,Z-score,Linear,GL(M)M
+Stepwise linear regression,Beta coefficient,Linear,GL(M)M
+Aggregated regression model,Beta coefficient,Linear,GL(M)M
+Multivariate autoregressive distributed lag models,Beta coefficient,Linear,DLNM
+Negative binomial regression,Hospitilisation rate ratio,Linear,GL(M)M
+Generalised linear model with cubic splines,Spline coefficient,Linear,GAM
+Regression analysis,,Non-linear,GL(M)M
+generalized mixed-effects model,T-value,Non-linear,GL(M)M
+generalized mixed-effects model,Z-score,Non-linear,GL(M)M
+general additive mixed model,,Non-linear,GAM
+Generalised linear regression,Odds ratio,Linear,GL(M)M
+Estimated smooth function,,Non-linear,GAM
+Generalised estimating equation model,Maximum coefficient,Non-linear,GL(M)M
+Generalised estimating equation model,,Non-linear,GL(M)M
+Multiple logistic regression,,Non-linear,GL(M)M
+Poisson regression,Relative risk,Linear,GL(M)M
+Generalised additive model,,Non-linear,GAM
+distributed lag nonlinear model,Percent change,Non-linear,DLNM
+Negative binomial distributed lag nonlinear model,Relative risk,Non-linear,DLNM
+zero-truncated poisson model,Effect sizes,Linear,GL(M)M
+Negative binomial regression,,Non-linear,GL(M)M
+Structured additive regression model,,Non-linear,GAM
+Multivariate meta-analysis,,Non-linear,DLNM
+One-way ANOVA,F-statistic,Linear,Other
+Zero-inflated generalised additive models,,Non-linear,GAM
+Bayesian model,Beta coefficient,Linear,GL(M)M
+Univariate binomial generalised linear model,Beta coefficient,Linear,GL(M)M
+Multivariable poisson regression,Risk ratio,Linear,GL(M)M
+Zero-inflated poisson likelihood,Relative risk,Non-linear,ST
+Logistic regression,Odds ratio,Non-linear,ST
+Univariate panel data analysis,Percent change,Linear,Causal
+Multiple logistic regression,Odds ratio,Linear,GL(M)M
+Generalised linear model,,Non-linear,GL(M)M
+Univariate regression,R square,Linear,GL(M)M
+Bayesian geostatistical logistic regression,Posterior mean (log odds scale),Linear,ST
+Time-series poisson regression,Beta coefficient,Linear,GL(M)M
+Adjusted Poisson regression,Beta coefficient,Linear,GL(M)M
+Multivariate linear regression,Correlation coefficient,Linear,GL(M)M
+Multivariate linear regression,Beta coefficient,Linear,GL(M)M
+Geographically weighted regression,Correlation coefficient,Linear,ST
