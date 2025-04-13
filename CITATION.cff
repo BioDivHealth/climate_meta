@@ -6,4 +6,7 @@ authors:
     orcid: https://orcid.org/0009-0006-3259-5215
 title: "Data and code repository for Trebski et al."
 version: 1.0.0
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.15206104
 date-released: 2025-04-13
