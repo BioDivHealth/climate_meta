@@ -1,0 +1,415 @@
+﻿Disease,Synonyms used,Database,Zoonotic metric,Search terms,Total returns,Titles evaluated,Titles sought for retrieval,Total number of articles for each disease,New studies found,Duplicates,Total number for study ,Dates searched
+Alveolar echinococcosis,"Hantid*, cystic echinococcosis",Scholar,Abundance,(alveolar echinococcosis OR hantid* OR cystic echinococcosis) AND (climat*) AND (Abundance*),925,50,16,16,16,0,,11/15/22
+Alveolar echinococcosis,"Hantid*, cystic echinococcosis",PubMed,Abundance,((((Alveolar echinococcosis) OR (Hydatid*)) OR (Cystic echinococcosis)) AND (Climat*)) AND (Abundance),2,2,2,17,1,1,,11/15/22
+Alveolar echinococcosis,"Hantid*, cystic echinococcosis",Scholar,Seroprevalence,(alveolar echinococcosis OR hantid* OR cystic echinococcosis) AND (climat*) AND (Seroprevalence,1650,50,11,22,5,6,,11/15/22
+Alveolar echinococcosis,"Hantid*, cystic echinococcosis",PubMed,Seroprevalence,((((Alveolar echinococcosis) AND (Hantid*) OR (Cystic echinococcosis)) ) AND (Climat*)) AND (Seroprevalence,2,2,2,24,2,0,,11/15/22
+Alveolar echinococcosis,"Hantid*, cystic echinococcosis",Scholar,Cases Or Incidence,(alveolar echinococcosis OR hantid* OR cystic echinococcosis) AND (climat*) AND (Cases OR Incidence) ,1990,50,12,24,0,12,,11/15/22
+Alveolar echinococcosis,"Hantid*, cystic echinococcosis",PubMed,Cases Or Incidence,((((Alveolar echinococcosis) AND (Hantid disease) OR (Cystic echinococcosis)) ) AND (Climat*)) AND ((cases) OR (incidence)),58,50,8,28,4,4,,11/15/22
+Alveolar echinococcosis,"Hantid*, cystic echinococcosis",Scholar,Every metric,(alveolar echinococcosis OR hantid* OR cystic echinococcosis) AND (climat*) AND (Abundance OR Seroprevalence OR Cases OR Incidence) ,2060,50,7,30,2,5,,11/15/22
+Alveolar echinococcosis,"Hantid*, cystic echinococcosis",PubMed,Every metric,((((Alveolar echinococcosis) AND (Hantid disease) OR (Cystic echinococcosis)) ) AND (Climat*)) AND ((cases) OR (incidence) OR (abundance) OR (Seroprevalence)),58,50,10,31,1,9,31,11/15/22
+Leptospirosis,"Weil's disease*, canicola fever",Scholar,Abundance,(Leptospirosis OR weil's disease OR canicola fever) AND (climat*) AND (Abundance),4830,50,9,9,9,0,,11/15/22
+Leptospirosis,"Weil's disease*, canicola fever",PubMed,Abundance,((((Leptospirosis) OR (Weil's*)) OR (Canicola fever)) AND (Climat*)) AND (Abundance),13,13,5,13,4,1,,11/15/22
+Leptospirosis,"Weil's disease*, canicola fever",Scholar,Seroprevalence,(Leptospirosis OR weil's disease OR canicola fever) AND (climat*) AND (Seroprevalence),8290,50,15,28,15,0,,11/15/22
+Leptospirosis,"Weil's disease*, canicola fever",PubMed,Seroprevalence,((((Leptospirosis) OR (Weil's*)) OR (Canicola fever)) AND (Climat*)) AND (Seroprevalence),30,30,9,35,7,2,,11/15/22
+Leptospirosis,"Weil's disease*, canicola fever",Scholar,Cases Or Incidence,(Leptospirosis OR weil's disease OR canicola fever) AND (climat*) AND (Cases OR Incidence) ,12600,50,15,50,15,0,,11/15/22
+Leptospirosis,"Weil's disease*, canicola fever",PubMed,Cases Or Incidence,((((Leptospirosis) OR (Weil's*)) OR (Canicola fever)) AND (Climat*)) AND ((Cases) OR (Incidence)),211,50,13,56,6,7,,11/15/22
+Leptospirosis,"Weil's disease*, canicola fever",Scholar,Every metric,(Leptospirosis OR weil's disease OR canicola fever) AND (climat*) AND (Abundance OR Seroprevalence OR Cases OR Incidence) ,13100,50,17,59,3,14,,11/15/22
+Leptospirosis,"Weil's disease*, canicola fever",PubMed,Every metric,((((Leptospirosis) OR (Weil's*)) OR (Canicola fever)) AND (Climat*)) AND ((Cases) OR (Incidence) OR (Abundance) OR (Seroprevalence)),216,50,7,60,1,6,91,11/15/22
+Monkeypox,n/a,Scholar,Abundance,(Monkeypox) AND (Climat*) AND (Abundance),1730,50,7,7,7,0,,11/15/22
+Monkeypox,n/a,PubMed,Abundance,((Monkeypox) AND (Climat*)) AND (Abundance),0,0,0,7,0,0,,11/15/22
+Monkeypox,n/a,Scholar,Seroprevalence,(Monkeypox) AND (Climat*) AND (Seroprevalence,1720,50,11,14,7,4,,11/15/22
+Monkeypox,n/a,PubMed,Seroprevalence,((Monkeypox) AND (Climat*)) AND (Seroprevalence,0,0,0,14,0,0,,11/15/22
+Monkeypox,n/a,Scholar,Cases Or Incidence,(Monkeypox) AND (Climat*) AND (Cases OR Incidence),4090,50,4,18,4,0,,11/15/22
+Monkeypox,n/a,PubMed,Cases Or Incidence,((Monkeypox) AND (Climat*)) AND ((Cases) OR (Incidence)),12,0,0,18,0,0,,11/15/22
+Monkeypox,n/a,Scholar,Every metric,(Monkeypox) AND (Climat*) AND (Cases OR Incidence OR Abundance OR Seroprevalence),4600,50,7,19,1,6,,11/15/22
+Monkeypox,n/a,PubMed,Every metric,((Monkeypox) AND (Climat*)) AND ((Cases) OR (Incidence) OR (Abundance) OR (Seroprevalence)),12,12,0,19,0,0,110,11/15/22
+Ohio valley disease,Histoplasmosis,Scholar,Abundance,(Ohio valley disease OR Histoplasmosis) AND (Climat*) AND (Abundance),18500,50,4,4,4,0,,11/15/22
+Ohio valley disease,Histoplasmosis,PubMed,Abundance,(((Ohio valley disease) OR (Histoplasmosis)) AND (Climat*)) AND (Abundance*),1,0,0,4,0,0,,11/15/22
+Ohio valley disease,Histoplasmosis,Scholar,Seroprevalence,(Ohio valley disease OR Histoplasmosis) AND (Climat*) AND (Seroprevalence,17900,50,1,5,1,0,,11/15/22
+Ohio valley disease,Histoplasmosis,PubMed,Seroprevalence,(((Ohio valley disease) OR (Histoplasmosis)) AND (Climat*)) AND (Seroprevalence,0,0,0,5,0,0,,11/15/22
+Ohio valley disease,Histoplasmosis,Scholar,Cases Or Incidence,(Ohio valley disease OR Histoplasmosis) AND (Climat*) AND (Cases OR Incidence),20600,50,6,9,4,2,,11/15/22
+Ohio valley disease,Histoplasmosis,PubMed,Cases Or Incidence,(((Ohio valley disease) OR (Histoplasmosis)) AND (Climat*)) AND ((Cases) OR (Incidence)),33,33,2,11,2,0,,11/15/22
+Ohio valley disease,Histoplasmosis,Scholar,Every metric,(Ohio valley disease OR Histoplasmosis) AND (Climat*) AND (Cases OR Incidence OR Abundance OR Seroprevalence),20400,50,4,14,3,1,,11/15/22
+Ohio valley disease,Histoplasmosis,PubMed,Every metric,(((Ohio valley disease) OR (Histoplasmosis)) AND (Climat*)) AND ((Cases) OR (Incidence) OR (Abundance) OR (Seroprevalence)),34,34,1,14,0,1,124,11/15/22
+Brucellosis,n/a,Scholar,Abundance,(Brucellosis) AND (Climat*) AND (Abundance),9830,50,10,9,9,1,,11/15/22
+Brucellosis,n/a,PubMed,Abundance,((Brucellosis) AND (Climat*)) AND (Abundance),2,0,0,9,0,0,,11/15/22
+Brucellosis,n/a,Scholar,Seroprevalence,(Brucellosis) AND (Climat*) AND (Seroprevalence,13200,50,19,23,14,5,,11/15/22
+Brucellosis,n/a,PubMed,Seroprevalence,((Brucellosis) AND (Climat*)) AND (Seroprevalence,8,8,1,23,0,1,,11/15/22
+Brucellosis,n/a,Scholar,Cases Or Incidence,(Brucellosis) AND (Climat*) AND (Cases OR Incidence),22400,50,33,48,25,8,,11/15/22
+Brucellosis,n/a,PubMed,Cases Or Incidence,((Brucellosis) AND (Climat*)) AND ((Cases) OR (Incidence)),55,50,10,48,0,10,,11/15/22
+Brucellosis,n/a,Scholar,Every metric,(Brucellosis) AND (Climat*) AND (Cases OR Incidence OR Abundance OR Seroprevalence),22900,50,16,52,4,12,,11/15/22
+Brucellosis,n/a,PubMed,Every metric,((Brucellosis) AND (Climat*)) AND ((Cases) OR (Incidence) OR (Abundance) OR (Seroprevalence)),57,50,8,53,1,7,177,11/15/22
+Leprosy,Hansen's disease,Scholar,Abundance,(Leprosy OR Hansen's disease) AND (Climat*) AND (Abundance),16500,50,2,2,2,0,,11/15/22
+Leprosy,Hansen's disease,PubMed,Abundance,(((Leprosy) OR (Hansen's disease)) AND (Climat*)) AND (Abundance),0,0,0,2,0,0,,11/15/22
+Leprosy,Hansen's disease,Scholar,Seroprevalence,(Leprosy OR Hansen's disease) AND (Climat*) AND (Seroprevalence,16200,50,5,3,1,4,,11/15/22
+Leprosy,Hansen's disease,PubMed,Seroprevalence,(((Leprosy) OR (Hansen's disease)) AND (Climat*)) AND (Seroprevalence,0,0,1,3,0,1,,11/15/22
+Leprosy,Hansen's disease,Scholar,Cases Or Incidence,(Leprosy OR Hansen's disease) AND (Climat*) AND (Cases OR Incidence),41900,50,9,7,4,5,,11/15/22
+Leprosy,Hansen's disease,PubMed,Cases Or Incidence,(((Leprosy) OR (Hansen's disease)) AND (Climat*)) AND ((Cases) OR (Incidence)),49,49,0,7,0,0,,11/15/22
+Leprosy,Hansen's disease,Scholar,Every metric,(Leprosy OR Hansen's disease) AND (Climat*) AND (Cases OR Incidence OR Abundance OR Seroprevalence),42900,50,8,11,4,4,,11/15/22
+Leprosy,Hansen's disease,PubMed,Every metric,(((Leprosy) OR (Hansen's disease)) AND (Climat*)) AND ((Cases) OR (Incidence) OR (Abundance) OR (Seroprevalence)),48,48,0,11,0,0,188,11/15/22
+Hemorrhagic fever ,Haemorrhagic fever,Scholar,Abundance,(Hemorrhagic Fever with renal syndrome OR Haemorrhagic Fever with renal syndrome) AND (climat*) AND (abundance),17800,50,28,26,26,2,,11/15/22
+Hemorrhagic fever ,Haemorrhagic fever,PubMed,Abundance,(((Hemorrhagic fever with renal syndrome) OR (Haemorrhagic fever with renal syndrome)) AND (Climat*)) AND (Abundance*),103,50,5,28,2,3,,11/15/22
+Hemorrhagic fever ,Haemorrhagic fever,Scholar,Seroprevalence,(Hemorrhagic Fever with renal syndrome OR Haemorrhagic Fever with renal syndrome) AND (Climat*) AND (Seroprevalence,11300,50,10,38,10,0,,11/15/22
+Hemorrhagic fever ,Haemorrhagic fever,PubMed,Seroprevalence,(((Hemorrhagic fever with renal syndrome) OR (Haemorrhagic fever with renal syndrome)) AND (Climat*)) AND (Seroprevalence,5,5,3,41,3,0,,11/15/22
+Hemorrhagic fever ,Haemorrhagic fever,Scholar,Cases Or Incidence,(Hemorrhagic Fever with renal syndrome OR Haemorrhagic Fever with renal syndrome) AND (climat*) AND (Cases OR Incidence),17300,50,10,51,10,0,,11/15/22
+Hemorrhagic fever ,Haemorrhagic fever,PubMed,Cases Or Incidence,(((Hemorrhagic fever with renal syndrome) OR (Haemorrhagic fever with renal syndrome)) AND (Climat*)) AND (Cases OR Incidence),82,50,29,57,6,23,,11/15/22
+Hemorrhagic fever ,Haemorrhagic fever,Scholar,Every metric,(Hemorrhagic Fever with renal syndrome OR Haemorrhagic Fever with renal syndrome) AND (climat*) AND (Cases OR Incidence OR Abundance OR Seroprevalence),17500,50,32,61,4,28,,11/15/22
+Hemorrhagic fever ,Haemorrhagic fever,PubMed,Every metric,(((Hemorrhagic fever with renal syndrome) OR (Haemorrhagic fever with renal syndrome)) AND (Climat*)) AND ((Cases) OR (Incidence) OR (Abundance) OR (Seroprevalence)),83,50,1,62,1,0,250,11/15/22
+Rabies ,n/a,Scholar,Abundance,(Rabies) AND (Climat*) AND (Abundance),20300,50,13,12,12,1,,11/16/22
+Rabies ,n/a,PubMed,Abundance,((Rabies) AND (Climat*)) AND (Abundance),5,5,0,12,0,0,,11/16/22
+Rabies ,n/a,Scholar,Seroprevalence,(Rabies) AND (Climat*) AND (Seroprevalence,16200,50,9,21,9,0,,11/16/22
+Rabies ,n/a,PubMed,Seroprevalence,((Rabies) AND (Climat*)) AND (Seroprevalence,3,2,2,23,2,0,,11/16/22
+Rabies ,n/a,Scholar,Cases Or Incidence,(Rabies) AND (Climat) AND (Cases OR Incidence),31000,50,11,34,11,0,,11/16/22
+Rabies ,n/a,PubMed,Cases Or Incidence,((Rabies) AND (Climat*)) AND ((Cases) OR (Incidence)),73,50,8,38,4,4,,11/16/22
+Rabies ,n/a,Scholar,Every metric,(Rabies) AND (Climat) AND (Cases OR Incidence OR Abundance OR Seroprevalence),31900,50,10,39,1,9,,11/16/22
+Rabies ,n/a,PubMed,Every metric,((Rabies) AND (Climat*)) AND ((Cases) OR (Incidence) OR (Abundance) OR (Seroprevalence)),75,50,4,40,1,3,290,11/16/22
+Lassa fever,n/a,Scholar,Abundance,(Lassa*) AND (Climat) AND (Abundance),2840,50,4,4,4,0,,11/16/22
+Lassa fever,n/a,PubMed,Abundance,((Lassa*) AND (Climat)) AND (Abundance),2,2,1,5,1,0,,11/16/22
+Lassa fever,n/a,Scholar,Seroprevalence,(Lassa*) AND (Climat) AND (Seroprevalence,4760,50,7,9,4,3,,11/16/22
+Lassa fever,n/a,PubMed,Seroprevalence,((Lassa*) AND (Climat)) AND (Seroprevalence,2,2,0,9,0,0,,11/16/22
+Lassa fever,n/a,Scholar,Cases Or Incidence,(Lassa*) AND (Climat) AND (Cases OR Incidence),10100,50,6,13,4,2,,11/16/22
+Lassa fever,n/a,PubMed,Cases Or Incidence,((Lassa*) AND (Climat)) AND ((Cases) OR (Incidence)),32,32,3,15,2,1,,11/16/22
+Lassa fever,n/a,Scholar,Every metric,(Lassa*) AND (Climat) AND (Cases OR Incidence OR Abundance OR Seroprevalence),8360,50,5,17,2,3,,11/16/22
+Lassa fever,n/a,PubMed,Every metric,((Lassa*) AND (Climat)) AND ((Cases) OR (Incidence) OR (Abundance) OR (Seroprevalence)),33,33,2,17,0,2,307,11/16/22
+Nephropathia epidemica,"Hantaan, Puumala",Scholar,Abundance,(Nephropathia epidemica OR Hantaan OR Puumala) AND (Climat*) AND (Abundance),1880,50,25,20,20,5,,11/16/22
+Nephropathia epidemica,"Hantaan, Puumala",PubMed,Abundance,((((Nephropathia) OR (Hantaan*)) OR (Puumala*)) AND (Climat*)) AND (Abundance),11,11,8,22,2,6,,11/16/22
+Nephropathia epidemica,"Hantaan, Puumala",Scholar,Seroprevalence,(Nephropathia epidemica OR Hantaan OR Puumala) AND (Climat*) AND (Seroprevalence,3830,50,17,27,5,12,,11/16/22
+Nephropathia epidemica,"Hantaan, Puumala",PubMed,Seroprevalence,((((Nephropathia) OR (Hantaan*)) OR (Puumala*)) AND (Climat*)) AND (Seroprevalence,6,6,1,27,0,1,,11/16/22
+Nephropathia epidemica,"Hantaan, Puumala",Scholar,Cases Or Incidence,(Nephropathia epidemica OR Hantaan OR Puumala) AND (Climat*) AND (Cases OR Incidence),4920,50,12,30,3,9,,11/16/22
+Nephropathia epidemica,"Hantaan, Puumala",PubMed,Cases Or Incidence,((((Nephropathia) OR (Hantaan*)) OR (Puumala*)) AND (Climat*)) AND ((Cases) OR (Incidence)),49,49,9,34,4,5,,11/16/22
+Nephropathia epidemica,"Hantaan, Puumala",Scholar,Every metric,(Nephropathia epidemica OR Hantaan OR Puumala) AND (Climat*) AND (Cases OR Incidence OR Abundance OR Seroprevalence),4880,50,14,36,2,12,,11/16/22
+Nephropathia epidemica,"Hantaan, Puumala",PubMed,Every metric,((((Nephropathia) OR (Hantaan*)) OR (Puumala*)) AND (Climat*)) AND ((Cases) OR (Incidence) OR (Abundance) OR (Seroprevalence)),51,50,8,36,0,8,343,11/16/22
+Hantaviral Disease,"Orthohantavirus, Seoul virus, Tula virus",Scholar,Abundance,(Hantavirus* OR Orthohantavirus* OR Seoul virus* OR Tula virus*) AND (Climat*) AND (Abundance)),4330,50,22,21,21,1,,11/16/22
+Hantaviral Disease,"Orthohantavirus, Seoul virus, Tula virus",PubMed,Abundance,((((Hantavirus*) OR (Orthohantavirus*)) OR (Seoul virus*) OR (Tula virus*)) AND (Climat*)) AND (Abundance*),21,21,7,24,3,4,,11/16/22
+Hantaviral Disease,"Orthohantavirus, Seoul virus, Tula virus",Scholar,Seroprevalence,(Hantavirus* OR Orthohantavirus* OR Seoul virus* OR Tula virus*) AND (Climat*) AND (Seroprevalence,5330,50,15,32,8,7,,11/16/22
+Hantaviral Disease,"Orthohantavirus, Seoul virus, Tula virus",PubMed,Seroprevalence,((((Hantavirus*) OR (Orthohantavirus*)) OR (Seoul virus*) OR (Tula virus*)) AND (Climat*)) AND (Seroprevalence,8,8,0,32,0,0,,11/16/22
+Hantaviral Disease,"Orthohantavirus, Seoul virus, Tula virus",Scholar,Cases Or Incidence,(Hantavirus* OR Orthohantavirus* OR Seoul virus* OR Tula virus*) AND (Climat) AND (Cases OR Incidence),8030,50,14,40,8,6,,11/16/22
+Hantaviral Disease,"Orthohantavirus, Seoul virus, Tula virus",PubMed,Cases Or Incidence,((((Hantavirus*) OR (Orthohantavirus*)) OR (Seoul virus*) OR (Tula virus*)) AND (Climat*)) AND ((Cases) OR (Incidence)),121,50,12,46,6,6,,11/16/22
+Hantaviral Disease,"Orthohantavirus, Seoul virus, Tula virus",Scholar,Every metric,(Hantavirus* OR Orthohantavirus* OR Seoul virus* OR Tula virus*) AND (Climat*) AND (Cases OR Incidence OR Abundance OR Seroprevalence),7700,50,14,49,3,11,,11/16/22
+Hantaviral Disease,"Orthohantavirus, Seoul virus, Tula virus",PubMed,Every metric,((((Hantavirus*) OR (Orthohantavirus*)) OR (Seoul virus*) OR (Tula virus*)) AND (Climat*)) AND ((Cases) OR (Incidence) OR (Abundance) OR (Seroprevalence)),128,50,3,50,1,2,393,11/16/22
+Hantavirus Pulmonary Syndrome,"Hantavirus cardiopulmonary syndrome, Sin nombre",Scholar,Abundance,(hantavirus pulmonary syndrome OR hantavirus cardiopulmonary syndrome OR Sin nombre*) AND (Climat) AND (Abundance),344,50,10,9,9,1,,11/16/22
+Hantavirus Pulmonary Syndrome,"Hantavirus cardiopulmonary syndrome, Sin nombre",PubMed,Abundance,((((Hantavirus pulmonary syndrome) OR (Hantavirus cardiopulmonary syndrome)) OR (Sin Nombre*)) AND (Climat*)) AND (Abundance),10,10,5,14,5,0,,11/16/22
+Hantavirus Pulmonary Syndrome,"Hantavirus cardiopulmonary syndrome, Sin nombre",Scholar,Seroprevalence,(hantavirus pulmonary syndrome OR hantavirus cardiopulmonary syndrome OR Sin nombre*) AND (Climat) AND (Seroprevalence,491,50,8,17,3,5,,11/16/22
+Hantavirus Pulmonary Syndrome,"Hantavirus cardiopulmonary syndrome, Sin nombre",PubMed,Seroprevalence,((((Hantavirus pulmonary syndrome) OR (Hantavirus cardiopulmonary syndrome)) OR (Sin Nombre*)) AND (Climat*)) AND (Seroprevalence,4,4,1,17,0,1,,11/16/22
+Hantavirus Pulmonary Syndrome,"Hantavirus cardiopulmonary syndrome, Sin nombre",Scholar,Cases Or Incidence,(hantavirus pulmonary syndrome OR hantavirus cardiopulmonary syndrome OR Sin nombre*) AND (Climat) AND (Cases OR Incidence),635,50,11,23,6,5,,11/16/22
+Hantavirus Pulmonary Syndrome,"Hantavirus cardiopulmonary syndrome, Sin nombre",PubMed,Cases Or Incidence,((((Hantavirus pulmonary syndrome) OR (Hantavirus cardiopulmonary syndrome)) OR (Sin Nombre*)) AND (Climat*)) AND ((Cases) OR (Incidence)),35,35,7,24,1,6,,11/16/22
+Hantavirus Pulmonary Syndrome,"Hantavirus cardiopulmonary syndrome, Sin nombre",Scholar,Every metric,(hantavirus pulmonary syndrome OR hantavirus cardiopulmonary syndrome OR Sin nombre*) AND (Climat) AND (Cases OR Incidence OR Abundance OR Seroprevalence),583,50,9,27,3,6,,11/16/22
+Hantavirus Pulmonary Syndrome,"Hantavirus cardiopulmonary syndrome, Sin nombre",PubMed,Every metric,((((Hantavirus pulmonary syndrome) OR (Hantavirus cardiopulmonary syndrome)) OR (Sin Nombre*)) AND (Climat*)) AND ((Cases) OR (Incidence) OR (Abundance) OR (Seroprevalence)),38,38,6,27,0,6,420,11/16/22
+Nipah virus,n/a,Scholar,Abundance,(Nipah*) AND (Climat*) AND (Abundance),3050,50,10,9,9,1,,11/16/22
+Nipah virus,n/a,PubMed,Abundance,((Nipah*) AND (Climat*)) AND (Abundance),0,0,0,9,0,0,,11/16/22
+Nipah virus,n/a,Scholar,Seroprevalence,(Nipah*) AND (Climat*) AND (Seroprevalence,3280,50,5,13,4,1,,11/16/22
+Nipah virus,n/a,PubMed,Seroprevalence,((Nipah*) AND (Climat*)) AND (Seroprevalence,0,0,0,13,0,0,,11/16/22
+Nipah virus,n/a,Scholar,Cases Or Incidence,(Nipah*) AND (Climat*) AND (Cases OR Incidence),6530,50,3,15,2,1,,11/16/22
+Nipah virus,n/a,PubMed,Cases Or Incidence,((Nipah*) AND (Climat*)) AND ((Cases) OR (Incidence)),17,17,1,16,1,0,,11/16/22
+Nipah virus,n/a,Scholar,Every metric,(Nipah*) AND (Climat*) AND (Cases OR Incidence OR Abundance OR Seroprevalence),6600,50,2,17,1,1,,11/16/22
+Nipah virus,n/a,PubMed,Every metric,((Nipah*) AND (Climat*)) AND ((Cases) OR (Incidence) OR (Abundance) OR (Seroprevalence)),17,17,0,17,0,0,437,11/16/22
+Hendra virus,n/a,Scholar,Abundance,(Hendra virus) AND (Climat*) AND (Abundance),2670,50,8,8,8,0,,11/17/22
+Hendra virus,n/a,PubMed,Abundance,((Hendra virus) AND (Climat*)) AND (Abundance),2,2,0,8,0,0,,11/17/22
+Hendra virus,n/a,Scholar,Seroprevalence,(Hendra virus) AND (Climat*) AND (Seroprevalence,3600,12,7,15,7,0,,11/17/22
+Hendra virus,n/a,PubMed,Seroprevalence,((Hendra virus) AND (climat*)) AND (Seroprevalence,1,1,0,15,0,0,,11/17/22
+Hendra virus,n/a,Scholar,Cases Or Incidence,(Hendra virus) AND (Climat*) AND (Cases OR Incidence),6180,50,11,20,5,6,,11/17/22
+Hendra virus,n/a,PubMed,Cases Or Incidence,((Hendra virus) AND (Climat*)) AND (Cases OR Incidence),15,15,4,21,1,3,,11/17/22
+Hendra virus,n/a,Scholar,Every metric,(Hendra virus) AND (Climat*) AND (Cases OR Incidence OR Abundance OR Seroprevalence),6050,50,6,23,2,4,,11/17/22
+Hendra virus,n/a,PubMed,Every metric,((Hendra virus) AND (Climat*)) AND ((Cases) OR (Incidence) OR (Abundance) OR (Seroprevalence)),17,17,1,23,0,1,460,11/17/22
+Paracoccidioidomycosis,n/a,Scholar,Abundance,(Paracoccidioidomycosis) AND (Climat*) AND (Abundance),345,50,3,3,3,0,,11/17/22
+Paracoccidioidomycosis,n/a,PubMed,Abundance,((Paracoccidioidomycosis) AND (Climat*)) AND (Abundance),0,0,0,3,0,0,,11/17/22
+Paracoccidioidomycosis,n/a,Scholar,Seroprevalence,(Paracoccidioidomycosis) AND (Climat*) AND (Seroprevalence,668,50,7,8,5,2,,11/17/22
+Paracoccidioidomycosis,n/a,PubMed,Seroprevalence,((Paracoccidioidomycosis) AND (Climat*)) AND (Seroprevalence,1,1,1,8,0,1,,11/17/22
+Paracoccidioidomycosis,n/a,Scholar,Cases Or Incidence,(Paracoccidioidomycosis) AND (Climat*) AND (Cases OR Incidence),1570,50,8,14,6,2,,11/17/22
+Paracoccidioidomycosis,n/a,PubMed,Cases Or Incidence,((Paracoccidioidomycosis) AND (Climat*)) AND ((Cases) OR (Incidence)),18,18,3,14,0,3,,11/17/22
+Paracoccidioidomycosis,n/a,Scholar,Every metric,(Paracoccidioidomycosis) AND (Climat*) AND (Cases OR Incidence OR Abundance OR Seroprevalence),1470,50,3,16,2,1,,11/17/22
+Paracoccidioidomycosis,n/a,PubMed,Every metric,((Paracoccidioidomycosis) AND (Climat*)) AND ((Cases) OR (Incidence) OR (Abundance) OR (Seroprevalence)),18,18,2,16,0,2,476,11/17/22
+Ebola ,n/a,Scholar,Abundance,(Ebola) AND (Climat*) AND (Abundance),14300,50,8,8,8,0,,11/17/22
+Ebola ,n/a,PubMed,Abundance,((Ebola) AND (Climat*)) AND (Abundance),3,3,1,8,0,1,,11/17/22
+Ebola ,n/a,Scholar,Seroprevalence,(Ebola) AND (Climate*) AND (Seroprevalence,2650,50,11,17,9,2,,11/17/22
+Ebola ,n/a,PubMed,Seroprevalence,((Ebola) AND (Climat*)) AND (Seroprevalence,0,0,0,17,0,0,,11/17/22
+Ebola ,n/a,Scholar,Cases Or Incidence,(Ebola) AND (Climate*) AND (Cases OR Incidence),173000,50,10,24,7,3,,11/17/22
+Ebola ,n/a,PubMed,Cases Or Incidence,((Ebola) AND (Climat*)) AND ((Cases) OR (Incidence)),81,50,3,24,0,3,,11/17/22
+Ebola ,n/a,Scholar,Every metric,(Ebola) AND (Climate*) AND (Cases OR Incidence OR Abundance OR Seroprevalence),171000,50,6,26,2,4,,11/17/22
+Ebola ,n/a,PubMed,Every metric,((Ebola) AND (Climat*)) AND ((Cases) OR (Incidence) OR (Abundance) OR (Seroprevalence)),83,50,0,26,0,0,502,11/17/22
+Severe Acute Respiratory Syndrome,"Mers coronavirus, SARS coronavirus",Scholar,Abundance,(Severe acute respiratory syndrome OR Mers* OR Sars* OR Coronavirus*) AND (Climat*) AND (Abundance),18100,50,3,3,3,0,,11/17/22
+Severe Acute Respiratory Syndrome,"Mers coronavirus, SARS coronavirus",PubMed,Abundance,(((((Severe acute respiratory syndrome) OR (Sars*)) OR (Mers*)) OR (Coronavirus*)) AND (Climat*)) AND (Abundance),32,32,2,5,2,0,,11/17/22
+Severe Acute Respiratory Syndrome,"Mers coronavirus, SARS coronavirus",Scholar,Seroprevalence,(Severe acute respiratory syndrome OR Mers* OR Sars* OR Coronavirus*) AND (Climat*) AND (Seroprevalence,18400,50,5,9,4,1,,11/17/22
+Severe Acute Respiratory Syndrome,"Mers coronavirus, SARS coronavirus",PubMed,Seroprevalence,(((((Severe acute respiratory syndrome) OR (Sars*)) OR (Mers*)) OR (Coronavirus*)) AND (Climat*)) AND (Seroprevalence,7,7,1,10,1,0,,11/17/22
+Severe Acute Respiratory Syndrome,"Mers coronavirus, SARS coronavirus",Scholar,Cases Or Incidence,(Severe acute respiratory syndrome OR Mers* OR Sars* OR Coronavirus*) AND (Climat*) AND (Cases OR Incidence),20200,12,11,21,11,0,,11/17/22
+Severe Acute Respiratory Syndrome,"Mers coronavirus, SARS coronavirus",PubMed,Cases Or Incidence,(((((Severe acute respiratory syndrome) OR (Sars*)) OR (Mers*)) OR (Coronavirus*)) AND (Climat*)) AND (Cases OR Incidence),884,50,14,32,11,3,,11/17/22
+Severe Acute Respiratory Syndrome,"Mers coronavirus, SARS coronavirus",Scholar,Every metric,(Severe acute respiratory syndrome OR Mers* OR Sars* OR Coronavirus*) AND (Climat*) AND (Cases OR Incidence OR Seroprevalence OR Abundance),19500,50,12,34,2,10,,11/17/22
+Severe Acute Respiratory Syndrome,"Mers coronavirus, SARS coronavirus",PubMed,Every metric,(((((Severe acute respiratory syndrome) OR (Sars*)) OR (Mers*)) OR (Coronavirus*)) AND (Climat*)) AND (Cases OR Incidence OR Seroprevalence OR Abundance),915,50,12,37,3,9,539,11/17/22
+Anthrax,Splenic fever,Scholar,Abundance,(Anthrax OR Splenic fever) AND (Climat*) AND (Abundance),10500,50,6,6,6,0,,11/17/22
+Anthrax,Splenic fever,PubMed,Abundance,((Anthrax OR Splenic fever)) AND (Climat*)) AND (Abundance),0,0,6,6,0,6,,11/17/22
+Anthrax,Splenic fever,Scholar,Seroprevalence,(Anthrax OR Splenic fever) AND (Climat*) AND (Seroprevalence),11700,50,7,10,4,3,,11/17/22
+Anthrax,Splenic fever,PubMed,Seroprevalence,((Anthrax OR Splenic fever)) AND (Climat*)) AND (Seroprevalence),1,1,1,10,0,1,,11/17/22
+Anthrax,Splenic fever,Scholar,Cases Or Incidence,(Anthrax OR Splenic fever) AND (Climat*) AND (Cases OR Incidence),21700,50,7,14,4,3,,11/17/22
+Anthrax,Splenic fever,PubMed,Cases Or Incidence,((((Anthrax) OR (Splenic fever)) AND (Climat*)) AND ((Cases) OR (Incidence)),39,39,9,19,5,4,,11/17/22
+Anthrax,Splenic fever,Scholar,Every metric,(Anthrax OR Splenic fever) AND (Climat*) AND (Cases OR Incidence OR Abundance OR Seroprevalence),21700,50,5,22,3,2,,11/17/22
+Anthrax,Splenic fever,PubMed,Every metric,((((Anthrax) OR (Splenic fever)) AND (Climat*)) AND ((Cases) OR (Incidence) OR (Abundance) OR (Seroprevalence)),40,40,6,23,1,5,562,11/17/22
+Zoonotic Influenza,"Avian influenza, Swine Influenza",Scholar,Abundance,(Zoonotic influenza OR Swine Influenza OR Avian influenza) AND (Climat*) AND (Abundance),8020,50,6,6,6,0,,11/17/22
+Zoonotic Influenza,"Avian influenza, Swine Influenza",PubMed,Abundance,((((Zoonotic influenza) OR (Avian influenza)) OR (Swine influenza)) AND (Climat*)) AND (Abundance),8,8,5,9,3,2,,11/17/22
+Zoonotic Influenza,"Avian influenza, Swine Influenza",Scholar,Seroprevalence,(zoonotic influenza OR Swine Influenza OR Avian influenza) AND (Climat*) AND (Seroprevalence,13600,50,8,14,5,3,,11/17/22
+Zoonotic Influenza,"Avian influenza, Swine Influenza",PubMed,Seroprevalence,((((Zoonotic influenza) OR (Avian influenza)) OR (Swine influenza)) AND (Climat*)) AND (Seroprevalence),8,8,0,14,0,0,,11/17/22
+Zoonotic Influenza,"Avian influenza, Swine Influenza",Scholar,Cases Or Incidence,(zoonotic influenza OR Swine Influenza OR Avian influenza) AND (Climat*) AND (Cases OR Incidence),17700,50,5,17,3,2,,11/17/22
+Zoonotic Influenza,"Avian influenza, Swine Influenza",PubMed,Cases Or Incidence,((((Zoonotic influenza) OR (Avian influenza)) OR (Swine influenza)) AND (Climat*)) AND ((Cases) OR (Incidence)),419,50,11,26,9,2,,11/17/22
+Zoonotic Influenza,"Avian influenza, Swine Influenza",Scholar,Every metric,(zoonotic influenza OR Swine Influenza OR Avian influenza) AND (Climat*) AND (Cases OR Incidence OR Abundance OR Seroprevalence),17300,50,2,27,1,1,,11/17/22
+Zoonotic Influenza,"Avian influenza, Swine Influenza",PubMed,Every metric,((((Zoonotic influenza) OR (Avian influenza)) OR (Swine influenza)) AND (Climat*)) AND ((Cases) OR (Incidence) OR (Abundance) OR (Seroprevalence)),423,50,15,32,5,10,594,11/17/22
+Plague,n/a,Scholar,Abundance,(Plague) AND (Climat*) AND (Abundance),84800,50,17,12,12,5,,11/17/22
+Plague,n/a,PubMed,Abundance,((Plague) AND (Climat*)) AND (Abundance),20,20,4,14,2,2,,11/17/22
+Plague,n/a,Scholar,Seroprevalence,(Plague) AND (Climat*) AND (Seroprevalence),2540,50,9,20,6,3,,11/17/22
+Plague,n/a,PubMed,Seroprevalence,((Plague) AND (Climat*)) AND (Seroprevalence),3,3,3,20,0,3,,11/17/22
+Plague,n/a,Scholar,Cases Or Incidence,(Plague) AND (Climate*) AND (Cases OR Incidence),233000,50,19,30,10,9,,11/17/22
+Plague,n/a,PubMed,Cases Or Incidence,((Plague) AND (Climat*)) AND ((Cases) OR (Incidence)),103,50,11,36,6,5,,11/17/22
+Plague,n/a,Scholar,Every metric,(Plague) AND (Climate*) AND (Cases OR Incidence OR Abundance OR Seroprevalence),245000,50,15,36,0,15,,11/17/22
+Plague,n/a,PubMed,Every metric,((Plague) AND (Climat*)) AND ((Cases) OR (Incidence) OR (Abundance) OR (Seroprevalence)),112,50,10,40,4,6,634,11/17/22
+Argentine Hemorrhagic fever,"Argentine haemorrhagic fever, Junin virus, Andes virus",Scholar,Abundance,(Argentine hemorrhagic fever OR Argentine haemorrhagic fever OR Andes virus OR Junin virus) AND (Climate*) AND (Abundance),2280,50,6,5,5,1,,11/17/22
+Argentine Hemorrhagic fever,"Argentine haemorrhagic fever, Junin virus, Andes virus",PubMed,Abundance,(((((Argentine hemorrhagic fever) OR (Argentine haemorrhagic fever)) OR (Junin virus)) OR (Andes virus)) AND (Climat*)) AND (Abundance),29,29,0,5,0,0,,11/17/22
+Argentine Hemorrhagic fever,"Argentine haemorrhagic fever, Junin virus, Andes virus",Scholar,Seroprevalence,(Argentine hemorrhagic fever OR Argentine haemorrhagic fever OR Andes virus OR Junin virus) AND (Climate*) AND (Seroprevalence),3650,50,1,5,0,1,,11/17/22
+Argentine Hemorrhagic fever,"Argentine haemorrhagic fever, Junin virus, Andes virus",PubMed,Seroprevalence,(((((Argentine hemorrhagic fever) OR (Argentine haemorrhagic fever)) OR (Junin virus)) OR (Andes virus)) AND (Climat*)) AND (Seroprevalence),13,13,1,6,1,0,,11/17/22
+Argentine Hemorrhagic fever,"Argentine haemorrhagic fever, Junin virus, Andes virus",Scholar,Cases Or Incidence,(Argentine hemorrhagic fever OR Argentine haemorrhagic fever OR Andes virus OR Junin virus) AND (Climate*) AND (Cases OR Incidence),5120,50,0,6,0,0,,11/17/22
+Argentine Hemorrhagic fever,"Argentine haemorrhagic fever, Junin virus, Andes virus",PubMed,Cases Or Incidence,(((((Argentine hemorrhagic fever) OR (Argentine haemorrhagic fever)) OR (Junin virus)) OR (Andes virus)) AND (Climat*)) AND ((Cases) OR (Incidence)),122,50,0,6,0,0,,11/17/22
+Argentine Hemorrhagic fever,"Argentine haemorrhagic fever, Junin virus, Andes virus",Scholar,Every metric,(Argentine hemorrhagic fever OR Argentine haemorrhagic fever OR Andes virus OR Junin virus) AND (Climate*) AND (Cases OR Incidence OR Abundance OR Seroprevalence),4890,50,0,6,0,0,,11/17/22
+Argentine Hemorrhagic fever,"Argentine haemorrhagic fever, Junin virus, Andes virus",PubMed,Every metric,(((((Argentine hemorrhagic fever) OR (Argentine haemorrhagic fever)) OR (Junin virus)) OR (Andes virus)) AND (Climat*)) AND ((Cases) OR (Incidence) OR (Abundance) OR (Seroprevalence)),129,50,6,10,4,2,644,11/17/22
+Cowpox,n/a,Scholar,Abundance,(Cowpox) AND (Climat*) AND (Abundance),2250,50,9,7,7,2,,11/17/22
+Cowpox,n/a,PubMed,Abundance,(Cowpox) AND (Climat*) AND (Abundance),0,0,0,7,0,0,,11/17/22
+Cowpox,n/a,Scholar,Seroprevalence,(Cowpox) AND (Climat*) AND (Seroprevalence),1860,50,4,11,4,0,,11/17/22
+Cowpox,n/a,PubMed,Seroprevalence,((Cowpox) AND (Climat)) AND (Seroprevalence),5,0,0,11,0,0,,11/17/22
+Cowpox,n/a,Scholar,Cases Or Incidence,(Cowpox) AND (Climate*) AND (Cases OR Incidence),5140,50,0,11,0,0,,11/17/22
+Cowpox,n/a,PubMed,Cases Or Incidence,((Cowpox) AND (Climat)) AND ((Cases) OR (Incidence)),11,11,0,11,0,0,,11/17/22
+Cowpox,n/a,Scholar,Every metric,(Cowpox) AND (Climate*) AND (Cases OR Incidence OR Abundance OR Seroprevalence),5200,50,0,11,0,0,,11/17/22
+Cowpox,n/a,PubMed,Every metric,((Cowpox) AND (Climat)) AND ((Cases) OR (Incidence) OR (Abundance) OR (Seroprevalence)),12,12,2,12,1,1,656,11/17/22
+Marburg virus,ravn virus,Scholar,Abundance,(Marburg virus* OR ravn virus*) AND (Climat*) AND (Abundance),2790,50,6,5,5,1,,11/17/22
+Marburg virus,ravn virus,PubMed,Abundance,(((Marburg virus*) OR (Ravn virus*)) AND (Climat*)) AND (Abundance),0,0,0,5,0,0,,11/17/22
+Marburg virus,ravn virus,Scholar,Seroprevalence,(Marburg virus* OR RAVN virus*) AND (Climat*) AND (Seroprevalence),3410,50,5,9,4,1,,11/17/22
+Marburg virus,ravn virus,PubMed,Seroprevalence,(((Marburg virus*) OR (Ravn virus*)) AND (Climat*)) AND (Seroprevalence),0,0,0,9,0,0,,11/17/22
+Marburg virus,ravn virus,Scholar,Cases Or Incidence,(Marburg virus* OR RAVN virus*) AND (Climat*) AND (Cases OR Incidence),7130,50,6,13,4,2,,11/17/22
+Marburg virus,ravn virus,PubMed,Cases Or Incidence,(((Marburg virus*) OR (Ravn virus*)) AND (Climat*)) AND ((Cases) OR (Incidence)),7,7,0,13,0,0,,11/17/22
+Marburg virus,ravn virus,Scholar,Every metric,(Marburg virus* OR RAVN virus*) AND (Climat*) AND (Cases OR Incidence OR Abundance OR Seroprevalence),6940,50,7,14,1,6,,11/17/22
+Marburg virus,ravn virus,PubMed,Every metric,(((Marburg virus*) OR (Ravn virus*)) AND (Climat*)) AND ((Cases) OR (Incidence) OR (Abundance) OR (Seroprevalence)),7,7,0,14,0,0,670,11/17/22
+Encephalitis, Tick-borne encephalitis,Scholar,Abundance,(Encephalitis OR Tick-borne encephalitis) AND (Climat*) AND (Abundance),17600,50,21,18,18,3,,11/17/22
+Encephalitis,Tick-borne encephalitis,PubMed,Abundance,(((Encephalitis) OR (Tick-borne encephalitis)) AND (Climat*)) AND (Abundance),95,50,9,23,5,4,,11/17/22
+Encephalitis,Tick-borne encephalitis,Scholar,Seroprevalence,(Encephalitis OR Tick-borne encephalitis) AND (Climat*) AND (Seroprevalence),18500,50,9,27,4,5,,11/17/22
+Encephalitis,Tick-borne encephalitis,PubMed,Seroprevalence,(((Encephalitis) OR (Tick-borne encephalitis)) AND (Climat*)) AND (Seroprevalence),26,26,0,27,0,0,,11/17/22
+Encephalitis,Tick-borne encephalitis,Scholar,Cases Or Incidence,(Encephalitis OR Tick-borne encephalitis) AND (Climat*) AND (Cases OR Incidence),19100,50,16,37,10,6,,11/17/22
+Encephalitis,Tick-borne encephalitis,PubMed,Cases Or Incidence,(((Encephalitis) OR (Tick-borne encephalitis)) AND (Climat*)) AND ((Cases) OR (Incidence)),481,50,5,38,1,4,,11/17/22
+Encephalitis,Tick-borne encephalitis,Scholar,Every metric,(Encephalitis OR Tick-borne encephalitis) AND (Climat*) AND (Cases OR Incidence OR Abundance OR Seroprevalence),18600,50,19,42,4,15,,11/17/22
+Encephalitis,Tick-borne encephalitis,PubMed,Every metric,(((Encephalitis) OR (Tick-borne encephalitis)) AND (Climat*)) AND ((Cases) OR (Incidence) OR (Abundance) OR (Seroprevalence)),501,50,7,43,1,6,713,11/17/22
+Venezuelan equine encephalitis,n/a,Scholar,Abundance,(Venezuelan equine encephalitis) AND (Climat*) AND (Abundance),2240,50,2,2,2,0,,11/17/22
+Venezuelan equine encephalitis,n/a,PubMed,Abundance,((Venezuelan equine encephalitis) AND (Climat*)) AND (Abundance*),4,0,0,2,0,0,,11/17/22
+Venezuelan equine encephalitis,n/a,Scholar,Seroprevalence,(Venezuelan equine encephalitis) AND (Climat*) AND (Seroprevalence),2400,50,1,3,1,0,,11/17/22
+Venezuelan equine encephalitis,n/a,PubMed,Seroprevalence,((Venezuelan equine encephalitis) AND (Climat)) AND (Seroprevalence),2,0,0,3,0,0,,11/17/22
+Venezuelan equine encephalitis,n/a,Scholar,Cases Or Incidence,(Venezuelan equine encephalitis) AND (Climat*) AND (Cases OR Incidence),3820,50,3,5,2,1,,11/17/22
+Venezuelan equine encephalitis,n/a,PubMed,Cases Or Incidence,((Venezuelan equine encephalitis) AND (climat)) AND ((Cases) OR (Incidence)),18,18,2,5,0,2,,11/17/22
+Venezuelan equine encephalitis,n/a,Scholar,Every metric,(Venezuelan equine encephalitis) AND (Climat*) AND (Cases OR Incidence OR Abundance OR Seroprevalence),3770,50,4,7,2,2,,11/17/22
+Venezuelan equine encephalitis,n/a,PubMed,Every metric,((Venezuelan equine encephalitis) AND (climat)) AND ((Cases) OR (Incidence) OR (Abundance) OR (Seroprevalence)),10,10,0,7,0,0,720,11/17/22
+Japanese encephalitis,n/a,Scholar,Abundance,(Japanese encephalitis) AND (Climat*) AND (Abundance),10600,50,14,12,12,2,,11/17/22
+Japanese encephalitis,n/a,PubMed,Abundance,((Japanese encephalitis) AND (Climat*)) AND (Abundance),17,17,8,17,5,3,,11/17/22
+Japanese encephalitis,n/a,Scholar,Seroprevalence,(Japanese encephalitis) AND (Climat*) AND (Seroprevalence),13700,50,8,18,1,7,,11/17/22
+Japanese encephalitis,n/a,PubMed,Seroprevalence,((Japanese encephalitis) AND (Climat)) AND (Seroprevalence),13,13,2,19,1,1,,11/17/22
+Japanese encephalitis,n/a,Scholar,Cases Or Incidence,(Japanese encephalitis) AND (Climat*) AND (Cases OR Incidence),23500,50,19,30,11,8,,11/17/22
+Japanese encephalitis,n/a,PubMed,Cases Or Incidence,((Japanese encephalitis) AND (Climat*)) AND ((Cases) OR (Incidence)),95,50,3,30,0,3,,11/17/22
+Japanese encephalitis,n/a,Scholar,Every metric,(Japanese encephalitis) AND (Climat*) AND (Cases OR Incidence OR Abundance OR Seroprevalence),23500,50,12,32,2,10,,11/17/22
+Japanese encephalitis,n/a,PubMed,Every metric,((Japanese encephalitis) AND (Climat*)) AND ((Cases) OR (Incidence) OR (Abundance) OR (Seroprevalence)),101,50,8,33,1,7,753,11/17/22
+Crimean-Congo hemorrhagic fever,"Nairovirus, Crimean-congo haemorrhagic fever",Scholar,Abundance,(Crimean-congo hemorrhagic fever OR Crimean-congo haemorrhagic fever OR Nairovirus) AND (Climat*) AND (Abundance),1210,50,11,10,10,1,,11/18/22
+Crimean-Congo hemorrhagic fever,"Nairovirus, Crimean-congo haemorrhagic fever",PubMed,Abundance,(((((Crimean-congo hemorrhagic fever) ) OR (Crimean-congo haemorrhagic fever)) OR (Nairovirus)) AND (Climat*)) AND (Abundance),11,11,2,12,2,0,,11/18/22
+Crimean-Congo hemorrhagic fever,"Nairovirus, Crimean-congo haemorrhagic fever",Scholar,Seroprevalence,(Crimean-congo hemorrhagic fever OR Crimean-congo haemorrhagic fever OR Nairovirus) AND (Climat*) AND (Seroprevalence),1920,50,3,14,2,1,,11/18/22
+Crimean-Congo hemorrhagic fever,"Nairovirus, Crimean-congo haemorrhagic fever",PubMed,Seroprevalence,(((((Crimean-congo hemorrhagic fever) ) OR (Crimean-congo haemorrhagic fever)) OR (Nairovirus)) AND (Climat*)) AND (Seroprevalence),5,5,0,14,0,0,,11/18/22
+Crimean-Congo hemorrhagic fever,"Nairovirus, Crimean-congo haemorrhagic fever",Scholar,Cases Or Incidence,(Crimean-congo hemorrhagic fever OR Crimean-congo haemorrhagic fever OR Nairovirus) AND (Climat*) AND (Cases OR Incidence),2250,50,6,15,1,5,,11/18/22
+Crimean-Congo hemorrhagic fever,"Nairovirus, Crimean-congo haemorrhagic fever",PubMed,Cases Or Incidence,(((((Crimean-congo hemorrhagic fever) ) OR (Crimean-congo haemorrhagic fever)) OR (Nairovirus)) AND (Climat*)) AND (Cases OR Incidence),70,50,7,17,2,5,,11/18/22
+Crimean-Congo hemorrhagic fever,"Nairovirus, Crimean-congo haemorrhagic fever",Scholar,Every metric,(Crimean-congo hemorrhagic fever OR Crimean-congo haemorrhagic fever OR Nairovirus) AND (Climat*) AND (Cases OR Incidence OR Abundance OR Seroprevalence),2480,50,9,20,3,6,,11/18/22
+Crimean-Congo hemorrhagic fever,"Nairovirus, Crimean-congo haemorrhagic fever",PubMed,Every metric,(((((Crimean-congo hemorrhagic fever) ) OR (Crimean-congo haemorrhagic fever)) OR (Nairovirus)) AND (Climat*)) AND ((Cases) OR (Incidence) OR (Abundance) OR (Seroprevalence)),73,50,6,21,1,5,774,11/18/22
+Penicilliosis,n/a,Scholar,Abundance,(Penicilliosis) AND (Climate*) AND (Abundance),18100,50,3,3,3,0,,11/18/22
+Penicilliosis,n/a,PubMed,Abundance,((Penicilliosis) AND (Climat*)) AND (Abundance),0,0,0,3,0,0,,11/18/22
+Penicilliosis,n/a,Scholar,Seroprevalence,(Penicilliosis) AND (Climat*) AND (Seroprevalence),12400,50,1,4,1,0,,11/18/22
+Penicilliosis,n/a,PubMed,Seroprevalence,((Penicilliosis) AND (Climat*)) AND (Seroprevalence),0,0,0,4,0,0,,11/18/22
+Penicilliosis,n/a,Scholar,Cases Or Incidence,(Penicilliosis) AND (Climat*) AND (Cases OR Incidence),18700,50,1,5,1,0,,11/18/22
+Penicilliosis,n/a,PubMed,Cases Or Incidence,((Penicilliosis) AND (Climat*)) AND ((Cases) OR (Incidence)),1,1,0,5,0,0,,11/18/22
+Penicilliosis,n/a,Scholar,Every metric,(Penicilliosis) AND (Climat*) AND (Cases OR Incidence OR Abundance OR Seroprevalence),18100,50,3,7,2,1,,11/18/22
+Penicilliosis,n/a,PubMed,Every metric,((Penicilliosis) AND (Climat*)) AND ((Cases) OR (Incidence) OR (Abundance) OR (Seroprevalence)),1,1,0,7,0,0,781,11/18/22
+ Boutonneuse fever,"Kenya tick typhus, Indian tick typhus, Israeli spotted fever, Astrakhan fever",Scholar,Abundance,(Boutonneuse fever OR Kenya tick typhus OR Indian tick typhus OR Israeli spotted fever OR Astrakhan fever) AND (Climat*) AND (Abundance),169,50,2,2,2,0,,11/18/22
+ Boutonneuse fever,"Kenya tick typhus, Indian tick typhus, Israeli spotted fever, Astrakhan fever",PubMed,Abundance,((((((boutonneuse fever) OR (Kenya tick typhus)) OR (Indian tick typhus)) OR (Israeli spotted fever)) OR (Astrakhan fever)) AND (Climat*)) AND (Abundance),4,4,1,3,1,0,,11/18/22
+ Boutonneuse fever,"Kenya tick typhus, Indian tick typhus, Israeli spotted fever, Astrakhan fever",Scholar,Seroprevalence,(Boutonneuse fever OR Kenya tick typhus OR Indian tick typhus OR Israeli spotted fever OR Astrakhan fever) AND (Climat*) AND (Seroprevalence),258,50,1,4,1,0,,11/18/22
+ Boutonneuse fever,"Kenya tick typhus, Indian tick typhus, Israeli spotted fever, Astrakhan fever",PubMed,Seroprevalence,((((((boutonneuse fever) OR (Kenya tick typhus)) OR (Indian tick typhus)) OR (Israeli spotted fever)) OR (Astrakhan fever)) AND (Climat*)) AND (Seroprevalence),1,1,0,4,0,0,,11/18/22
+ Boutonneuse fever,"Kenya tick typhus, Indian tick typhus, Israeli spotted fever, Astrakhan fever",Scholar,Cases Or Incidence,Boutonneuse fever OR Kenya tick typhus OR Indian tick typhus OR Israeli spotted fever OR Astrakhan fever) AND (Climat*) AND (Cases OR Incidence),397,50,2,4,0,2,,11/18/22
+ Boutonneuse fever,"Kenya tick typhus, Indian tick typhus, Israeli spotted fever, Astrakhan fever",PubMed,Cases Or Incidence,((((((boutonneuse fever) OR (Kenya tick typhus)) OR (Indian tick typhus)) OR (Israeli spotted fever)) OR (Astrakhan fever)) AND (Climat*)) AND (Cases OR Incidence),24,24,8,4,0,8,,11/18/22
+ Boutonneuse fever,"Kenya tick typhus, Indian tick typhus, Israeli spotted fever, Astrakhan fever",Scholar,Every metric,Boutonneuse fever OR Kenya tick typhus OR Indian tick typhus OR Israeli spotted fever OR Astrakhan fever) AND (Climat*) AND (Cases OR Incidence OR Abundance OR Seroprevalence),347,50,4,4,0,4,,11/18/22
+ Boutonneuse fever,"Kenya tick typhus, Indian tick typhus, Israeli spotted fever, Astrakhan fever",PubMed,Every metric,((((((boutonneuse fever) OR (Kenya tick typhus)) OR (Indian tick typhus)) OR (Israeli spotted fever)) OR (Astrakhan fever)) AND (Climat*)) AND (Cases OR Incidence OR Abundance OR Seroprevalence),26,26,8,9,5,3,790,11/18/22
+Scrub typhus,"bush typhus, tsutsugamushi disease",Scholar,Abundance,(Scrub typhus OR Bush typhus OR tsutsugamushi disease) AND (Climat*) AND (Abundance),2870,50,21,21,21,0,,11/18/22
+Scrub typhus,"bush typhus, tsutsugamushi disease",PubMed,Abundance,((((Scrub Typhus) OR (Bush typhus)) OR (tsutsugamushi disease)) AND (Climat*)) AND (Abundance),3,3,1,21,0,1,,11/18/22
+Scrub typhus,"bush typhus, tsutsugamushi disease",Scholar,Seroprevalence,(Scrub typhus OR Bush typhus OR tsutsugamushi disease) AND (Climat*) AND (Seroprevalence),2560,50,11,27,6,5,,11/18/22
+Scrub typhus,"bush typhus, tsutsugamushi disease",PubMed,Seroprevalence,((((Scrub Typhus) OR (Bush typhus)) OR (tsutsugamushi disease)) AND (Climat*)) AND (Seroprevalence),2,0,0,27,0,0,,11/18/22
+Scrub typhus,"bush typhus, tsutsugamushi disease",Scholar,Cases Or Incidence,(Scrub typhus OR Bush typhus OR tsutsugamushi disease) AND (Climat*) AND (Cases OR Incidence),5460,50,14,30,3,11,,11/18/22
+Scrub typhus,"bush typhus, tsutsugamushi disease",PubMed,Cases Or Incidence,((((Scrub Typhus) OR (Bush typhus)) OR (tsutsugamushi disease)) AND (Climat*)) AND ((Cases) OR (Incidence)),45,45,10,33,3,7,,11/18/22
+Scrub typhus,"bush typhus, tsutsugamushi disease",Scholar,Every metric,(Scrub typhus OR Bush typhus OR tsutsugamushi disease) AND (Climat*) AND (Cases OR Incidence OR Abundance OR Seroprevalence),5550,50,14,35,2,12,,11/18/22
+Scrub typhus,"bush typhus, tsutsugamushi disease",PubMed,Every metric,((((Scrub Typhus) OR (Bush typhus)) OR (tsutsugamushi disease)) AND (Climat*)) AND ((Cases) OR (Incidence) OR (Abundance) OR (Seroprevalence)),46,46,7,36,1,6,826,11/18/22
+Psittacosis,ornithosis,Scholar,Abundance,(Psittacosis OR Ornithosis) AND (Climat*) AND (Abundance),649,50,2,2,2,0,,11/18/22
+Psittacosis,ornithosis,PubMed,Abundance,(((Psittacosis) OR (Ornithosis)) AND (Climat*)) AND (Abundance),0,0,0,2,0,0,,11/18/22
+Psittacosis,ornithosis,Scholar,Seroprevalence,(Psittacosis OR Ornithosis) AND (Climat*) AND (Seroprevalence),1040,50,5,6,4,1,,11/18/22
+Psittacosis,ornithosis,PubMed,Seroprevalence,(((Psittacosis) OR (Ornithosis)) AND (Climat*)) AND (Seroprevalence),1,1,0,6,0,0,,11/18/22
+Psittacosis,ornithosis,Scholar,Cases Or Incidence,(Psittacosis OR Ornithosis) AND (Climat*) AND (Cases OR Incidence),2740,50,1,6,0,1,,11/18/22
+Psittacosis,ornithosis,PubMed,Cases Or Incidence,((Psittacosis) OR(Ornithosis)) AND (Climat*) AND ((Cases) OR (Incidence)),3,3,0,6,0,0,,11/18/22
+Psittacosis,ornithosis,Scholar,Every metric,(Psittacosis OR Ornithosis) AND (Climat*) AND (Cases OR Incidence OR Seroprevalence OR Abundance),2820,50,1,7,1,0,,11/18/22
+Psittacosis,ornithosis,PubMed,Every metric,((Psittacosis) OR(Ornithosis)) AND (Climat*) AND ((Cases) OR (Incidence) OR (Abundance) OR (Seroprevalence)),3,3,0,7,0,0,833,11/18/22
+Rickettsiosis,"Brazilian spotted fever, Murine typhus",Scholar,Abundance,(Rickettsiosis OR Brazilian spotted fever OR Murine typhus) AND (Climat*) AND (Abundance),1050,50,3,3,3,0,,11/20/22
+Rickettsiosis,"Brazilian spotted fever, Murine typhus",PubMed,Abundance,((((Rickettsiosis) OR (Brazilian spotted fever)) OR (Murine typhus)) AND (Climat*)) AND (Abundance),10,10,3,6,3,0,,11/20/22
+Rickettsiosis,"Brazilian spotted fever, Murine typhus",Scholar,Seroprevalence,(Rickettsiosis OR Brazilian spotted fever OR Murine typhus) AND (Climat*) AND (Seroprevalence),1220,50,5,10,4,1,,11/20/22
+Rickettsiosis,"Brazilian spotted fever, Murine typhus",PubMed,Seroprevalence,((((Rickettsiosis) OR (Brazilian spotted fever)) OR (Murine typhus)) AND (Climat*)) AND (Seroprevalence),4,4,4,13,3,1,,11/20/22
+Rickettsiosis,"Brazilian spotted fever, Murine typhus",Scholar,Cases Or Incidence,(Rickettsiosis OR Brazilian spotted fever OR Murine typhus) AND (Climat*) AND (Cases OR Incidence),1800,50,2,13,0,2,,11/20/22
+Rickettsiosis,"Brazilian spotted fever, Murine typhus",PubMed,Cases Or Incidence,((((Rickettsiosis) OR (Brazilian spotted fever)) OR (Murine typhus)) AND (Climat*)) AND ((Cases) OR (Incidence)),90,50,6,15,2,4,,11/20/22
+Rickettsiosis,"Brazilian spotted fever, Murine typhus",Scholar,Every metric,(Rickettsiosis OR Brazilian spotted fever OR Murine typhus) AND (Climat*) AND (Cases OR Incidence OR Abundance OR Seroprevalence),1870,50,2,17,2,0,,11/20/22
+Rickettsiosis,"Brazilian spotted fever, Murine typhus",PubMed,Every metric,((((Rickettsiosis) OR (Brazilian spotted fever)) OR (Murine typhus)) AND (Climat*)) AND ((Cases) OR (Incidence) OR (Abundance) OR (Seroprevalence)),93,50,9,19,2,7,852,11/20/22
+Rocky mountain spotted fever,n/a,Scholar,Abundance,(Rocky mountain spotted fever) AND (Climat*) AND (Abundance),19100,50,5,5,5,0,,11/20/22
+Rocky mountain spotted fever,n/a,PubMed,Abundance,(Rocky Mountain Spotted Fever) AND (Climat*) AND (Abundance) ,1,1,1,6,1,0,,11/20/22
+Rocky mountain spotted fever,n/a,Scholar,Seroprevalence,(Rocky mountain spotted fever) AND (Climat*) AND (Seroprevalence),18000,50,7,12,6,1,,11/20/22
+Rocky mountain spotted fever,n/a,PubMed,Seroprevalence,(Rocky mountain spotted fever) AND (Climat*) AND (Seroprevalence),0,0,0,12,0,0,,11/20/22
+Rocky mountain spotted fever,n/a,Scholar,Cases Or Incidence,(Rocky mountain spotted fever) AND (Climat*) AND (Cases OR Incidence),19400,50,8,15,3,5,,11/20/22
+Rocky mountain spotted fever,n/a,PubMed,Cases Or Incidence,(Rocky mountain spotted fever) AND (Climat*) AND ((Cases) OR (Incidence)),12,12,6,17,2,4,,11/20/22
+Rocky mountain spotted fever,n/a,Scholar,Every metric,(Rocky mountain spotted fever) AND (Climat*) AND (Cases OR Incidence OR Abundance OR Seroprevalence),18500,50,9,23,6,3,,11/20/22
+Rocky mountain spotted fever,n/a,PubMed,Every metric,(Rocky mountain spotted fever) AND (Climat*) AND ((Cases) OR (Incidence) OR (Abudance) OR (Seroprevalence)),12,12,5,24,1,4,876,11/20/22
+Menangle virus,Menangle pararubulavirus,Scholar,Abundance,(Menangle virus OR Menangle para rubulavirus) AND (Climat*) AND (Abundance),43,43,0,0,0,0,,11/21/22
+Menangle virus,Menangle pararubulavirus,PubMed,Abundance,((Menangle OR Menangle para rubulavirus) AND (Climat*)) AND (Abundance),5,5,0,0,0,0,,11/21/22
+Menangle virus,Menangle pararubulavirus,Scholar,Seroprevalence,(Menangle virus OR Menangle para rubulavirus) AND (Climat*) AND (Seroprevalence),70,50,0,0,0,0,,11/21/22
+Menangle virus,Menangle pararubulavirus,PubMed,Seroprevalence,((Menangle OR Menangle para rubulavirus) AND (Climat*)) AND (Seroprevalence),1,1,0,0,0,0,,11/21/22
+Menangle virus,Menangle pararubulavirus,Scholar,Cases Or Incidence,(Menangle virus OR Menangle para rubulavirus) AND (Climat*) AND (Cases OR Incidence),78,50,4,4,4,0,,11/21/22
+Menangle virus,Menangle pararubulavirus,PubMed,Cases Or Incidence,((Menangle OR Menangle para rubulavirus) AND (Climat*)) AND ((Cases OR (Incidence)),2,2,0,4,0,0,,11/21/22
+Menangle virus,Menangle pararubulavirus,Scholar,Every metric,(Menangle virus OR Menangle para rubulavirus) AND (Climat*) AND (Cases OR Incidence OR Abundance OR Seroprevalence),82,50,1,5,1,0,,11/21/22
+Menangle virus,Menangle pararubulavirus,PubMed,Every metric,((Menangle OR Menangle para rubulavirus) AND (Climat*)) AND ((Cases OR (Incidence) OR (Abundance) OR (Seroprevalence)),7,7,0,5,0,0,881,11/21/22
+Venezuelan hemorrhagic fever,"Guanarito hemorrhagic fever, Venezuelan haemorrhagic fever",Scholar,Abundance,(Venezuelan hemorrhagic fever OR Venezuelan haemorrhagic fever OR Guanarito fever) AND (Climat*) AND (Abundance),1480,50,10,8,8,2,,11/21/22
+Venezuelan hemorrhagic fever,"Guanarito hemorrhagic fever, Venezuelan haemorrhagic fever",PubMed,Abundance,((((Venezuelan hemorrhagic fever) OR (Venezuelan haemorrhagic fever)) OR (Guanarito fever)) AND (Climat*)) AND (Abundance),0,0,0,8,0,0,,11/21/22
+Venezuelan hemorrhagic fever,"Guanarito hemorrhagic fever, Venezuelan haemorrhagic fever",Scholar,Seroprevalence,(Venezuelan hemorrhagic fever OR Venezuelan haemorrhagic fever OR Guanarito fever) AND (Climat*) AND (Seroprevalence),1940,50,4,11,3,1,,11/21/22
+Venezuelan hemorrhagic fever,"Guanarito hemorrhagic fever, Venezuelan haemorrhagic fever",PubMed,Seroprevalence,((((Venezuelan hemorrhagic fever) OR (Venezuelan haemorrhagic fever)) OR (Guanarito fever)) AND (Climat*)) AND (Seroprevalence),0,0,0,11,0,0,,11/21/22
+Venezuelan hemorrhagic fever,"Guanarito hemorrhagic fever, Venezuelan haemorrhagic fever",Scholar,Cases Or Incidence,(Venezuelan hemorrhagic fever OR Venezuelan haemorrhagic fever OR Guanarito fever) AND (Climat*) AND (Cases OR Incidence),2880,50,0,11,0,0,,11/21/22
+Venezuelan hemorrhagic fever,"Guanarito hemorrhagic fever, Venezuelan haemorrhagic fever",PubMed,Cases Or Incidence,((((Venezuelan hemorrhagic fever) OR (Venezuelan haemorrhagic fever)) OR (Guanarito fever)) AND (Climat*)) AND ((Cases) OR (Incidence)),1,1,1,12,1,0,,11/21/22
+Venezuelan hemorrhagic fever,"Guanarito hemorrhagic fever, Venezuelan haemorrhagic fever",Scholar,Every metric,(Venezuelan hemorrhagic fever OR Venezuelan haemorrhagic fever OR Guanarito fever) AND (Climat*) AND (Cases OR Incidence OR Abundance OR Seroprevalence),2920,50,0,12,0,0,,11/21/22
+Venezuelan hemorrhagic fever,"Guanarito hemorrhagic fever, Venezuelan haemorrhagic fever",PubMed,Every metric,((((Venezuelan hemorrhagic fever) OR (Venezuelan haemorrhagic fever)) OR (Guanarito fever)) AND (Climat*)) AND ((Cases) OR (Incidence) OR (Abundance) OR (Seroprevalence)),1,1,0,12,0,0,893,11/21/22
+Bolivian hemorrhagic fever,"black typhus, Machupo virus, Bolivian haemorrhagic fever",Scholar,Abundance,(Bolivian hemorrhagic fever OR Bolivian haemorrhagic fever OR Machupo* OR Black typhus) AND (Climat*) AND (Abundance),2810,50,3,3,3,0,,11/21/22
+Bolivian hemorrhagic fever,"black typhus, Machupo virus, Bolivian haemorrhagic fever",PubMed,Abundance,(((((Bolivian hemorrhagic fever) OR (Bolivian haemorrhagic fever)) OR (Black typhus)) OR (Machupo*)) AND (Climat*)) AND (Abundance),1,1,0,3,0,0,,11/21/22
+Bolivian hemorrhagic fever,"black typhus, Machupo virus, Bolivian haemorrhagic fever",Scholar,Seroprevalence,(Bolivian hemorrhagic fever OR Bolivian haemorrhagic fever OR Machupo* OR Black typhus) AND (Climat*) AND (Seroprevalence),3260,50,3,5,2,1,,11/21/22
+Bolivian hemorrhagic fever,"black typhus, Machupo virus, Bolivian haemorrhagic fever",PubMed,Seroprevalence,(((((Bolivian hemorrhagic fever) OR (Bolivian haemorrhagic fever)) OR (Black typhus)) OR (Machupo*)) AND (Climat*)) AND (Seroprevalence),0,0,0,5,0,0,,11/21/22
+Bolivian hemorrhagic fever,"black typhus, Machupo virus, Bolivian haemorrhagic fever",Scholar,Cases Or Incidence,(Bolivian hemorrhagic fever OR Bolivian haemorrhagic fever OR Machupo* OR Black typhus) AND (Climat*) AND (Cases OR Incidence),5750,50,3,6,1,2,,11/21/22
+Bolivian hemorrhagic fever,"black typhus, Machupo virus, Bolivian haemorrhagic fever",PubMed,Cases Or Incidence,(Bolivian hemorrhagic fever OR Bolivian haemorrhagic fever OR Machupo* OR Black typhus) AND (Climat*) AND ((Cases) OR (Incidence)),3,3,0,6,0,0,,11/21/22
+Bolivian hemorrhagic fever,"black typhus, Machupo virus, Bolivian haemorrhagic fever",Scholar,Every metric,(Bolivian hemorrhagic fever OR Bolivian haemorrhagic fever OR Machupo* OR Black typhus) AND (Climat*) AND (Cases OR Incidence OR Abundance OR Seroprevalence),5820,50,5,9,3,2,,11/21/22
+Bolivian hemorrhagic fever,"black typhus, Machupo virus, Bolivian haemorrhagic fever",PubMed,Every metric,(Bolivian hemorrhagic fever OR Bolivian haemorrhagic fever OR Machupo* OR Black typhus) AND (Climat*) AND ((Cases) OR (Incidence) OR (Abundance) OR (Seroprevalence)),3,3,0,9,0,0,902,11/21/22
+Mediterranean spotted fever,n/a,Scholar,Abundance,(Meditteranean spotted fever) AND (Climat*) AND (Abundance),18100,50,4,3,3,1,,11/21/22
+Mediterranean spotted fever,n/a,PubMed,Abundance,((Mediterranean spotted fever) AND (Climat*)) AND (Abundance),0,0,0,3,0,0,,11/21/22
+Mediterranean spotted fever,n/a,Scholar,Seroprevalence,(Meditteranean spotted fever) AND (Climat*) AND (Seroprevalence),9050,50,3,6,3,0,,11/21/22
+Mediterranean spotted fever,n/a,PubMed,Seroprevalence,((Mediterranean spotted fever) AND (Climat*)) AND (Seroprevalence),2,2,0,6,0,0,,11/21/22
+Mediterranean spotted fever,n/a,Scholar,Cases Or Incidence,(Meditteranean spotted fever) AND (Climat*) AND (Cases OR Incidence),17900,50,5,9,3,2,,11/21/22
+Mediterranean spotted fever,n/a,PubMed,Cases Or Incidence,((Mediterranean spotted fever) AND (Climat*)) AND ((Cases) OR (Incidence)),16,16,0,9,0,0,,11/21/22
+Mediterranean spotted fever,n/a,Scholar,Every metric,(Meditteranean spotted fever) AND (Climat*) AND (Cases OR Incidence OR Abundance OR Seroprevalence),17900,50,7,10,1,6,,11/21/22
+Mediterranean spotted fever,n/a,PubMed,Every metric,((Mediterranean spotted fever) AND (Climat*)) AND ((Cases) OR (Incidence) OR (Seroprevalence) OR (Abundance)),16,16,2,10,0,2,912,11/21/22
+African tick-bite fever,Rickettsia africae,Scholar,Abundance,(African tick-bite fever OR Rickettsia africae) AND (Climat*) AND (Abundance),1330,50,10,3,3,7,,11/21/22
+African tick-bite fever,Rickettsia africae,PubMed,Abundance,((African tick-bite fever) OR (Rickettsia africae)) AND (Climat*)) AND (Abundance),4,4,1,4,1,0,,11/21/22
+African tick-bite fever,Rickettsia africae,Scholar,Seroprevalence,(African tick-bite fever OR Rickettsia africae) AND (Climat*) AND (Seroprevalence),1830,50,5,7,3,2,,11/21/22
+African tick-bite fever,Rickettsia africae,PubMed,Seroprevalence,((African tick-bite fever) OR (Rickettsia africae)) AND (Climat*)) AND (Seroprevalence),1,1,0,7,0,0,,11/21/22
+African tick-bite fever,Rickettsia africae,Scholar,Cases Or Incidence,(African tick-bite fever OR Rickettsia africae) AND (Climat*) AND (Cases OR Incidence),2270,50,4,9,2,2,,11/21/22
+African tick-bite fever,Rickettsia africae,PubMed,Cases Or Incidence,((African tick-bite fever) OR (Rickettsia africae)) AND (Climat*)) AND ((Cases) OR (Incidence)),27,27,6,12,3,3,,11/21/22
+African tick-bite fever,Rickettsia africae,Scholar,Every metric,(African tick-bite fever OR Rickettsia africae) AND (Climat*) AND (Abundance OR Seroprevalence OR Cases OR Incidence),2340,50,4,15,3,1,,11/21/22
+African tick-bite fever,Rickettsia africae,PubMed,Every metric,((African tick-bite fever) OR (Rickettsia africae)) AND (Climat*)) AND ((Cases) OR (Incidence) OR (Seroprevalence) OR (Abundance)),29,29,0,15,0,0,927,11/21/22
+Tacaribe virus,n/a,Scholar,Abundance,(Tacaribe virus*) AND (Climat*) AND (Abundance),154,50,0,0,0,0,,11/21/22
+Tacaribe virus,n/a,PubMed,Abundance,((Tacaribe virus) AND (Climat*)) AND (Abundance),0,0,0,0,0,0,,11/21/22
+Tacaribe virus,n/a,Scholar,Seroprevalence,(Tacaribe virus*) AND (Climat*) AND (Seroprevalence),181,50,0,0,0,0,,11/21/22
+Tacaribe virus,n/a,PubMed,Seroprevalence,((Tacaribe virus) AND (Climat*)) AND (Seroprevalence),0,0,0,0,0,0,,11/21/22
+Tacaribe virus,n/a,Scholar,Cases Or Incidence,(Tacaribe virus*) AND (Climat*) AND (Cases OR Incidence),283,50,0,0,0,0,,11/21/22
+Tacaribe virus,n/a,PubMed,Cases Or Incidence,((Tacaribe virus) AND (Climat*)) AND ((Cases) OR (Incidence)),1,1,0,0,0,0,,11/21/22
+Tacaribe virus,n/a,Scholar,Every metric,(Tacaribe virus*) AND (Climat*) AND (Abundance OR Seroprevalence OR Cases OR Incidence),294,50,0,0,0,0,,11/21/22
+Tacaribe virus,n/a,PubMed,Every metric,((Tacaribe virus) AND (Climat*)) AND ((Cases) OR (Incidence) OR (Abundance) OR (Seroprevalence)),1,1,0,0,0,0,927,11/21/22
+Raccoon roundworm infection,Baylisascaris,Scholar,Abundance,(Raccoon roundworm infection OR Baylisascaris) AND (Climat*) AND (Abundance),562,50,5,4,4,1,,11/21/22
+Raccoon roundworm infection,Baylisascaris,PubMed,Abundance,((raccoon roundworm infection) AND (Climat*)) AND (Abundance),0,0,0,4,0,0,,11/21/22
+Raccoon roundworm infection,Baylisascaris,Scholar,Seroprevalence,(Raccoon roundworm infection OR Baylisascaris) AND (Climat*) AND (Seroprevalence),587,50,3,5,1,2,,11/21/22
+Raccoon roundworm infection,Baylisascaris,PubMed,Seroprevalence,((raccoon roundworm infection) AND (Climat*)) AND (Seroprevalence),12,12,1,6,1,0,,11/21/22
+Raccoon roundworm infection,Baylisascaris,Scholar,Cases Or Incidence,(Raccoon roundworm infection OR Baylisascaris) AND (Climat*) AND (Cases OR Incidence),717,50,4,7,1,3,,11/21/22
+Raccoon roundworm infection,Baylisascaris,PubMed,Cases Or Incidence,((raccoon roundworm infection) AND (Climat*)) AND ((Cases OR Incidence)),45,45,4,10,3,1,,11/21/22
+Raccoon roundworm infection,Baylisascaris,Scholar,Every metric,(Raccoon roundworm infection OR Baylisascaris) AND (Climat*) AND (Seroprevalence OR Abundance OR Cases OR Incidence),783,50,1,10,0,1,,11/21/22
+Raccoon roundworm infection,Baylisascaris,PubMed,Every metric,((raccoon roundworm infection) AND (Climat*)) AND ((Seroprevalence) OR (Abundance) OR (Cases) OR (Incidence)),46,46,3,11,1,2,938,11/21/22
+Siberian tick typhus,"north asian tick typhus, rickettsia sibirica",Scholar,Abundance,(Siberian tick typhus OR North asian tick typhus OR rickettsia siberica) AND (Climat*) AND (Abundance),119,50,1,1,1,0,,11/22/22
+Siberian tick typhus,"north asian tick typhus, rickettsia sibirica",PubMed,Abundance,((((Siberian tick typhus) OR (North asian tick typhus)) OR (Rickettsia sibirica)) AND (Climat*)) AND (Abundance),4,4,1,2,1,0,,11/22/22
+Siberian tick typhus,"north asian tick typhus, rickettsia sibirica",Scholar,Seroprevalence,(Siberian tick typhus OR North asian tick typhus OR rickettsia siberica) AND (Climat*) AND (Seroprevalence),146,50,1,3,1,0,,11/22/22
+Siberian tick typhus,"north asian tick typhus, rickettsia sibirica",PubMed,Seroprevalence,((((Siberian tick typhus) OR (North asian tick typhus)) OR (Rickettsia sibirica)) AND (Climat*)) AND (Seroprevalence),1,1,0,4,1,-1,,11/22/22
+Siberian tick typhus,"north asian tick typhus, rickettsia sibirica",Scholar,Cases Or Incidence,(Siberian tick typhus OR North asian tick typhus OR rickettsia siberica) AND (Climat*) AND (Cases OR Incidence),173,50,2,4,0,2,,11/22/22
+Siberian tick typhus,"north asian tick typhus, rickettsia sibirica",PubMed,Cases Or Incidence,((((Siberian tick typhus) OR (North asian tick typhus)) OR (Rickettsia sibirica)) AND (Climat*)) AND (Cases OR Incidence),24,24,4,6,2,2,,11/22/22
+Siberian tick typhus,"north asian tick typhus, rickettsia sibirica",Scholar,Every metric,(Siberian tick typhus OR North asian tick typhus OR rickettsia siberica) AND (Climat*) AND (Cases OR Incidence OR Abundance OR Seroprevalence),181,50,1,7,1,0,,11/22/22
+Siberian tick typhus,"north asian tick typhus, rickettsia sibirica",PubMed,Every metric,((((Siberian tick typhus) OR (North asian tick typhus)) OR (Rickettsia sibirica)) AND (Climat*)) AND ((Cases) OR (Incidence) OR (Abundance) OR (Seroprevalence)),26,26,1,8,1,0,946,11/22/22
+Queensland tick typhus,"Australian tick typhus, rickettsia australis",Scholar,Abundance,(Queensland tick typhus OR Australian tick typhus OR Rickettsia australis AND (Climat*) AND (Abundance),555,50,3,2,2,1,,11/22/22
+Queensland tick typhus,"Australian tick typhus, rickettsia australis",PubMed,Abundance,((((Queensland tick typhus) OR (Australian tick typhus)) OR (Rickettsia australis)) AND (Climat*)) AND (Abundance),4,4,0,2,0,0,,11/22/22
+Queensland tick typhus,"Australian tick typhus, rickettsia australis",Scholar,Seroprevalence,(Queensland tick typhus OR Australian tick typhus OR Rickettsia australis AND (Climat*) AND (Seroprevalence),638,50,1,3,1,0,,11/22/22
+Queensland tick typhus,"Australian tick typhus, rickettsia australis",PubMed,Seroprevalence,((((Queensland tick typhus) OR (Australian tick typhus)) OR (Rickettsia australis)) AND (Climat*)) AND (Seroprevalence),1,1,0,3,0,0,,11/22/22
+Queensland tick typhus,"Australian tick typhus, rickettsia australis",Scholar,Cases Or Incidence,(Queensland tick typhus OR Australian tick typhus OR Rickettsia australis AND (Climat*) AND (Cases OR Incidence),873,50,1,3,0,1,,11/22/22
+Queensland tick typhus,"Australian tick typhus, rickettsia australis",PubMed,Cases Or Incidence,((((Queensland tick typhus) OR (Australian tick typhus)) OR (Rickettsia australis)) AND (Climat*)) AND ((Cases) OR (Incidence)),26,26,1,4,1,0,,11/22/22
+Queensland tick typhus,"Australian tick typhus, rickettsia australis",Scholar,Every metric,(Queensland tick typhus OR Australian tick typhus OR Rickettsia australis AND (Climat*) AND (Abundance OR Seroprevalence OR Cases OR Incidence),909,50,3,4,0,3,,11/22/22
+Queensland tick typhus,"Australian tick typhus, rickettsia australis",PubMed,Every metric,((((Queensland tick typhus) OR (Australian tick typhus)) OR (Rickettsia australis)) AND (Climat*)) AND ((Cases) OR (Incidence) OR (Abundance) OR (Seroprevalence)),28,28,0,4,0,0,950,11/22/22
+Flinders island spotted fever,rickettsia honei,Scholar,Abundance,(Flinders island spotted fever OR rickettsia honei) AND (Climat*) AND (Abundance),99,50,0,0,0,0,,11/22/22
+Flinders island spotted fever,rickettsia honei,PubMed,Abundance,((Flinders island spotted fever) AND (Climat*)) AND (Abundance),4,4,0,0,0,0,,11/22/22
+Flinders island spotted fever,rickettsia honei,Scholar,Seroprevalence,(Flinders island spotted fever OR rickettsia honei) AND (Climat*) AND (Seroprevalence),127,50,1,1,1,0,,11/22/22
+Flinders island spotted fever,rickettsia honei,PubMed,Seroprevalence,((Flinders island spotted fever) AND (Climat*)) AND (Seroprevalence),1,1,0,1,0,0,,11/22/22
+Flinders island spotted fever,rickettsia honei,Scholar,Cases Or Incidence,(Flinders island spotted fever OR rickettsia honei) AND (Climat*) AND (Cases OR Incidence),153,50,2,2,1,1,,11/22/22
+Flinders island spotted fever,rickettsia honei,PubMed,Cases Or Incidence,(Flinders island spotted fever OR rickettsia honei) AND (Climat*) AND ((Cases) OR (Incidence)),24,24,0,2,0,0,,11/22/22
+Flinders island spotted fever,rickettsia honei,Scholar,Every metric,(Flinders island spotted fever OR rickettsia honei) AND (Climat*) AND (Abundance OR Seroprevalence OR Cases OR Incidence),159,50,0,2,0,0,,11/22/22
+Flinders island spotted fever,rickettsia honei,PubMed,Every metric,(Flinders island spotted fever OR rickettsia honei) AND (Climat*) AND ((Abundance) OR (Seroprevalence) OR (Cases) OR (Incidence)),26,26,5,5,3,2,955,11/22/22
+Japanese spotted fever,rickettsia japonica,Scholar,Abundance,(Japanese spotted fever OR Rickettsia japonica) AND (Climat*) AND (Abundance),951,50,3,3,3,0,,11/22/22
+Japanese spotted fever,rickettsia japonica,PubMed,Abundance,(((Japanese spotted fever) OR (Rickettsia japonica)) AND (Climat*)) AND (Abundance),5,5,0,3,0,0,,11/22/22
+Japanese spotted fever,rickettsia japonica,Scholar,Seroprevalence,(Japanese spotted fever OR Rickettsia japonica) AND (Climat*) AND (Seroprevalence),509,50,1,4,1,0,,11/22/22
+Japanese spotted fever,rickettsia japonica,PubMed,Seroprevalence,(((Japanese spotted fever) OR (Rickettsia japonica)) AND (Climat*)) AND (Seroprevalence),1,1,0,4,0,0,,11/22/22
+Japanese spotted fever,rickettsia japonica,Scholar,Cases Or Incidence,(Japanese spotted fever OR Rickettsia japonica) AND (Climat*) AND (Cases OR Incidence),881,50,1,4,0,1,,11/22/22
+Japanese spotted fever,rickettsia japonica,PubMed,Cases Or Incidence,((Japanese spotted fever) OR (Rickettsia japonica)) AND (Climat*) AND ((Cases) OR (Incidence)),23,23,0,4,0,0,,11/22/22
+Japanese spotted fever,rickettsia japonica,Scholar,Every metric,(Japanese spotted fever OR Rickettsia japonica) AND (Climat*) AND (Abundance OR Seroprevalence OR Cases OR Incidence),950,50,1,4,0,1,,11/22/22
+Japanese spotted fever,rickettsia japonica,PubMed,Every metric,((Japanese spotted fever) OR (Rickettsia japonica)) AND (Climat*) AND ((Cases) OR (Incidence) OR (Abundance) OR (Seroprevalence)),26,26,0,4,0,0,959,11/22/22
+American tick-bite fever,rickettsia parkeri,Scholar,Abundance,(American tick-bite fever OR Rickettsia parkeri) AND (Climat*) AND (Abundance),414,50,4,3,3,1,,11/22/22
+American tick-bite fever,rickettsia parkeri,PubMed,Abundance,(((American tick-bite fever) OR (Rickettsia parkeri)) AND (Climat*)) AND (Abundance),1,1,1,4,1,0,,11/22/22
+American tick-bite fever,rickettsia parkeri,Scholar,Seroprevalence,(American tick-bite fever OR Rickettsia parkeri) AND (Climat*) AND (Seroprevalence),521,50,3,5,1,2,,11/22/22
+American tick-bite fever,rickettsia parkeri,PubMed,Seroprevalence,(((American tick-bite fever) OR (Rickettsia parkeri)) AND (Climat*)) AND (Seroprevalence),0,0,0,5,0,0,,11/22/22
+American tick-bite fever,rickettsia parkeri,Scholar,Cases Or Incidence,(American tick-bite fever OR Rickettsia parkeri) AND (Climat*) AND (Cases OR Incidence),615,50,2,6,1,1,,11/22/22
+American tick-bite fever,rickettsia parkeri,PubMed,Cases Or Incidence,(((American tick-bite fever) OR (Rickettsia parkeri)) AND (Climat*)) AND ((Cases) OR (Incidence)),1,1,0,6,0,0,,11/22/22
+American tick-bite fever,rickettsia parkeri,Scholar,Every metric,(American tick-bite fever OR Rickettsia parkeri) AND (Climat*) AND (Abundance OR Seroprevalence OR Cases OR Incidence),636,50,2,6,0,2,,11/22/22
+American tick-bite fever,rickettsia parkeri,PubMed,Every metric,(((American tick-bite fever) OR (Rickettsia parkeri)) AND (Climat*)) AND ((Cases) OR (Incidence) OR (Abundance) OR (Seroprevalence)),3,0,0,6,0,0,965,11/22/22
+Sealpox,n/a,Scholar,Abundance,(Sealpox) AND (Climat*) AND (Abundance),29,29,1,1,1,0,,11/22/22
+Sealpox,n/a,PubMed,Abundance,((Sealpox) AND (Climat*)) AND (Abundance),0,0,0,1,0,0,,11/22/22
+Sealpox,n/a,Scholar,Seroprevalence,(Sealpox) AND (Climat*) AND (Seroprevalence),45,45,0,1,0,0,,11/22/22
+Sealpox,n/a,PubMed,Seroprevalence,((Sealpox) AND (Climat*)) AND (Seroprevalence),0,0,0,1,0,0,,11/22/22
+Sealpox,n/a,Scholar,Cases Or Incidence,(Sealpox) AND (Climat*) AND (Cases OR Incidence),58,50,0,1,0,0,,11/22/22
+Sealpox,n/a,PubMed,Cases Or Incidence,((Sealpox) AND (Climat*)) AND ((Cases) OR (Incidence)),0,0,0,1,0,0,,11/22/22
+Sealpox,n/a,Scholar,Every metric,(Sealpox) AND (Climat*) AND (Abundance OR Seroprevalence OR Cases OR Incidence),64,50,0,1,0,0,,11/22/22
+Sealpox,n/a,PubMed,Every metric,((Sealpox) AND (Climat*)) AND ((Cases) OR (Incidence) OR (Abundance) OR (Seroprevalence)),0,0,0,1,0,0,966,11/22/22
+Lymphocytic choriomeningitis,n/a,Scholar,Abundance,(Lymphocytic choriomeningitis) AND (Climat*) AND (Abundance),1160,50,3,2,2,1,,11/22/22
+Lymphocytic choriomeningitis,n/a,PubMed,Abundance,((Lymphocytic choriomeningitis) AND (Climat*)) AND (Abundance),0,0,0,2,0,0,,11/22/22
+Lymphocytic choriomeningitis,n/a,Scholar,Seroprevalence,(Lymphocytic choriomeningitis) AND (Climat*) AND (Seroprevalence),1060,50,5,2,0,5,,11/22/22
+Lymphocytic choriomeningitis,n/a,PubMed,Seroprevalence,((Lymphocytic choriomeningitis) AND (Climat*)) AND (Seroprevalence),0,0,0,2,0,0,,11/22/22
+Lymphocytic choriomeningitis,n/a,Scholar,Cases Or Incidence,(Lymphocytic choriomeningitis) AND (Climat*) AND (Cases OR Incidence),2140,50,0,2,0,0,,11/22/22
+Lymphocytic choriomeningitis,n/a,PubMed,Cases Or Incidence,(Lymphocytic choriomeningitis) AND (Climat*) AND ((Cases) OR (Incidence)),0,0,0,2,0,0,,11/22/22
+Lymphocytic choriomeningitis,n/a,Scholar,Every metric,(Lymphocytic choriomeningitis) AND (Climat*) AND (Abundance OR Seroprevalence OR Cases OR Incidence),2350,50,0,2,0,0,,11/22/22
+Lymphocytic choriomeningitis,n/a,PubMed,Every metric,((Lymphocytic choriomeningitis) AND (Climat*)) AND ((Abundance) OR (Seroprevalence) OR (Cases) OR (Incidence)),1,0,0,2,0,0,968,11/22/22
+giardiasis,n/a,Scholar,Abundance,(Giardiasis) AND (Climat*) AND (Abundance),10700,50,3,3,3,0,,11/22/22
+giardiasis,n/a,PubMed,Abundance,((Giardiasis) AND (Climat*)) AND (Abundance),0,0,0,3,0,0,,11/22/22
+giardiasis,n/a,Scholar,Seroprevalence,(Giardiasis) AND (Climat*) AND (Seroprevalence),13300,50,2,5,2,0,,11/22/22
+giardiasis,n/a,PubMed,Seroprevalence,((Giardiasis) AND (Climat*)) AND (Seroprevalence),0,0,0,5,0,0,,11/22/22
+giardiasis,n/a,Scholar,Cases Or Incidence,(Giardiasis) AND (Climat*) AND (Cases OR Incidence),20000,50,12,17,12,0,,11/22/22
+giardiasis,n/a,PubMed,Cases Or Incidence,((Giardiasis) AND (Climat*)) AND (Cases OR Incidence),52,50,8,18,1,7,,11/22/22
+giardiasis,n/a,Scholar,Every metric,(Giardiasis) AND (Climat*) AND (Cases OR Incidence OR Abundance OR Seroprevalence),20300,50,5,19,1,4,,11/22/22
+giardiasis,n/a,PubMed,Every metric,((Giardiasis) AND (Climat*)) AND ((Cases) OR (Incidence) OR (Abundance) OR (Seroprevalence)),52,50,7,20,1,6,988,11/22/22
+zoonotic tuberculosis,Bovine tuberculosis,Scholar,Abundance,(Zoonotic tuberculosis OR Bovine tuberculosis) AND (Climat*) AND (Abundance),7200,50,4,4,4,0,,11/22/22
+zoonotic tuberculosis,Bovine tuberculosis,PubMed,Abundance,((((Zoonotic tuberculosis) ) OR (Bovine tuberculosis)) AND (Climat*)) AND (Abundance),2,2,0,4,0,0,,11/22/22
+zoonotic tuberculosis,Bovine tuberculosis,Scholar,Seroprevalence,(Zoonotic tuberculosis OR Bovine tuberculosis) AND (Climat*) AND (Seroprevalence),13200,50,3,7,3,0,,11/22/22
+zoonotic tuberculosis,Bovine tuberculosis,PubMed,Seroprevalence,((((Zoonotic tuberculosis) ) OR (Bovine tuberculosis)) AND (Climat*)) AND (Seroprevalence),0,0,0,7,0,0,,11/22/22
+zoonotic tuberculosis,Bovine tuberculosis,Scholar,Cases Or Incidence,(Zoonotic tuberculosis OR Bovine tuberculosis) AND (Climat*) AND (Cases OR Incidence),16400,50,3,10,3,0,,11/22/22
+zoonotic tuberculosis,Bovine tuberculosis,PubMed,Cases Or Incidence,((((Zoonotic tuberculosis) ) OR (Bovine tuberculosis)) AND (Climat*)) AND ((Cases) OR (Incidence)),24,24,4,12,2,2,,11/22/22
+zoonotic tuberculosis,Bovine tuberculosis,Scholar,Every metric,(Zoonotic tuberculosis OR Bovine tuberculosis) AND (Climat*) AND (Abundance OR Seroprevalence OR Cases OR Incidence),16700,50,4,14,2,2,,11/22/22
+zoonotic tuberculosis,Bovine tuberculosis,PubMed,Every metric,((((Zoonotic tuberculosis) ) OR (Bovine tuberculosis)) AND (Climat*)) AND ((Cases) OR (Incidence) OR (Abundance) OR (Seroprevalence)),25,25,1,14,0,1,1002,11/22/22
+Rift valley fever,n/a,Scholar,Abundance,(Rift Valley Fever) AND (Climat*) AND (Abundance),18000,50,8,5,5,3,,11/22/22
+Rift valley fever,n/a,PubMed,Abundance,((Rift valley fever) AND (Climat*)) AND (Abundance),24,24,2,7,2,0,,11/22/22
+Rift valley fever,n/a,Scholar,Seroprevalence,((Rift Valley Fever) AND (Climat*)) AND (Seroprevalence),16900,50,6,10,3,3,,11/22/22
+Rift valley fever,n/a,PubMed,Seroprevalence,((Rift valley fever) AND (Climat*)) AND (Seroprevalence),15,15,3,13,3,0,,11/22/22
+Rift valley fever,n/a,Scholar,Cases Or Incidence,(Rift Valley Fever) AND (Climat*) AND (Cases OR Incidence),18000,50,12,20,7,5,,11/22/22
+Rift valley fever,n/a,PubMed,Cases Or Incidence,((Rift valley fever) AND (Climat*)) AND ((Cases) OR (Incidence)),127,50,10,26,6,4,,11/22/22
+Rift valley fever,n/a,Scholar,Every metric,(Rift Valley Fever) AND (Climat*) AND (Abundance OR Seroprevalence OR Cases OR Incidence),18400,50,5,28,2,3,,11/22/22
+Rift valley fever,n/a,PubMed,Every metric,((Rift valley fever) AND (Climat*)) AND ((Cases) OR (Incidence) OR (Abundance) OR (Seroprevalence)),136,50,2,29,1,1,1031,11/22/22
+Fascioliasis,Liver fluke disease,Scholar,Abundance,(((Fascioliasis) OR (Liver fluke disease)) AND (Climat*))) AND (Abundance),5740,50,7,7,,7,,3/28/23
+Fascioliasis,Liver fluke disease,PubMed,Abundance,(((Fascioliasis) OR (Liver fluke disease)) AND (Climat*))) AND (Abundance),,,,,,,,3/28/23
+Fascioliasis,Liver fluke disease,Scholar,Seroprevalence,(((Fascioliasis) OR (Liver fluke disease)) AND (Climat*))) AND (Seroprevalence),,,,,,,,3/28/23
+Fascioliasis,Liver fluke disease,PubMed,Seroprevalence,(((Fascioliasis) OR (Liver fluke disease)) AND (Climat*)))AND (Seroprevalence),,,,,,,,3/28/23
+Fascioliasis,Liver fluke disease,Scholar,Cases Or Incidence,(((Fascioliasis) OR (Liver fluke disease)) AND (Climat*)))AND (Cases OR Incidence),,,,,,,,3/28/23
+Fascioliasis,Liver fluke disease,PubMed,Cases Or Incidence,(((Fascioliasis) OR (Liver fluke disease)) AND (Climat*)))AND ((Cases) OR (Incidence)),,,,,,,,3/28/23
+Fascioliasis,Liver fluke disease,Scholar,Every metric,(((Fascioliasis) OR (Liver fluke disease)) AND (Climat*))) AND (Abundance OR Seroprevalence OR Cases OR Incidence),,,,,,,,3/28/23
+Fascioliasis,Liver fluke disease,PubMed,Every metric,(((Fascioliasis) OR (Liver fluke disease)) AND (Climat*))) AND ((Cases) OR (Incidence) OR (Abundance) OR (Seroprevalence)),,,,,,,,3/28/23
+,,,,,,,,,,,,
+,,,,,,,,,,,,
+,,,,,,13468,,,,,,
+,,,,,,,1876,,,845,1031,
+,,,,,Scholar,9891,,Scholar,819,,,
+,,,,,PubMed,3527,,PubMed,212,,,
