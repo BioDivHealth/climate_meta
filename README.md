@@ -1,4 +1,5 @@
-# Title: Climate sensitivity in zoonotic diseases: temperature impacts on vector-borne diseases highlighted in global assessment
+# Title: Climate sensitivity is widely but unevenly spread across zoonotic diseases
+
 
 ------------------------------------------------------------------------
 
