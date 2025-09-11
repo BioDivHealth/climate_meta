@@ -10,24 +10,23 @@ editor_options:
 # Set-up of packages
 
 ```{r}
-#install.packages("grateful")
+install.packages("grateful")
 ```
-
 
 ```{r Loading libraries, include=FALSE}
 library(plyr)
 library(grateful)
 library(dplyr)
 library(ggplot2)
-library(esc)
-library(extrafont)
+p_load(esc)
+#library(extrafont)
 library(cowplot)
-library(tinytest)
+#library(tinytest)
 library(testthat)
 library(patchwork)
-library(ggdist)
-library(ggthemes)
-library(tidyquant)
+#library(ggdist)
+#library(ggthemes)
+#library(tidyquant)
 library(tidyr)
 library(metafor)
 library(maps)
@@ -39,7 +38,16 @@ library(here)
 ```{r setting directory, include=FALSE}
 
 # Read in the data
-zooALL <- read.csv(here::here('data','dataset_final.csv'), header = TRUE, stringsAsFactors = FALSE, fileEncoding = "latin1")
+df <- read.csv(here::here('data','dataset_final_new.csv'), header = TRUE, stringsAsFactors = FALSE, fileEncoding = "latin1")
+zooALL <- read.csv(here::here('data','dataset_final_new.csv'), header = TRUE, stringsAsFactors = FALSE, fileEncoding = "latin1")
+
+zooALL$Value[zooALL$Value==""]<-NA
+zooALL$Value[zooALL$Value=="NA"]<-NA
+zooALL$Upper[zooALL$Upper==""]<-NA
+zooALL$Upper[zooALL$Upper=="NA"]<-NA
+zooALL$Lower[zooALL$Lower==""]<-NA
+zooALL$Lower[zooALL$Lower=="NA"]<-NA
+
 
 # Select relevant columns and rename 'Data_ID' to 'study' for merging datasets
 zooALL <- zooALL %>%
@@ -50,10 +58,9 @@ zooALL <- zooALL %>%
 zooALL_copy <- unique(zooALL)
 zooALL = unique(zooALL)
 
-# Remove datapoints with missing or extreme values
 zooALL <- zooALL %>%
   filter(!is.na(Value)) %>%
-  filter(Value < 25 & Value > -25)
+  filter(Type == "Percent change" | (Value > -25 & Value < 25))
 ```
 
 ```{r Convert environmental variables to the same scale, include=FALSE}
@@ -118,6 +125,8 @@ num_studies <- zooALL %>%
 
 # Print the result
 cat("Number of independent studies:",num_studies$num_studies, "\n")
+
+zooALL_raw = zooALL
 
 ```
 
@@ -194,6 +203,59 @@ OR_comp$es = unlist(OR_comp$es)
 OR_comp$Value = unlist(OR_comp$Value)
 ```
 
+### ODDS RATIO NEW
+
+```{r}
+library(dplyr)
+library(stringr)
+
+OR <- zooALL %>%
+  filter(Type == "Odds ratio") %>%
+  mutate(
+    Value      = as.numeric(Value),
+    Lower      = as.numeric(Lower),
+    Upper      = as.numeric(Upper),
+    Std._error = as.numeric(Std._error),
+    N.value    = as.numeric(N.value),
+    P.value_specific = suppressWarnings(as.numeric(P.value_specific)),
+    err_norm   = str_to_lower(coalesce(Error, "")),
+    # valid positive CI?
+    valid_ci   = !is.na(Lower) & !is.na(Upper) & Lower > 0 & Upper > 0 & Upper > Lower,
+    # choose SE for log(OR)
+    se_log_or = case_when(
+      valid_ci & str_detect(err_norm, "95") ~ (log(Upper) - log(Lower)) / (2 * qnorm(0.975)),
+      # if table printed SE of log(OR)
+      !is.na(Std._error) ~ Std._error,
+      # fallback via p-value if present
+      !is.na(P.value_specific) & P.value_specific > 0 & P.value_specific < 1 & Value > 0 ~
+        abs(log(Value)) / qnorm(1 - P.value_specific/2),
+      TRUE ~ NA_real_
+    ),
+    # convert OR → d (Chinn 2000) and SE
+    d  = ifelse(Value > 0, log(Value) * sqrt(3)/pi, NA_real_),
+    se_d = ifelse(!is.na(se_log_or), (sqrt(3)/pi) * se_log_or, NA_real_),
+    # Hedges' correction (set J=1 if N unknown/clustered designs)
+    J  = ifelse(!is.na(N.value) & N.value > 3, 1 - 3/(4*N.value - 9), 1),
+    g  = J * d,
+    se_g = J * se_d,
+    se_source = case_when(
+      valid_ci & str_detect(err_norm, "95") ~ "from_95CI_log",
+      !is.na(Std._error) ~ "from_SE_log",
+      !is.na(P.value_specific) ~ "from_pvalue",
+      TRUE ~ "none"
+    )
+  ) %>%
+  # basic QC
+  filter(!is.na(g), !is.na(se_g), is.finite(g), is.finite(se_g))
+
+OR$es = OR$g
+OR$se = OR$se_g
+OR$sample.size = OR$N.value
+
+OR_comp = OR
+
+```
+
 #### Scatterplot odds ratio
 
 ```{r}
@@ -240,144 +302,270 @@ print(OR_comp_scatter)
 ### Beta coefficient
 
 ```{r Effect sizes for Beta coefficient, include=TRUE, error=TRUE}
-# Subset data to include only Beta coefficients
-Beta <- subset(zooALL, zooALL$Type %in% c("Beta coefficient"))
-
-# Convert 95% Confidence interval to Standard deviation
-Beta_95 <- subset(Beta, Beta$Error %in% c("95% Confidence", "95% Credible"))
-
-# Convert relevant columns to numeric
-Beta$Value <- as.numeric(Beta$Value)
-Beta_95$Upper <- as.numeric(Beta_95$Upper)
-Beta_95$Lower <- as.numeric(Beta_95$Lower)
-Beta_95$N.value <- as.numeric(Beta_95$N.value)
-Beta$Std._error <- as.numeric(Beta$Std._error)
-
-# Calculate standard deviation from 95% CI
-Beta_95_sd <- as.data.frame((sqrt(Beta_95$N.value) * (Beta_95$Upper - Beta_95$Lower)) / 3.92)
-Beta_95 <- cbind(Beta_95, Beta_95_sd)
-names(Beta_95)[names(Beta_95) == "(sqrt(Beta_95$N.value) * (Beta_95$Upper - Beta_95$Lower))/3.92"] <- "Std_dev"
-
-
-# Convert Standard error to Standard Deviation
-Beta_SE <- subset(Beta, Beta$Error %in% "Std. error")
-
-# Convert relevant columns to numeric
-Beta_SE$Upper <- as.numeric(Beta_SE$Upper)
-Beta_SE$Lower <- as.numeric(Beta_SE$Lower)
-Beta_SE$N.value <- as.numeric(Beta_SE$N.value)
-Beta_SE$Std._error <- as.numeric(Beta_SE$Std._error)
-
-# Calculate standard deviation from Standard error
-Beta_SE_sd <- as.data.frame(Beta_SE$Std._error * sqrt(Beta_SE$N.value))
-Beta_SE <- cbind(Beta_SE, Beta_SE_sd)
-names(Beta_SE)[names(Beta_SE) == "Beta_SE$Std._error * sqrt(Beta_SE$N.value)"] <- "Std_dev"
-
-# Combine Beta_95 and Beta_SE dataframes
-Beta_Stdev <- rbind(Beta_95, Beta_SE)
-
-# Calculate Hedge's G effect size
-Hedge_Beta <- data.frame(
-  esc_beta(
-    beta = Beta_Stdev$Value, 
-    sdy = Beta_Stdev$Std_dev,
-    grp1n = Beta_Stdev$N.value / 2, 
-    grp2n = Beta_Stdev$N.value / 2,
-    es.type = "g", 
-    study = Beta_Stdev$study
-  ))
-Hedge_Beta <- Hedge_Beta[!is.na(Hedge_Beta$se), ]
-
-# Calculate Cohen's D effect size for Beta coefficients without error
-Beta_t<-subset(Beta, !Beta$Error %in% c("95% Confidence", "Std. error", "95% Credible"))
-Beta_d<-as.data.frame(cohens_d(Beta_t$Value)) #calculate cohen's effect size
-
-# Bind Dataframe and Cohen's D effect size calculation
-Beta_t1 <- cbind(Beta_t, Beta_d)
-names(Beta_t1)[names(Beta_t1) == "cohens_d(Beta_t$Value)"] <- "d"
-
-# Calculate Hedge's G from Cohen's D
-Hedge_Beta_t <- as.data.frame(hedges_g(d = Beta_t1$d, totaln = Beta_t1$N.value))
-names(Hedge_Beta_t)[names(Hedge_Beta_t) == "hedges_g(d = Beta_t1$d, totaln = Beta_t1$N.value)"] <- "es"
-
-# Combine study and Hedge's G effect size
-Beta_t2 <- cbind(Beta_t$study, Hedge_Beta_t)
-names(Beta_t2)[names(Beta_t2) == "Beta_t$study"] <- "study"
-Hedge_Beta_t<-Beta_t2
-
-# Unit scaling and sanity checks
-Beta_comp <- left_join(Beta_Stdev, Hedge_Beta, by = "study")
-names(Beta_comp)[names(Beta_SE) == "Value"] <- "Correlation"
-
-# # Graphing Beta coefficients which don't have errors
-# Beta_t_comp <- merge(Beta_t, Beta_t2, by = "study")
-# Beta_t_comp_scatter <- ggplot(data = Beta_t_comp, aes(x = Value, y = es, label = study)) +
-#   geom_point() +
-#   xlab("Correlation coefficient (β)") +
-#   ylab("Effect size (g)") +
-#   theme_classic() +
-#   geom_line() +
-#   geom_text(aes(label = study), vjust = 1) +
-#   geom_smooth(method = "lm", se = FALSE)
+# # Subset data to include only Beta coefficients
+# Beta <- subset(zooALL, zooALL$Type %in% c("Beta coefficient"))
 # 
-# # Display scatter plot
-# print(Beta_t_comp_scatter)
-
-# Test for Standard error --------
-Beta_test_se <- subset(Beta_comp, Beta_comp$Error %in% c("Std. error"))
-Beta_test_se <- sample_n(Beta_test_se, 5)
-
-# Ensure columns are numeric
-Beta_test_se$Std._error <- as.numeric(Beta_test_se$Std._error)
-Beta_test_se$N.value <- as.numeric(Beta_test_se$N.value)
-Beta_test_se$Std_dev <- as.numeric(Beta_test_se$Std_dev)
-
-# Define the test for se_to_sd function
-# test_that("se_to_sd returns correct standard deviation for all rows in a dataframe", {
-#   Beta_test_se_df <- data.frame(
-#     se = Beta_test_se$Std._error,
-#     n = Beta_test_se$N.value,
-#     sd = Beta_test_se$Std_dev
-#   )
-#   
-#   expected_sds <- Beta_test_se_df$sd
-#   actual_sds <- apply(Beta_test_se_df, 1, function(x) se_to_sd(x[1], x[2]))
-#   
-#   expect_equal(round(actual_sds, 3), round(expected_sds, 3))
-# })
+# # Convert 95% Confidence interval to Standard deviation
+# Beta_95 <- subset(Beta, Beta$Error %in% c("95% Confidence", "95% Credible"))
 # 
-# # Test for 95% CI
-# Beta_test_ci <- subset(Beta_comp, Error %in% c("95% Confidence"))
-# Beta_test_ci <- sample_n(Beta_test_ci, 5)
+# # Convert relevant columns to numeric
+# Beta$Value <- as.numeric(Beta$Value)
+# Beta_95$Upper <- as.numeric(Beta_95$Upper)
+# Beta_95$Lower <- as.numeric(Beta_95$Lower)
+# Beta_95$N.value <- as.numeric(Beta_95$N.value)
+# Beta$Std._error <- as.numeric(Beta$Std._error)
 # 
-# # Define the test for ci_to_sd function
-# test_that("ci_to_sd returns correct standard deviation for all rows", {
-#   # Create the data frame
-#   data <- data.frame(
-#     ci_lower = Beta_test_ci$Lower,
-#     ci_upper = Beta_test_ci$Upper,
-#     sd = Beta_test_ci$Std_dev,
-#     n = Beta_test_ci$N.value
-#   )
-#   
-#   # Calculate the expected and actual standard deviations
-#   expected_sds <- data$sd
-#   actual_sds <- apply(data, 1, function(x) ci_to_sd(x[1], x[2], x[4]))
-#   
-#   # Compare the expected and actual standard deviations
-#   expect_equal(actual_sds, expected_sds, tolerance = 1e-4)
-# })
+# # Calculate standard deviation from 95% CI
+# Beta_95_sd <- as.data.frame((sqrt(Beta_95$N.value) * (Beta_95$Upper - Beta_95$Lower)) / 3.92)
+# Beta_95 <- cbind(Beta_95, Beta_95_sd)
+# names(Beta_95)[names(Beta_95) == "(sqrt(Beta_95$N.value) * (Beta_95$Upper - Beta_95$Lower))/3.92"] <- "Std_dev"
+# 
+# # Convert Standard error to Standard Deviation
+# Beta_SE <- subset(Beta, Beta$Error %in% "Std. error")
+# 
+# # Convert relevant columns to numeric
+# Beta_SE$Upper <- as.numeric(Beta_SE$Upper)
+# Beta_SE$Lower <- as.numeric(Beta_SE$Lower)
+# Beta_SE$N.value <- as.numeric(Beta_SE$N.value)
+# Beta_SE$Std._error <- as.numeric(Beta_SE$Std._error)
+# 
+# # Calculate standard deviation from Standard error
+# Beta_SE_sd <- as.data.frame(Beta_SE$Std._error * sqrt(Beta_SE$N.value))
+# Beta_SE <- cbind(Beta_SE, Beta_SE_sd)
+# names(Beta_SE)[names(Beta_SE) == "Beta_SE$Std._error * sqrt(Beta_SE$N.value)"] <- "Std_dev"
+# 
+# # Combine Beta_95 and Beta_SE dataframes
+# Beta_Stdev <- rbind(Beta_95, Beta_SE)
+# 
+# # Calculate Hedge's G effect size
+# Hedge_Beta <- data.frame(
+#   esc_beta(
+#     beta = Beta_Stdev$Value, 
+#     sdy = Beta_Stdev$Std_dev,
+#     grp1n = Beta_Stdev$N.value / 2, 
+#     grp2n = Beta_Stdev$N.value / 2,
+#     es.type = "g", 
+#     study = Beta_Stdev$study
+#   ))
+# Hedge_Beta <- Hedge_Beta[!is.na(Hedge_Beta$se), ]
+# 
+# # Calculate Cohen's D effect size for Beta coefficients without error
+# Beta_t<-subset(Beta, !Beta$Error %in% c("95% Confidence", "Std. error", "95% Credible"))
+# Beta_d<-as.data.frame(cohens_d(Beta_t$Value)) #calculate cohen's effect size
+# 
+# # Bind Dataframe and Cohen's D effect size calculation
+# Beta_t1 <- cbind(Beta_t, Beta_d)
+# names(Beta_t1)[names(Beta_t1) == "cohens_d(Beta_t$Value)"] <- "d"
+# 
+# # Calculate Hedge's G from Cohen's D
+# Hedge_Beta_t <- as.data.frame(hedges_g(d = Beta_t1$d, totaln = Beta_t1$N.value))
+# names(Hedge_Beta_t)[names(Hedge_Beta_t) == "hedges_g(d = Beta_t1$d, totaln = Beta_t1$N.value)"] <- "es"
+# 
+# # Combine study and Hedge's G effect size
+# Beta_t2 <- cbind(Beta_t$study, Hedge_Beta_t)
+# names(Beta_t2)[names(Beta_t2) == "Beta_t$study"] <- "study"
+# Hedge_Beta_t<-Beta_t2
+# 
+# # Unit scaling and sanity checks
+# Beta_comp <- left_join(Beta_Stdev, Hedge_Beta, by = "study")
+# names(Beta_comp)[names(Beta_SE) == "Value"] <- "Correlation"
+# 
+# 
+# # Test for Standard error --------
+# Beta_test_se <- subset(Beta_comp, Beta_comp$Error %in% c("Std. error"))
+# Beta_test_se <- sample_n(Beta_test_se, 5)
+# 
+# # Ensure columns are numeric
+# Beta_test_se$Std._error <- as.numeric(Beta_test_se$Std._error)
+# Beta_test_se$N.value <- as.numeric(Beta_test_se$N.value)
+# Beta_test_se$Std_dev <- as.numeric(Beta_test_se$Std_dev)
+```
+
+### Beta coefficient standardised new
+
+```{r}
+## --- STANDARDISED BETAS (Type == "Beta coefficient") -> HEDGES' g ---
+## Uses: Value (beta*), N.value, Std._error, Upper/Lower + Error, p-values, R.squared,
+##       Statistical_method, General_Stats_Method.
+
+library(dplyr)
+library(stringr)
+library(tibble)
+
+# Vectorized p-value parser (safe in mutate)
+if (!exists("parse_p_vec")) {
+  parse_p_vec <- function(p) {
+    x <- tolower(trimws(as.character(p)))
+    x <- gsub(",", ".", x); x <- gsub("\\s+", "", x)
+    x[x %in% c("", "na", "n/a", "ns", "n.s.", "notsignificant", "not significant")] <- NA_character_
+    x <- sub("^p\\s*[=<>≤≥]\\s*", "", x)
+    x[grepl("^[>≥]", x)] <- NA_character_
+    x <- sub("^[<≤=]", "", x)
+    num <- suppressWarnings(as.numeric(x))
+    ifelse(is.na(num), NA_real_, pmin(pmax(num, 1e-16), 1 - 1e-16))
+  }
+}
+
+# r -> Hedges g (+ SE) helper (small-sample correction J)
+if (!exists("hedges_from_r")) {
+  hedges_from_r <- function(r, N) {
+    r <- ifelse(!is.na(r), pmax(pmin(r, 1 - 1e-8), -1 + 1e-8), NA_real_)
+    J <- ifelse(!is.na(N), 1 - 3/(4*N - 9), NA_real_)
+    d <- ifelse(!is.na(r), 2*r / sqrt(1 - r^2), NA_real_)
+    g <- ifelse(!is.na(d) & !is.na(J), J * d, NA_real_)
+    se_g <- ifelse(!is.na(r) & !is.na(N) & N > 3,
+                   (1 - 3/(4*N - 9)) * 2 / sqrt((1 - r^2) * (N - 3)),
+                   NA_real_)
+    list(g = g, se_g = se_g)
+  }
+}
+
+# Map method to family for inverting p-values correctly
+method_family <- function(method_chr) {
+  m <- tolower(method_chr)
+  case_when(
+    str_detect(m, "ordinary\\s+least\\s+squares|\\bols\\b|multivariate\\s+linear|linear\\s+fixed") ~ "lm",
+    str_detect(m, "logistic|poisson|negative\\s*binomial|zero\\s*inflated|general(ized|ised)\\s+linear") ~ "glm",
+    str_detect(m, "mixed") ~ "glmm",
+    str_detect(m, "bayesian") ~ "bayes",
+    str_detect(m, "panel|fixed[- ]?effect") ~ "lm",
+    TRUE ~ "other"
+  )
+}
+
+# Conservative simple-OLS detector for LAST-RESORT fallback
+is_simple_linear_vec <- function(method, general) {
+  m <- tolower(ifelse(is.na(method),  "", as.character(method)))
+  g <- tolower(ifelse(is.na(general), "", as.character(general)))
+  s <- paste(m, g)
+  ols_like <- grepl("\\b(ols|ordinary\\s+least\\s+squares|linear\\s+regression)\\b", s, perl = TRUE)
+  uni_hint <- grepl("\\b(simple|univariate|bivariate|single\\s*predictor)\\b", s, perl = TRUE)
+  multi_like <- grepl("\\b(multivariate|multiple\\s+linear|glm|general(ized|ised)\\s+linear|mixed|panel)\\b", s, perl = TRUE)
+  ols_like & uni_hint & !multi_like
+}
+
+# ---- Pipeline ----
+Z <- zooALL %>% filter(Type == "Beta coefficient") %>% rowid_to_column("rowid")
+
+Beta <- Z %>%
+  mutate(
+    beta_star  = suppressWarnings(as.numeric(Value)),
+    Upper      = suppressWarnings(as.numeric(Upper)),
+    Lower      = suppressWarnings(as.numeric(Lower)),
+    Std._error = suppressWarnings(as.numeric(Std._error)),
+    N.value    = suppressWarnings(as.numeric(N.value)),
+    R.squared  = suppressWarnings(as.numeric(R.squared)),
+    # normalise possible percent R^2
+    R.squared  = ifelse(!is.na(R.squared) & R.squared > 1 & R.squared <= 100, R.squared/100, R.squared),
+    p_raw = dplyr::coalesce(
+      if ("P.value_specific" %in% names(.)) P.value_specific else NA,
+      if ("P.value_general"  %in% names(.)) P.value_general  else NA
+    ),
+    p_val = parse_p_vec(p_raw),
+    fam   = method_family(Statistical_method)
+  ) %>%
+  # --- NEW: robust bound handling + SE reconstruction even when Error label is wrong/empty ---
+  mutate(
+    # sort bounds; allow for mis-ordered or degenerate entries
+    hi   = ifelse(!is.na(Upper) & !is.na(Lower), pmax(Upper, Lower), NA_real_),
+    lo   = ifelse(!is.na(Upper) & !is.na(Lower), pmin(Upper, Lower), NA_real_),
+    width = ifelse(!is.na(hi) & !is.na(lo), hi - lo, NA_real_),
+
+    # labelled CI divisors
+    ci_div_labeled = case_when(
+      !is.na(Error) & str_detect(Error, regex("90%.*(CI|Credible)",  ignore_case = TRUE)) ~ 3.29,   # 2*1.645
+      !is.na(Error) & str_detect(Error, regex("95%.*(CI|Confidence|Credible)", TRUE))     ~ 3.92,   # 2*1.96
+      !is.na(Error) & str_detect(Error, regex("99%.*(CI|Credible)", TRUE))                ~ 5.152,  # 2*2.576
+      TRUE ~ NA_real_
+    ),
+
+    # SE from *labelled* CI (if present)
+    se_from_ci_labeled = ifelse(!is.na(width) & width > 0 & !is.na(ci_div_labeled),
+                                width / ci_div_labeled, NA_real_),
+
+    # Fallback: SE from bounds even if label says "Std. error" or is missing
+    # Assumes 95% CI when bounds are present but label is not a CI.
+    se_from_bounds_default = ifelse(
+      !is.na(width) & width > 0 &
+      (is.na(ci_div_labeled)) & (is.na(Std._error) | Std._error <= 0),
+      width / 3.92,  # assume 95%
+      NA_real_
+    ),
+
+    # One SE to use
+    SE_use = coalesce(Std._error, se_from_ci_labeled, se_from_bounds_default),
+
+    # Where did SE come from? (useful for auditing rows 28–51)
+    se_source = case_when(
+      !is.na(Std._error) ~ "reported_se",
+      !is.na(se_from_ci_labeled) ~ "labeled_ci",
+      !is.na(se_from_bounds_default) ~ "assumed_95pc_from_bounds",
+      TRUE ~ NA_character_
+    )
+  ) %>%
+  # df: prefer residual df if you store it; else default ≈ N - 2
+  mutate(
+    df_hat = if ("df" %in% names(.)) suppressWarnings(as.numeric(df)) else
+             if ("Residual.df" %in% names(.)) suppressWarnings(as.numeric(Residual.df)) else
+             ifelse(!is.na(N.value) & N.value > 2, N.value - 2, NA_real_)
+  ) %>%
+  # Build test statistic:
+  mutate(
+    stat_from_se = ifelse(!is.na(beta_star) & !is.na(SE_use) & SE_use > 0, beta_star / SE_use, NA_real_),
+    stat_from_p  = case_when(
+      !is.na(p_val) & fam %in% c("lm", "other") & !is.na(df_hat) ~ qt(1 - p_val/2, df = df_hat),
+      !is.na(p_val) & fam %in% c("glm", "glmm", "bayes")        ~ qnorm(1 - p_val/2),
+      TRUE ~ NA_real_
+    ),
+    stat_from_p  = ifelse(!is.na(stat_from_p) & !is.na(beta_star), sign(beta_star) * stat_from_p, stat_from_p),
+    stat = coalesce(stat_from_se, stat_from_p)
+  ) %>%
+  # Convert to r:
+  mutate(
+    r_from_t = ifelse(!is.na(stat) & !is.na(df_hat) & df_hat > 0,
+                      stat / sqrt(stat^2 + df_hat), NA_real_),
+
+    # LAST-RESORT simple OLS fallbacks
+    simple_flag = is_simple_linear_vec(Statistical_method, General_Stats_Method),
+    r_from_R2   = ifelse(simple_flag & !is.na(R.squared) & !is.na(beta_star),
+                         sign(beta_star) * sqrt(pmin(pmax(R.squared, 0), 1)), NA_real_),
+    r_from_beta_simple = ifelse(simple_flag & !is.na(beta_star),
+                                pmax(pmin(beta_star, 1 - 1e-8), -1 + 1e-8), NA_real_),
+
+    r_raw = coalesce(r_from_t, r_from_R2, r_from_beta_simple)
+  ) %>%
+  # r -> g (+ SE)
+  mutate(
+    g    = hedges_from_r(r_raw, N.value)$g,
+    se_g = hedges_from_r(r_raw, N.value)$se_g
+  ) %>%
+  transmute(
+    rowid,
+    es = g, se = se_g,
+    sample.size = N.value,
+    var   = ifelse(!is.na(se), se^2, NA_real_),
+    ci.lo = ifelse(!is.na(es) & !is.na(se), es - 1.96*se, NA_real_),
+    ci.hi = ifelse(!is.na(es) & !is.na(se), es + 1.96*se, NA_real_),
+    r_est = r_raw, beta_star, fam, se_source
+  )
+
+# Join back to full table if you want the enriched columns alongside originals:
+Beta_comp_full <- Z %>% left_join(Beta, by = "rowid") 
+#View(Beta_comp_full %>% select(Value, N.value, Upper, Lower, Error, Std._error, es, se))
+Beta_comp = Beta_comp_full %>% select(-rowid,-r_est,-beta_star, -fam,-se_source) 
+
 ```
 
 #### Scatterplot beta
 
 ```{r}
 # -----PLOT ORIGINAL STAT VS HEDGES G --------------
-{Beta_comp_scatter <- ggplot(data = Beta_comp, aes(x = Correlation, y = es)) +
+ {if(is.null(Beta_comp$Correlation)){Beta_comp$Correlation = Beta_comp$Value}
+  Beta_comp_scatter <- ggplot(data = Beta_comp %>% filter(!is.na(es)), aes(x = Correlation, y = es)) +
   geom_line() +  # Add line
   geom_smooth(method = "lm", se = FALSE, color = "#54D8B1FF") + 
   geom_point(aes(color = "Observation", shape = "Observation"), size = 3, alpha = 0.5) +  # Add main data points
-  xlab("Correlation coefficient (β)") +
+  xlab("Standardised beta coefficient (β)") +
   ylab("Effect size (g)") +
   theme_classic()
 
@@ -416,91 +604,218 @@ print(Beta_comp_scatter)
 
 ```{r Effect sizes for Unstandardised coefficients, include=TRUE}
 
-# Subset data to include only correlation coefficients
-B <- subset(zooALL, zooALL$Type %in% c("Correlation coefficient"))
-B <- subset(B, !B$Statistical_method %in% c("Spearman rank correlation", "Pearson correlation")) # Remove rank correlations
-
-# 95% Confidence interval conversion
-B_95 <- subset(B, B$Error %in% c("95% Confidence", "95% Credible"))
-B_95$Upper <- as.numeric(B_95$Upper) # Convert type to numeric
-B_95$Lower <- as.numeric(B_95$Lower) # Convert type to numeric
-B_95$N.value <- as.numeric(B_95$N.value) # Convert type to numeric
-B$Std._error <- as.numeric(B$Std._error) # Convert type to numeric
-B_95_sd <- as.data.frame((sqrt(B_95$N.value) * (B_95$Upper - B_95$Lower)) / 3.92) # Std. deviation from 95% CI
-B_95 <- cbind(B_95, B_95_sd)
-names(B_95)[names(B_95) == "(sqrt(B_95$N.value) * (B_95$Upper - B_95$Lower))/3.92"] <- "Std_dev"
-
-# Standard error conversion
-B_SE <- subset(B, B$Error %in% "Std. error") # Subset data to those with a SE
-B_SE$Upper <- as.numeric(B_SE$Upper) # Convert type to numeric
-B_SE$Lower <- as.numeric(B_SE$Lower) # Convert type to numeric
-B_SE$N.value <- as.numeric(B_SE$N.value) # Convert type to numeric
-B_SE$Std._error <- as.numeric(B_SE$Std._error) # Convert type to numeric
-B_SE_sd <- as.data.frame(B_SE$Std._error * sqrt(B_SE$N.value)) # Std. deviation from Std. error
-B_SE <- cbind(B_SE, B_SE_sd)
-names(B_SE)[names(B_SE) == "B_SE$Std._error * sqrt(B_SE$N.value)"] <- "Std_dev"
-
-# Calculate Hedge's G effect size
-B_Stdev <- rbind(B_95, B_SE)
-B_Stdev$N.value[is.na(B_Stdev$N.value)] <- mean(B_Stdev$N.value, na.rm = TRUE)
-Hedge_B <- as.data.frame(esc_B(b = B_Stdev$Value, sdy = B_Stdev$Std_dev, grp1n = B_Stdev$N.value / 2, grp2n = B_Stdev$N.value / 2, es.type = "g", study = B_Stdev$study)) # Calculate Hedge's g
-
-# Unit scaling and sanity checks
-B_comp <- as.data.frame(left_join(B_Stdev, Hedge_B, by = "study"))
-names(B_comp)[names(B_SE) == "Value"] <- "Correlation"
-
-# Test for Standard error
-B_test_se <- subset(B_comp, B_comp$Error %in% c("Std. error"))
-B_test_se <- sample_n(B_test_se, 5)
-
-B_test_se$Std._error <- as.numeric(B_test_se$Std._error)
-B_test_se$N.value <- as.numeric(B_test_se$N.value)
-B_test_se$Std_dev <- as.numeric(B_test_se$Std_dev)
-
-# test_that("se_to_sd returns correct standard deviation for all rows in a dataframe", {
-#   B_test_se <- data.frame(
-#     se = B_test_se$Std._error,
-#     n = B_test_se$N.value,
-#     sd = B_test_se$Std_dev
-#   )
-#   
-#   expected_sds <- B_test_se$sd
-#   actual_sds <- apply(B_test_se, 1, function(x) se_to_sd(x[1], x[2]))
-#   expect_equal(round(actual_sds, 3), round(expected_sds, 3))
-# })
+# # Subset data to include only correlation coefficients
+# B = zooALL %>% filter(Type == "Unstandardised coefficient")
+# #B = zooALL %>% filter(Type == "Correlation coefficient" | Type == "Unstandardised coefficient")
+# #B <- subset(zooALL, zooALL$Type %in% c("Correlation coefficient"))
+# B <- subset(B, !B$Statistical_method %in% c("Spearman rank correlation", "Pearson correlation"))
+# # Let's use gsub to remove "Pearson" and "Spearman" from the 'Statistical_method' column
+# B = B %>% filter(!grepl("Spearman", Statistical_method))
+# B = B %>% filter(!grepl("Pearson", Statistical_method))
+# # Remove rank correlations
 # 
-# # Test for 95% CI
-# B_test_ci <- subset(B_comp, Error %in% c("95% Confidence"))
+# # 95% Confidence interval conversion
+# B_95 <- subset(B, B$Error %in% c("95% Confidence", "95% Credible"))
+# B_95$Upper <- as.numeric(B_95$Upper) # Convert type to numeric
+# B_95$Lower <- as.numeric(B_95$Lower) # Convert type to numeric
+# B_95$N.value <- as.numeric(B_95$N.value) # Convert type to numeric
+# B$Std._error <- as.numeric(B$Std._error) # Convert type to numeric
+# B_95_sd <- as.data.frame((sqrt(B_95$N.value) * (B_95$Upper - B_95$Lower)) / 3.92) # Std. deviation from 95% CI
+# B_95 <- cbind(B_95, B_95_sd)
+# names(B_95)[names(B_95) == "(sqrt(B_95$N.value) * (B_95$Upper - B_95$Lower))/3.92"] <- "Std_dev"
 # 
-# test_that("ci_to_sd returns correct standard deviation for all rows", {
-#   # Create the data frame
-#   data <- data.frame(
-#     ci_lower = B_test_ci$Lower,
-#     ci_upper = B_test_ci$Upper,
-#     sd = B_test_ci$Std_dev,
-#     n = B_test_ci$N.value
-#   )
-#   
-#   # Calculate the expected and actual standard deviations
-#   expected_sds <- data$sd
-#   actual_sds <- apply(data, 1, function(x) ci_to_sd(x[1], x[2], x[4]))
-#   
-#   # Compare the expected and actual standard deviations
-#   expect_equal(round(actual_sds, 2), round(expected_sds, 2))
-# })
+# # Standard error conversion
+# B_SE <- subset(B, B$Error %in% "Std. error") # Subset data to those with a SE
+# B_SE$Upper <- as.numeric(B_SE$Upper) # Convert type to numeric
+# B_SE$Lower <- as.numeric(B_SE$Lower) # Convert type to numeric
+# B_SE$N.value <- as.numeric(B_SE$N.value) # Convert type to numeric
+# B_SE$Std._error <- as.numeric(B_SE$Std._error) # Convert type to numeric
+# B_SE_sd <- as.data.frame(B_SE$Std._error * sqrt(B_SE$N.value)) # Std. deviation from Std. error
+# B_SE <- cbind(B_SE, B_SE_sd)
+# names(B_SE)[names(B_SE) == "B_SE$Std._error * sqrt(B_SE$N.value)"] <- "Std_dev"
+# 
+# # Calculate Hedge's G effect size
+# B_Stdev <- rbind(B_95, B_SE)
+# B_Stdev$N.value[is.na(B_Stdev$N.value)] <- mean(B_Stdev$N.value, na.rm = TRUE)
+# Hedge_B <- as.data.frame(esc_B(b = B_Stdev$Value, sdy = B_Stdev$Std_dev, grp1n = B_Stdev$N.value / 2, grp2n = B_Stdev$N.value / 2, es.type = "g", study = B_Stdev$study)) # Calculate Hedge's g
+# 
+# # Unit scaling and sanity checks
+# B_comp <- as.data.frame(left_join(B_Stdev, Hedge_B, by = "study"))
+# names(B_comp)[names(B_SE) == "Value"] <- "Correlation"
+# 
+# # Test for Standard error
+# B_test_se <- subset(B_comp, B_comp$Error %in% c("Std. error"))
+# B_test_se <- sample_n(B_test_se, 5)
+# 
+# B_test_se$Std._error <- as.numeric(B_test_se$Std._error)
+# B_test_se$N.value <- as.numeric(B_test_se$N.value)
+# B_test_se$Std_dev <- as.numeric(B_test_se$Std_dev)
+
 ```
 
-#### Scatterplot correlation
+#### Unstandardized coefficients NEW METHOD
+
+```{r}
+## --- Effect sizes: Unstandardised coefficients & correlations (Hedges' g only) ---
+## Uses ONLY: N.value, Type, R.squared, Value, Lower, Upper, Error, Std._error
+## Correlation bucket: "Cross-correlation analysis", "Simple correlation"
+## Unstandardised regression bucket: all other methods when Type == "Unstandardised coefficient"
+
+library(dplyr)
+library(tibble)
+
+correlation_methods <- c("Cross-correlation analysis", "Simple correlation")
+
+# Add a stable row id to the full table so we keep ALL rows/columns
+Z <- zooALL %>% rowid_to_column("rowid")
+
+# Vectorized p-value parser: handles "0.03", "p=0.03", "<0.05", "≤0.01", decimal commas, etc.
+parse_p_vec <- function(p) {
+  x <- tolower(trimws(as.character(p)))
+  x <- gsub(",", ".", x)              # decimal commas
+  x <- gsub("\\s+", "", x)            # remove spaces
+  x[x %in% c("", "na", "n/a", "ns", "n.s.", "not significant", "notsignificant")] <- NA_character_
+  # remove a leading "p=" / "p<" / "p≤" / "p>" / "p≥"
+  x <- sub("^p\\s*[=<>≤≥]\\s*", "", x)
+  # if starts with ">" or "≥", we can't reconstruct t reliably -> NA
+  x[grepl("^[>≥]", x)] <- NA_character_
+  # strip any leading "<", "≤", or "=" now
+  x <- sub("^[<≤=]", "", x)
+  num <- suppressWarnings(as.numeric(x))
+  # keep within (0,1) to avoid Inf t-statistics
+  ifelse(is.na(num), NA_real_, pmin(pmax(num, 1e-16), 1 - 1e-16))
+}
+
+# Helper: r -> (g, se_g) with small-sample correction J
+hedges_from_r <- function(r, N) {
+  r <- ifelse(!is.na(r), pmax(pmin(r, 1 - 1e-8), -1 + 1e-8), NA_real_)
+  J <- ifelse(!is.na(N), 1 - 3/(4*N - 9), NA_real_)
+  d <- ifelse(!is.na(r), 2*r / sqrt(1 - r^2), NA_real_)
+  g <- ifelse(!is.na(d) & !is.na(J), J * d, NA_real_)
+  se_g <- ifelse(!is.na(r) & !is.na(N) & N > 3,
+                 (1 - 3/(4*N - 9)) * 2 / sqrt((1 - r^2) * (N - 3)),
+                 NA_real_)
+  list(g = g, se_g = se_g)}
+
+# Subset to rows relevant for these two buckets (but we'll join back to Z later)
+B <- Z %>%
+  filter(Type %in% c("Correlation coefficient", "Unstandardised coefficient")) %>%
+  # exclude Pearson/Spearman here because you handle them elsewhere
+  filter(!grepl("Spearman", ifelse(is.na(Statistical_method), "", Statistical_method), ignore.case = TRUE),
+         !grepl("Pearson",  ifelse(is.na(Statistical_method), "", Statistical_method), ignore.case = TRUE))
+
+## ---------- A) CORRELATION bucket: treat Value as r ----------
+B_corr <- B %>%
+  filter(Type == "Correlation coefficient",
+         Statistical_method %in% correlation_methods) %>%
+  mutate(
+    N.value = suppressWarnings(as.numeric(N.value)),
+    r_raw   = suppressWarnings(as.numeric(Value))
+  ) %>%
+  mutate(
+    g     = hedges_from_r(r_raw, N.value)$g,
+    se_g  = hedges_from_r(r_raw, N.value)$se_g
+  ) %>%
+  transmute(rowid, g, se_g, r_raw)
+
+## ---------- B) UNSTANDARDISED REGRESSION (no SE? use CI / p / R²) ----------
+B_reg <- B %>%
+  filter(Type %in% c("Unstandardised coefficient", "Correlation coefficient"),
+         !Statistical_method %in% correlation_methods) %>%
+  mutate(
+    beta        = suppressWarnings(as.numeric(Value)),
+    Upper       = suppressWarnings(as.numeric(Upper)),
+    Lower       = suppressWarnings(as.numeric(Lower)),
+    Std._error  = suppressWarnings(as.numeric(Std._error)),
+    N.value     = suppressWarnings(as.numeric(N.value)),
+    R.squared   = suppressWarnings(as.numeric(R.squared)),
+    # pick p from specific first, then general
+    p_spec_raw  = if ("P.value_specific" %in% names(.)) P.value_specific else NA,
+    p_gen_raw   = if ("P.value_general"  %in% names(.)) P.value_general  else NA,
+    # vectorized parse to numeric in (0,1); "<…" becomes boundary, ">…" -> NA
+    p_spec      = parse_p_vec(p_spec_raw),
+    p_gen       = parse_p_vec(p_gen_raw),
+    # use SPECIFIC if available, else GENERAL
+    p_use       = dplyr::coalesce(p_spec, p_gen)
+
+  ) %>%
+  # pick correct CI width divisor based on Error label
+  mutate(
+    ci_div = case_when(
+      !is.na(Error) & str_detect(Error, regex("90%.*(CI|Credible)", ignore_case = TRUE)) ~ 3.29,   # 2*1.645
+      !is.na(Error) & str_detect(Error, regex("95%.*(CI|Confidence|Credible)", TRUE))    ~ 3.92,   # 2*1.96
+      !is.na(Error) & str_detect(Error, regex("99%.*(CI|Credible)", TRUE))               ~ 5.152,  # 2*2.576
+      TRUE ~ NA_real_
+    ),
+    se_from_ci = ifelse(!is.na(Upper) & !is.na(Lower) & !is.na(ci_div),
+                        (Upper - Lower) / ci_div, NA_real_),
+    SE_use     = coalesce(Std._error, se_from_ci)
+  ) %>%
+  # t from beta/SE, else from p-value (two-sided), using df ≈ N-2
+  mutate(
+    df_hat = ifelse(!is.na(N.value) & N.value > 2, N.value - 2, NA_real_),
+    t_from_se = ifelse(!is.na(beta) & !is.na(SE_use) & SE_use > 0, beta / SE_use, NA_real_),
+    # if p is available, reconstruct |t|; sign from beta
+    t_from_p = ifelse(!is.na(p_use) & !is.na(df_hat) & p_use > 0 & p_use < 1,
+                  stats::qt(1 - p_use/2, df = df_hat), NA_real_),
+    t_from_p = ifelse(!is.na(t_from_p) & !is.na(beta), sign(beta) * t_from_p, t_from_p),
+    tval     = dplyr::coalesce(t_from_se, t_from_p)
+  ) %>%
+  # r from t, else (simple models only) from R^2
+  mutate(
+    r_from_t   = ifelse(!is.na(tval) & !is.na(df_hat) & df_hat > 0,
+                        tval / sqrt(tval^2 + df_hat), NA_real_),
+    # heuristic "simple model" flag — be conservative
+    simple_flag = grepl("simple|univariate|bivariate|correlation", 
+                        tolower(paste(Statistical_method, General_Stats_Method)), perl = TRUE),
+    r_from_R2  = ifelse(!is.na(R.squared) & R.squared >= 0 & R.squared <= 1 & simple_flag & !is.na(beta),
+                        sign(beta) * sqrt(R.squared), NA_real_),
+    r_raw      = coalesce(r_from_t, r_from_R2)
+  ) %>%
+  # g and se_g from r
+  mutate(
+    g    = hedges_from_r(r_raw, N.value)$g,
+    se_g = hedges_from_r(r_raw, N.value)$se_g
+  ) %>%
+  transmute(rowid, g, se_g, beta, r_raw)
+
+## ---------- C) Join effects back to the FULL dataset & map required columns ----------
+Hedge_B <- bind_rows(B_corr, B_reg)
+
+B_comp_both <- B %>%
+  left_join(Hedge_B, by = "rowid") %>%
+  mutate(
+    sample.size = suppressWarnings(as.numeric(N.value)),
+    es  = g,
+    se  = se_g,
+    var = ifelse(!is.na(se), se^2, NA_real_),
+    ci.lo = ifelse(!is.na(es) & !is.na(se), es - 1.96 * se, NA_real_),
+    ci.hi = ifelse(!is.na(es) & !is.na(se), es + 1.96 * se, NA_real_)
+  ) %>%
+  select(-rowid)
+
+## Result:
+## B_comp = original zooALL columns + [es (Hedges g), se, sample.size, var, ci.lo, ci.hi]
+
+```
+
+#### Scatterplot unstandardised
 
 ```{r}
 library(ggplot2)
 
+B_comp = B_comp_both %>% 
+  filter(Type %in% c("Unstandardised coefficient","Correlation coefficient"),
+         !Statistical_method %in% correlation_methods)
+
+if(is.null(B_comp$Correlation)){B_comp$Correlation = B_comp$Value}
+
 # Scatter plot showing the relationship between correlation coefficient and effect size
-B_comp_scatter <- ggplot(data = B_comp, aes(x = Correlation, y = es)) +
+B_comp_scatter <- ggplot(data = B_comp %>% filter(!is.na(es)), aes(x = Correlation, y = es)) +
   geom_line() +  # Add line
   geom_smooth(method = "lm", se = FALSE, color = "#54D8B1FF") +  # Add smooth line with custom color
   geom_point(aes(color = "Observation", shape = "Observation"), size = 3, alpha = 0.5) +  # Add main data points
-  xlab("Correlation coefficient (unstandardised)") +
+  xlab("Unstandardised coefficient") +
   ylab("Effect size (g)") +
   theme_classic()
 
@@ -515,7 +830,7 @@ B_comp_scatter <- B_comp_scatter +
              aes(x = Correlation, y = es, color = "Outlier", shape = "Outlier"), 
              size = 3.5) +  # Add slightly larger points for outliers
   geom_text(data = outliers, 
-            aes(x = Correlation, y = es, label = as.character(N.value)), 
+            aes(x = Correlation, y = es, label = as.character(study)), 
             position = position_jitter(width = 0.6, height = 0.2), 
             alpha = 0.9, 
             size = 3.5) +  # Add text labels only for outliers
@@ -534,6 +849,53 @@ B_comp_scatter <- B_comp_scatter +
 print(B_comp_scatter)
 ```
 
+#### Scatterplot correlation simple
+
+```{r}
+
+library(ggplot2)
+B_corr = B_comp_both %>% filter(Type=="Correlation coefficient")
+if(is.null(B_corr$Correlation)){B_corr$Correlation = B_corr$Value}
+
+# Scatter plot showing the relationship between correlation coefficient and effect size
+B_corr_scatter <- ggplot(data = B_corr, aes(x = Correlation, y = es)) +
+  geom_line() +  # Add line
+  geom_smooth(method = "lm", se = FALSE, color = "#54D8B1FF") +  # Add smooth line with custom color
+  geom_point(aes(color = "Observation", shape = "Observation"), size = 3, alpha = 0.5) +  # Add main data points
+  xlab("Correlation coefficient") +
+  ylab("Effect size (g)") +
+  theme_classic()
+
+# Assess outliers using residuals
+model <- lm(es ~ Correlation, data = B_corr)
+residuals <- model$residuals
+outliers <- B_corr[abs(residuals) > 2 * sd(residuals), ]
+
+# Add outliers to scatter plot
+B_corr_scatter <- B_corr_scatter + 
+  geom_point(data = outliers, 
+             aes(x = Correlation, y = es, color = "Outlier", shape = "Outlier"), 
+             size = 3.5) +  # Add slightly larger points for outliers
+  geom_text(data = outliers, 
+            aes(x = Correlation, y = es, label = as.character(study)), 
+            position = position_jitter(width = 0.6, height = 0.2), 
+            alpha = 0.9, 
+            size = 3.5) +  # Add text labels only for outliers
+  scale_color_manual(name = "", 
+                     values = c("Observation" = "#175149FF", "Outlier" = "#E54E21FF")) +  # Custom colors
+  scale_shape_manual(name = "", 
+                     values = c("Observation" = 16, "Outlier" = 16)) +  # Custom shapes
+  theme(legend.position = "right",
+        legend.text = element_text(size = 12),  # Increase legend text size
+        axis.text.x = element_text(size = 12),  # Increase x-axis text size
+        axis.text.y = element_text(size = 12),  # Increase y-axis text size
+        axis.title.x = element_text(size = 14), # Increase x-axis title size
+        axis.title.y = element_text(size = 14)) # Increase y-axis title size
+
+# Display scatter plot
+print(B_corr_scatter)
+```
+
 ### Spearman & Pearson correlaiton
 
 ```{r Effect sizes for Spearman & Pearson correlaiton, include=TRUE}
@@ -542,8 +904,9 @@ print(B_comp_scatter)
 R <- subset(zooALL, zooALL$Statistical_method %in% c("Spearman rank correlation", "Pearson correlation"))
 
 # Subset correlation coefficients without error values
-B.1 <- subset(B, !B$Error %in% c("95% Confidence", "Std. error"))
-R.1 <- rbind(R, B.1)
+# B.1 <- subset(B, !B$Error %in% c("95% Confidence", "Std. error"))
+# R.1 <- rbind(R, B.1)
+R.1 <- R
 
 # Calculate Cohen's D effect size
 R_d <- cohens_d(R.1$Value)
@@ -766,7 +1129,83 @@ print(z_comp_scatter)
 
 # Subset data to include only T-values
 t <- subset(zooALL, zooALL$Type %in% c("T-value"))
-Hedge_t<-as.data.frame(esc_t(t=t$Value, p=t$P.value_specific, totaln = 8917, es.type = c("g"), study = t$study))
+# Hedge_t<-as.data.frame(esc_t(t=t$Value, p=t$P.value_specific, totaln = t$N.value, es.type = "g", study = t$study))
+
+library(dplyr)
+library(purrr)
+library(tidyr)
+dat = t 
+
+Hedge_t <- dat %>%
+  mutate(.row = row_number()) %>%
+  pmap_dfr(function(Value, P.value_specific, N.value, study, row_unique, .row, ...) {
+    # If essential inputs missing, return NA but keep identifiers
+    if (is.na(Value) || is.na(N.value)) {
+      return(tibble(.row = .row, row_unique = row_unique, es = NA_real_, se = NA_real_))
+    }
+
+    # Safe call to esc_t (returns a data.frame-like object)
+    res <- tryCatch(
+      as_tibble(as.data.frame(
+        esc::esc_t(t = Value,
+                   p = P.value_specific,
+                   totaln = N.value,
+                   es.type = "g",
+                   study = study)
+      )),
+      error = function(e) {
+        # on error, return NA placeholders (match expected columns if you know them)
+        tibble(es = NA_real_, se = NA_real_)
+      }
+    )
+
+    # attach identifiers and return
+    res %>% mutate(.row = .row, row_unique = row_unique, Value = Value)
+  })
+
+```
+
+#### Scatteplot T test
+
+```{r}
+
+# Scatter plot showing the relationship between Z-score and effect size
+Hedge_t_scatter <- ggplot(data = Hedge_t, aes(x = Value, y = es)) +
+  geom_line() +  # Add line
+  geom_smooth(method = "lm", se = FALSE, color = "#54D8B1FF") +  # Add smooth line with custom color
+  geom_point(aes(color = "Observation", shape = "Observation"), size = 3, alpha = 0.5) +  # Add main data points
+  xlab("T") +
+  ylab("Effect size (g)") +
+  theme_classic()
+
+# Assess outliers using residuals
+model <- lm(es ~ Value, data = Hedge_t)
+residuals <- model$residuals
+outliers <- Hedge_t[abs(residuals) > 2 * sd(residuals), ]
+
+# Add outliers to scatter plot
+Hedge_t_scatter <- Hedge_t_scatter + 
+  geom_point(data = outliers, 
+             aes(x = Value, y = es, color = "Outlier", shape = "Outlier"), 
+             size = 3.5) +  # Add slightly larger points for outliers
+  geom_text(data = outliers, 
+            aes(x = Value, y = es, label = study), 
+            position = position_jitter(width = 0.6, height = 0.2), 
+            alpha = 0.9, 
+            size = 3.5) +  # Add text labels only for outliers
+  scale_color_manual(name = "", 
+                     values = c("Observation" = "#175149FF", "Outlier" = "#E54E21FF")) +  # Custom colors
+  scale_shape_manual(name = "", 
+                     values = c("Observation" = 16, "Outlier" = 16)) +  # Custom shapes
+  theme(legend.position = "right",
+        legend.text = element_text(size = 12),  # Increase legend text size
+        axis.text.x = element_text(size = 12),  # Increase x-axis text size
+        axis.text.y = element_text(size = 12),  # Increase y-axis text size
+        axis.title.x = element_text(size = 14), # Increase x-axis title size
+        axis.title.y = element_text(size = 14)) # Increase y-axis title size
+
+# Display scatter plot with outliers
+print(Hedge_t_scatter)
 ```
 
 ### Chi-square
@@ -778,6 +1217,32 @@ Chi <- subset(zooALL, zooALL$Type %in% c("Chi-square"))
 
 # Convert Chi-square values to Hedge's G effect size
 Hedge_chi<-as.data.frame(esc_chisq(chisq = Chi$Value, p = Chi$P.value_specific, totaln = Chi$N.value, es.type = c("g"), study = Chi$study)) 
+
+Hedge_chi <- Chi %>%
+  mutate(.row = row_number()) %>%
+  pmap_dfr(function(Value, P.value_specific, N.value, study, row_unique, .row, ...) {
+    # keep identifiers even when inputs are missing
+    if (is.na(Value) || is.na(N.value)) {
+      return(tibble(.row = .row, row_unique = row_unique, es = NA_real_, se = NA_real_))
+    }
+    # safe call to esc_chisq
+    res <- tryCatch(
+      as_tibble(as.data.frame(
+        esc::esc_chisq(chisq = Value,
+                       p = P.value_specific,
+                       totaln = N.value,
+                       es.type = "g",
+                       study = study)
+      )),
+      error = function(e) {
+        # return placeholders with correct column names if there is an error
+        tibble(es = NA_real_, se = NA_real_)
+      }
+    )
+
+    # attach identifiers and return
+    res %>% mutate(.row = .row, row_unique = row_unique)
+  })
 ```
 
 ### F-statistic
@@ -892,24 +1357,6 @@ names(p_comp)[names(p_SE) == "B"] <- "Correlation"
 # Test for 95% CI
 p_test_ci <- subset(p_comp, Error %in% c("95% Confidence"))
 p_test_ci <- sample_n(p_test_ci, 5)
-
-# Define the test for ci_to_sd function
-# test_that("ci_to_sd returns correct standard deviation for all rows", {
-#   # Create the data frame
-#   data <- data.frame(
-#     ci_L = p_test_ci$L,
-#     ci_U = p_test_ci$U,
-#     sd = p_test_ci$Std_dev,
-#     n = p_test_ci$N.value
-#   )
-#   
-#   # Calculate the expected and actual standard deviations
-#   expected_sds <- data$sd
-#   actual_sds <- apply(data, 1, function(x) ci_to_sd(x[1], x[2], x[4]))
-#   
-#   # Compare the expected and actual standard deviations
-#   expect_equal(actual_sds, expected_sds, tolerance = 1e-5)
-# })
 ```
 
 #### Scatterplot percentage change
@@ -1100,6 +1547,24 @@ print(Est_comp_scatter)
 ### Add annotations based on the significance of regression
 
 ```{r}
+
+names(OR_comp)
+names(Beta_comp)
+names(B_comp)
+names(B_corr)
+names(R_comp)
+names(Ratios_comp)
+names(z_comp)
+names(Hedge_t)
+names(Hedge_chi)
+names(F_comp)
+names(p_comp)
+names(Rsquare_comp)
+names(Est_comp)
+
+```
+
+```{r}
 # Annotate plots based on model significance
 
 # List of models to evaluate
@@ -1113,8 +1578,8 @@ models <- list(
   lm7 = lm(es ~ Value, data = F_comp),
   lm8 = lm(es ~ Value, data = Est_comp),
   lm9 = lm(es ~ Value, data = p_comp),
-  lm10 = lm(es ~ Value, data = Rsquare_comp)
-)
+  lm10 = lm(es ~ Value, data = Rsquare_comp),
+  lm11 = lm(es ~ Value, data = Hedge_t))
 
 # Function to check significance
 check_significance <- function(model) {
@@ -1131,6 +1596,212 @@ check_significance <- function(model) {
 }
 
 model_significance <- lapply(models, check_significance)
+
+# Combine indivisual datasets [OR_comp, Beta_comp, B_comp, R_comp, Ratios_comp, z_comp, F_comp, Est_comp, p_comp, Rsquare_comp]:
+# zooALL_raw = left_join(OR_comp, Beta_comp, by = "study")
+```
+
+# Combine datasets
+
+```{r}
+library(dplyr)
+library(purrr)
+
+cols_n = c("row_unique","es", "se", "var", "ci.lo", "ci.hi","weight", "sample.size")
+(cols_n)[!cols_n %in% names(OR_comp)] #has totaln
+(cols_n)[!cols_n %in% names(Beta_comp)]
+(cols_n)[!cols_n %in% names(B_comp)]
+(cols_n)[!cols_n %in% names(B_corr)]
+(cols_n)[!cols_n %in% names(R_comp)]
+(cols_n)[!cols_n %in% names(Ratios_comp)] #has totaln
+(cols_n)[!cols_n %in% names(z_comp)]
+(cols_n)[!cols_n %in% names(Hedge_t)]
+(cols_n)[!cols_n %in% names(Hedge_chi)]
+(cols_n)[!cols_n %in% names(F_comp)]
+(cols_n)[!cols_n %in% names(p_comp)]
+(cols_n)[!cols_n %in% names(Rsquare_comp)]
+(cols_n)[!cols_n %in% names(Est_comp)]
+
+library(dplyr)
+library(purrr)
+library(rlang)
+library(tibble)
+library(stringr)
+
+# ---- config ----
+target_cols <- c("row_unique","es","se","weight","sample.size","var","ci.lo","ci.hi")
+numeric_cols <- setdiff(target_cols, "row_unique")
+
+# Name your components so diagnostics are readable
+components <- list(
+  OR_comp      = OR_comp,
+  Beta_comp    = Beta_comp,
+  B_comp       = B_comp,
+  B_corr       = B_corr,
+  R_comp       = R_comp,
+  Ratios_comp  = Ratios_comp,
+  z_comp       = z_comp,
+  Hedge_t      = Hedge_t,
+  Hedge_chi    = Hedge_chi,
+  F_comp       = F_comp,
+  p_comp       = p_comp,
+  Rsquare_comp = Rsquare_comp,
+  Est_comp     = Est_comp
+)
+
+# ---- helpers ----
+
+# simplify a vector or list-column to numeric (taking the first element if length>1)
+as_numeric_scalar <- function(x) {
+  if (is.list(x)) {
+    vapply(x, function(el) {
+      if (length(el) == 0) return(NA_real_)
+      suppressWarnings(as.numeric(el[[1]]))
+    }, numeric(1))
+  } else if (is.factor(x)) {
+    suppressWarnings(as.numeric(as.character(x)))
+  } else if (is.character(x) || is.numeric(x) || is.integer(x) || is.logical(x)) {
+    suppressWarnings(as.numeric(x))
+  } else {
+    # unknown type -> NA
+    rep(NA_real_, length(x))
+  }
+}
+
+# standardise names, select target cols, coerce types
+standardise_effect_cols <- function(df) {
+  if (is.null(df)) return(tibble(row_unique = character()))
+  
+  nm <- names(df)
+  if ("w" %in% nm && !("weight" %in% nm))            df[["weight"]]      <- df[["w"]]
+  if ("totaln" %in% nm && !("sample.size" %in% nm))  df[["sample.size"]] <- df[["totaln"]]
+  
+  out <- dplyr::select(df, dplyr::any_of(target_cols))
+  
+  # Ensure row_unique exists and is character
+  if (!"row_unique" %in% names(out)) out$row_unique <- NA_character_
+  out$row_unique <- as.character(out$row_unique)
+  
+  # Force numeric columns to be plain doubles (flatten list-cols if needed)
+  for (cn in intersect(names(out), numeric_cols)) {
+    out[[cn]] <- as_numeric_scalar(out[[cn]])
+  }
+  out
+}
+
+# left-join and fill NA using coalesce(), after we ensured types are numeric
+fill_join <- function(acc, df) {
+  if (!"row_unique" %in% names(df)) return(acc)
+  df2 <- dplyr::select(df, dplyr::all_of(intersect(names(df), target_cols)))
+  out <- dplyr::left_join(acc, df2, by = "row_unique", suffix = c("", ".new"))
+  for (nm in numeric_cols) {
+    new_nm <- paste0(nm, ".new")
+    if (new_nm %in% names(out)) {
+      out[[nm]] <- dplyr::coalesce(out[[nm]], out[[new_nm]])
+      out[[new_nm]] <- NULL
+    }
+  }
+  out
+}
+
+# diagnostics for each component
+diagnose_component <- function(df, name) {
+  cat("\n==============================\n")
+  cat("Component:", name, "\n")
+  if (is.null(df)) { cat("NULL\n"); return(invisible(NULL)) }
+  
+  cat("Rows:", nrow(df), "\n")
+  has_ru <- "row_unique" %in% names(df)
+  cat("Has row_unique:", has_ru, "\n")
+  if (has_ru) {
+    nunq <- dplyr::n_distinct(df$row_unique)
+    cat("Distinct row_unique:", nunq, "\n")
+    dups <- sum(duplicated(df$row_unique))
+    cat("Duplicated row_unique:", dups, "\n")
+  }
+  
+  present <- intersect(names(df), target_cols)
+  missing <- setdiff(target_cols, names(df))
+  cat("Present target cols:", paste(present, collapse=", "), "\n")
+  cat("Missing target cols:", paste(missing, collapse=", "), "\n")
+  
+  # show classes of target columns
+  cls <- sapply(df[, intersect(names(df), target_cols), drop = FALSE], function(x) class(x)[1])
+  if (length(cls)) {
+    cat("Column classes:\n")
+    print(cls)
+  }
+  
+  # list-cols among target columns
+  list_cols <- names(df)[sapply(df, is.list) & names(df) %in% target_cols]
+  if (length(list_cols)) {
+    cat("List-columns among targets:", paste(list_cols, collapse=", "), "\n")
+    # show a tiny sample of lengths
+    for (lc in list_cols) {
+      lens <- lengths(df[[lc]])
+      cat(sprintf("  %s: max length=%d; non-scalar rows=%d\n", lc, max(lens, na.rm = TRUE), sum(lens > 1, na.rm = TRUE)))
+    }
+  } else {
+    cat("No list-columns among target cols.\n")
+  }
+}
+
+# cross-component duplicate check (same row_unique in multiple components)
+cross_component_dups <- function(comp_list) {
+  keys <- imap(comp_list, ~ tibble(component = .y, row_unique = as.character(.x$row_unique))) %>%
+    bind_rows() %>% filter(!is.na(row_unique))
+  dup_keys <- keys %>% count(row_unique, sort = TRUE) %>% filter(n > 1)
+  list(dups = dup_keys, keys = keys)
+}
+
+# ---- run diagnostics ----
+walk2(components, names(components), diagnose_component)
+
+dup_info <- cross_component_dups(components)
+cat("\n=====================================\n")
+cat("row_unique present in multiple components:", nrow(dup_info$dups), "\n")
+if (nrow(dup_info$dups)) {
+  cat("Top overlapping keys (head):\n")
+  print(head(dup_info$dups, 10))
+}
+
+# ---- standardise and join ----
+components_std <- imap(components, ~ {
+  out <- standardise_effect_cols(.x)
+  # optional: quick summary after standardisation
+  bad_types <- names(out)[names(out) %in% numeric_cols & !sapply(out[numeric_cols[numeric_cols %in% names(out)]], is.double)]
+  if (length(bad_types)) {
+    cat("\n[Warn] After standardise, still non-numeric in", .y, ":", paste(bad_types, collapse=", "), "\n")
+  }
+  out
+})
+
+# Ensure zooALL_raw has the target columns (as doubles) to receive coalesced values
+for (cn in setdiff(target_cols, "row_unique")) {
+  if (!cn %in% names(zooALL_raw)) zooALL_raw[[cn]] <- NA_real_
+  # coerce to double if needed
+  if (!is.double(zooALL_raw[[cn]])) zooALL_raw[[cn]] <- suppressWarnings(as.numeric(zooALL_raw[[cn]]))
+}
+# row_unique as character
+zooALL_raw$row_unique <- as.character(zooALL_raw$row_unique)
+
+# Join and fill
+zooALL_raw <- reduce(components_std, fill_join, .init = zooALL_raw)
+
+#Optional derivations
+ zooALL_raw <- zooALL_raw %>%
+   mutate(
+     var    = coalesce(var, se^2),
+     #weight = coalesce(weight, if_else(!is.na(var) & var > 0, 1/var, NA_real_)),
+     ci.lo  = coalesce(ci.lo, if_else(!is.na(es) & !is.na(se), es - 1.96 * se, NA_real_)),
+     ci.hi  = coalesce(ci.hi, if_else(!is.na(es) & !is.na(se), es + 1.96 * se, NA_real_))
+   )
+
+# Safety: row count unchanged and unique keys preserved
+stopifnot(nrow(zooALL_raw) == dplyr::n_distinct(zooALL_raw$row_unique))
+cat("\n[OK] zooALL_raw joined successfully. Rows:", nrow(zooALL_raw), "\n")
+
+View(zooALL_raw %>% select(row_unique, General_Stats_Method, Statistical_method, Type, Value, N.value, Upper, Lower, Std._error, Error,P.value_general, P.value_specific, es, se) %>% filter(is.na(es)))
 ```
 
 ```{r}
@@ -1168,8 +1839,10 @@ Est_comp_scatter <- Est_comp_scatter +
 
 p_comp_scatter <- p_comp_scatter + 
   annotate("text", x = Inf, y = Inf, label = model_significance$lm9, vjust = vjust_value, hjust = 1.1, size = custom_size, color = custom_color, alpha = custom_alpha)
-```
 
+Hedge_t_scatter <- Hedge_t_scatter +
+  annotate("text", x = Inf, y = Inf, label = model_significance$lm11, vjust = vjust_value, hjust = 1.1, size = custom_size, color = custom_color, alpha = custom_alpha)
+```
 
 ```{r}
 library(patchwork)
@@ -1183,7 +1856,7 @@ combined_plot <- (OR_comp_scatter + theme(legend.position = "none")) +
   (R_comp_scatter + theme(legend.position = "none")) / 
   (Ratios_comp_scatter + theme(legend.position = "none")) + 
   (z_comp_scatter + theme(legend.position = "none")) / 
-  (F_comp_scatter + theme(legend.position = "none")) + 
+  (Hedge_t_scatter + theme(legend.position = "none")) + 
   (Est_comp_scatter + theme(legend.position = "none")) / 
   (p_comp_scatter + theme(legend.position = "none")) + 
   plot_layout(ncol = 2, heights = c(1,1.8,2))  # Make the first row smaller
@@ -1203,14 +1876,12 @@ final_plot <- plot_grid(
 print(final_plot)
 
 # Save the final plot
-#ggsave(here('outputs','combined_plot_A4_70percent_signif.png'), final_plot, width = 5.5, height = 6.7, units = "in", dpi = 300, scale = 1.7)
+ggsave(here('outputs','combined_plot_NEWDATA_A4_70percent_signif.png'), final_plot, width = 5.5, height = 6.7, units = "in", dpi = 300, scale = 1.7)
 ```
-
 
 ```{r}
 #cite_packages(output = "file", out.dir = getwd(),out.format = "pdf")
 ```
-
 
 ```{r }
 #pkgs <- cite_packages(output = "table", out.dir = ".")
