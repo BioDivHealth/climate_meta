@@ -4,18 +4,21 @@
 # ------------- setup -------------
 
 # deps
-library(ggplot2); library(dplyr); library(magrittr); library(sf); library(patchwork);
-library(cowplot)
+library(pacman)
+p_load(ggplot2, dplyr, magrittr, sf, patchwork, cowplot, here, MetBrewer, pals)
 
 # read Lewis' database of published estimates
 lw = read.csv(here('data','lewis_dataset','lewis_data.csv'))
 lw = unique(lw)
 
-df = read.csv(here('data','dataset_final.csv'))
+df = read.csv(here('data','dataset_final_g.csv'))
+df$Linear_Nonlinear[df$Linear_Nonlinear=="Nonlinear"] = "Non-linear"
 ll = df %>% rename("Disease2" = "General_Disease",
                    "P_V_B" = "Pathogen",
                    "Method2" = "General_Stats_Method",
                    "Response2" = "General_response")
+
+#ll %<>% filter(Principal_reservoir=="Rodents")
 
 # -----------  colours scheme ------------
 
@@ -26,7 +29,16 @@ host_col = colors[4]
 risk_col = colors[6]
 meth_col = colors[5]
 
+# define all your “global” sizes in one place
+pt_size    <- 1    # was 3
+seg_size   <- 0.5  # was default 0.5
+sf_size    <- 0.1  # was 0.4 (map border)
+bar_width  <- 0.5  # your desired bar width
 
+# teach ggplot to use those as defaults
+update_geom_defaults("point",   list(size  = pt_size   ))
+update_geom_defaults("segment", list(linewidth  = seg_size  ))
+update_geom_defaults("sf",      list(size  = sf_size   ))
 
 
 # ---------- plots ------------
@@ -48,12 +60,12 @@ p0 = ll %>%
   dplyr::mutate(Disease2 = factor(Disease2, levels=rev(Disease2), ordered=TRUE)) %>%
   ggplot() +
   geom_segment(aes(x = 0, xend=N, y=Disease2, yend=Disease2), color=dz_col, show.legend = FALSE) + 
-  geom_point(aes(N, Disease2), color=dz_col, size=3) + 
+  geom_point(aes(N, Disease2), color=dz_col) + 
   theme_classic() +
   ylab("Disease or disease group") +
   labs(tag = "B")+
   xlab("Number of studies")+
-  theme(plot.tag = element_text(face = "bold", size = 12),
+  theme(plot.tag = element_text(face = "bold", size = 6),
         plot.tag.position = c(0.021, 1))
 
 
@@ -71,12 +83,13 @@ p00 = ll %>%
   dplyr::mutate(Principal_reservoir = factor(Principal_reservoir, levels=rev(Principal_reservoir), ordered=TRUE)) %>%
   ggplot() +
   geom_segment(aes(x = 0, xend=N, y=Principal_reservoir, yend=Principal_reservoir), color=host_col, show.legend = FALSE) + 
-  geom_point(aes(N, Principal_reservoir), color=host_col, size=3) + 
+  geom_point(aes(N, Principal_reservoir), color=host_col) + 
   theme_classic() +
   ylab("Principal reservoir") +
   labs(tag = "D")+
   xlab("Number of studies")+
-  theme(plot.tag = element_text(face = "bold", size = 12))
+  theme(plot.tag = element_text(face = "bold", size = 6),
+        plot.tag.position = c(0, 1))
 
 
 # 3. response variables (hazard metric)
@@ -101,19 +114,20 @@ p1 = table(cats$Response2) %>%
     Response = replace(Response, Response == "Human case locations", "Human case\nlocations"),
     Response = replace(Response, Response == "Human disease incidence", "Human disease\nincidence"),
     Response = replace(Response, Response == "Human outbreak occurrence", "Human outbreak\noccurrence"),
-    Response = replace(Response, Response == "Human seroprevalence", "Human\nseroprevalence")
+    Response = replace(Response, Response == "Human seroprevalence", "Human seroprevalence")
   ) %>%
   dplyr::filter(Response != "Host occurrence") %>%
   dplyr::arrange(desc(N)) %>%
   dplyr::mutate(Response = factor(Response, levels=rev(Response), ordered=TRUE)) %>%
   ggplot() +
   geom_segment(aes(x = 0, xend=N, y=Response, yend=Response), color=risk_col, show.legend = FALSE) + 
-  geom_point(aes(N, Response), color=risk_col, size=3) + 
+  geom_point(aes(N, Response), color=risk_col) + 
   theme_classic() +
   xlab("Number of studies") + ylab("Risk/hazard metric") +
   labs(tag = "C")+
   theme(axis.title.x = element_blank(),
-        plot.tag = element_text(face = "bold", size = 12))
+        plot.tag = element_text(face = "bold", size = 6),
+        plot.tag.position = c(0, 1))
 
 
 # 4. pathogen type
@@ -128,19 +142,19 @@ p3 = table(pvb$P_V_B) %>%
     Type = as.vector(Type),
     Type = replace(Type, Type == "P", "Parasite"),
     Type = replace(Type, Type == "V", "Virus"),
-    Type = replace(Type, Type == "B", "Bacteria/\nrickettsia")
+    Type = replace(Type, Type == "B", "Bacteria/rickettsia")
   ) %>%
   dplyr::arrange(desc(N)) %>%
   dplyr::mutate(Type = factor(Type, levels=rev(Type), ordered=TRUE)) %>%
   ggplot() + 
   geom_segment(aes(x = 0, xend=N, y=Type, yend=Type), color=host_col, show.legend = FALSE) + 
-  geom_point(aes(N, Type), color=host_col, size=3) + 
+  geom_point(aes(N, Type), color=host_col) + 
   theme_classic() +
   xlab("Number of studies") + ylab("Pathogen") +
   labs(tag = "E")+
   theme(axis.title.x = element_blank(),
-        plot.tag = element_text(face = "bold", size = 12),
-        plot.tag.position = c(-0.03, 0.95))
+        plot.tag = element_text(face = "bold", size = 6),
+        plot.tag.position = c(-0.03, 0.98))
 
 # 5. modelling method
 
@@ -160,12 +174,12 @@ p4 = table(meth$Method2) %>%
   dplyr::mutate(Method2 = factor(Method2, levels=rev(Method2), ordered=TRUE)) %>%
   ggplot() + 
   geom_segment(aes(x = 0, xend=N, y=Method2, yend=Method2), color=meth_col, show.legend = FALSE) + 
-  geom_point(aes(N, Method2), color=meth_col, size=3) + 
+  geom_point(aes(N, Method2), color=meth_col) + 
   theme_classic() +
   labs(tag = "G")+
   xlab("Number of studies") + ylab("Modelling method")+
-  theme(plot.tag = element_text(face = "bold", size = 12),
-        plot.tag.position = c(-0.03, 0.95))
+  theme(plot.tag = element_text(face = "bold", size = 6),
+        plot.tag.position = c(-0.03, 0.98))
 
 # 6. linear/nonlinear function fitted
 
@@ -180,13 +194,13 @@ p5 = table(nl$Linear_Nonlinear) %>%
   dplyr::mutate(LN = factor(LN, levels=rev(LN), ordered=TRUE)) %>%
   ggplot() + 
   geom_segment(aes(x = 0, xend=N, y=LN, yend=LN), color=meth_col, show.legend = FALSE) + 
-  geom_point(aes(N, LN), color=meth_col,size=3) + 
+  geom_point(aes(N, LN), color=meth_col) + 
   theme_classic() +
   xlab("Number of studies") + ylab("Function") +
   labs(tag = "F")+
   theme(axis.title.x = element_blank(),
-        plot.tag = element_text(face = "bold", size = 12),
-        plot.tag.position = c(-0.03, 1.2))
+        plot.tag = element_text(face = "bold", size = 9),
+        plot.tag.position = c(-0.03, 1.13))
 
 # ----------- map of locations ---------
 
@@ -221,35 +235,6 @@ climvars = lw %>%
   group_by(Environmental_condition) %>% 
   mutate(prop = n/length(unique(df$lw)))
 
-# Create the bar plot
-bar_plot_old <- ggplot(climvars, aes(x = n, y = Environmental_condition, fill = Environmental_condition)) +
-  geom_col() +
-  scale_fill_manual(values = c("Humidity" = "#FCC237", "Precipitation" = "#0FAEB8", "Temperature" = "#352A87")) +  # Custom colors
-  labs(x = "Num. studies", y = NULL) +
-  theme_minimal() +
-  #labs(tag = "B")+
-  theme(
-    legend.position = "none",  # Remove legend
-    axis.text.y = element_text(size = 10),  # Bold y-axis text
-    #axis.text.x = element_text(size = 12),  # X-axis text size
-    axis.title.x = element_text(size = 11),  # Bold x-axis title
-    plot.tag.position = c(0.195, 1.2),
-    plot.tag = element_text(face = "bold", size = 12))
-
-# Create the map----------------------------------------------------
-map_old <- ggplot() + 
-  geom_sf(data = ne2, fill = "grey90", color = "grey70", size = 0.4) + 
-  theme_void() + 
-  geom_sf(data = sf::st_jitter(ll2, factor = 0.003), size = 1.2, aes(color = Var), alpha = 0.8) + 
-  scale_color_manual(values = pals::parula(n = 8)[c(1, 4, 7)], name = "Climate metric type") + 
-  labs(tag = "A")+
-  theme(
-    legend.title = element_text(size = 11),
-    legend.text = element_text(size = 10, color = "grey15"), 
-    legend.position = "none",  # Remove the legend to make space for the bar plot
-    plot.tag.position = c(0.05, 0.9),
-    plot.tag = element_text(face = "bold", size = 12)
-  )
 
 ## Map new --------------
 ll %<>% dplyr::mutate(
@@ -293,17 +278,17 @@ new_coord %<>% dplyr::mutate(Longitude = as.numeric(Longitude), Latitude_ = as.n
 
 # Create the map
 map_new <- ggplot() + 
-  geom_sf(data = ne2, fill = "grey90", color = "grey70", size = 0.4) + 
+  geom_sf(data = ne2, fill = "grey90", color = "grey70", linewidth = 0.05) + 
   theme_void() + 
-  geom_sf(data = sf::st_jitter(new_coord, factor = 0.003), size = 1.2, aes(color = Var), alpha = 0.8) + 
+  geom_sf(data = sf::st_jitter(new_coord, factor = 0.003),size = 1, aes(color = Var), alpha = 0.8) + 
   scale_color_manual(values = pals::parula(n = 8)[c(1, 4, 7)], name = "Climate metric type") + 
   labs(tag = "A")+
   theme(
-    legend.title = element_text(size = 11),
-    legend.text = element_text(size = 10, color = "grey15"), 
+    legend.title = element_text(size = 9),
+    legend.text = element_text(size = 8, color = "grey15"), 
     legend.position = "none",  # Remove the legend to make space for the bar plot
-    plot.tag.position = c(0.05, 0.9),
-    plot.tag = element_text(face = "bold", size = 12)
+    plot.tag.position = c(0.015, 0.9),
+    plot.tag = element_text(face = "bold", size = 6)
   )
 
 # data for the bar plot new
@@ -318,37 +303,32 @@ climvars_new = ll %>%
 bar_plot_new <- ggplot(climvars_new, aes(x = n, y = Environmental_condition, fill = Environmental_condition)) +
   geom_col() +
   scale_fill_manual(values = c("Humidity" = "#FCC237", "Precipitation" = "#0FAEB8", "Temperature" = "#352A87")) +  # Custom colors
-  labs(x = "Num. studies", y = NULL) +
+  labs(x = "Number of studies", y = NULL) +
   theme_minimal() +
-  #labs(tag = "B")+
   theme(
     legend.position = "none",  # Remove legend
-    axis.text.y = element_text(size = 10),  # Bold y-axis text
-    #axis.text.x = element_text(size = 12),  # X-axis text size
-    axis.title.x = element_text(size = 11),  # Bold x-axis title
+    axis.text.y = element_text(size = 5),  # Bold y-axis text
+    axis.text.x = element_text(size = 5),  # X-axis text size
+    axis.title.x = element_text(size = 5),  # Bold x-axis title
     plot.tag.position = c(0.195, 1.2),
-    plot.tag = element_text(face = "bold", size = 12))
+    plot.tag = element_text(face = "bold", size = 6))
 
-# Combine the map and bar plot using cowplot
-combined_plot_old <- ggdraw() +
-  draw_plot(map_old, 0, 0, 1, 1) +
-  draw_plot(bar_plot_old, x = 0.05, y = 0.05, width = 0.23, height = 0.25)
 
 combined_plot_new <- ggdraw() +
   draw_plot(map_new, 0, 0, 1, 1) +
-  draw_plot(bar_plot_new, x = 0.05, y = 0.05, width = 0.23, height = 0.25)
+  draw_plot(bar_plot_new, x = 0.03, y = 0.05, width = 0.23, height = 0.25)
 
 
 # design for barplots
 design = "
-  12458
-  12468
-  13478
+  123569
+  123579
+  124589
 "
-comb = p0 + p1 + p00 + plot_spacer() + p3 + p5 + p4 + plot_spacer() + 
+comb = p0 + plot_spacer() + p1 + p00 + plot_spacer() + p3 + p5 + p4 + plot_spacer() + 
   plot_layout(guides = "collect", 
               nrow=3, ncol=5, 
-              widths=c(1.1, 0.9,0.07, 0.9, 0.19), 
+              widths=c(1.1, 0.03,0.8,0.07, 0.7, 0.2), 
               heights=c(0.25, 0.2, 0.55),
               design=design)
 
@@ -358,14 +338,36 @@ design2 = "
   #2
 "
 
-Fig1_old = combined_plot_old + (comb) + plot_layout(nrow=2, heights=c(1, 0.8), widths=c(0.05, 1), design=design2)
-Fig1_new = combined_plot_new + (comb) + plot_layout(nrow=2, heights=c(1, 0.8), widths=c(0.05, 1), design=design2)
+Fig1_new = combined_plot_new + (comb) + plot_layout(nrow=2, heights=c(1, 0.8), widths=c(0, 1), design=design2)
 
 print(Fig1_new)
 
-# save
-#ggsave(Fig1_new, file="Figure1.jpg", device="jpg", units="in", width=10.5, height=9.5, dpi=600, scale=0.93)
+Fig1_smalltext <- Fig1_new & 
+  theme(
+    text          = element_text(size = 5.3),  # base text
+    axis.title    = element_text(size = 5.3),
+    axis.text     = element_text(size = 5),
+    axis.title.x = element_text(size = 5.3),
+    axis.title.y = element_text(size = 5.3),
+    legend.title  = element_text(size = 5.5),
+    legend.text   = element_text(size = 5.5),
+    plot.tag      = element_text(face = "bold", size = 6),
+    plot.margin = unit(c(-0.1, 0, 0.05, 0.05),
+                        "inches")
+  )
 
 
+
+# 3️⃣ now save
+ggsave(
+  Fig1_smalltext,
+  filename = here('outputs','final_figs_new','Figure1.pdf'),
+  device   = "pdf",
+  units    = "cm",
+  width    = 10,
+  height   = 10,
+  dpi      = 600,
+  scale = 1.3
+)
 
 
