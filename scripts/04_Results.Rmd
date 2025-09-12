@@ -12,22 +12,23 @@ library(tidyr)
 library(here)
 library(magrittr)
 library(tidyverse)
+library(jsonlite)
 
 knitr::opts_chunk$set(echo = FALSE)
 
 # load dataset
-df = read.csv(here::here("data","dataset_final.csv"))
+df = read.csv(here::here("data","dataset_final_g.csv"))
 df = unique(df) #ensure all rows are unique
 
 # change vector names
-df = df%>%
-  mutate(Transmission_type = ifelse(Transmission_type == 'HVH', 'Vectored', 'Non-vectored'))
+#df = df%>%
+#  mutate(Transmission_type = ifelse(Transmission_type == 'HVH', 'Vectored', 'Non-vectored'))
 
 # add parasite group
-df = df%>%
-  mutate(Pathogen = ifelse(Pathogen == 'P', 'Parasite',
-                                ifelse(Pathogen == 'V', 'Virus',
-                                        'Bacteria')))
+# df = df%>%
+#   mutate(Pathogen = ifelse(Pathogen == 'P', 'Parasite',
+#                                 ifelse(Pathogen == 'V', 'Virus',
+#                                         'Bacteria')))
 
 cat(paste('Number of unique studies:', length(unique(df$Reference_ID))))
 cat(paste('Number of pathogens:', length(unique(df$Disease))))
@@ -198,9 +199,19 @@ cat("Proportion of studies significant at alfa = 0.001: ", tmp %>% filter(!signi
 Calculates chi-square tests looking into differences in proprortions of reported increased and decreases in zoonotic risk across different groups.
 
 ```{r chi_square}
-source(here::here('scripts', '01_Direction_ChiSquare_Tests.R'))
+source(here::here('scripts','analysis', '01_Direction_ChiSquare_Tests.R'))
 
-print(list_of_dfs)
+print(chi_all)
+
+
+cat("Ratio of increase to decrease:", print(unname((table(df$Direction)["increase"]/table(df$Direction)["decrease"][[1]]))))
+
+print(unname((table(df$Direction[df$Transmission_type=="Vectored"])["increase"]/table(df$Direction[df$Transmission_type=="Vectored"])["decrease"][[1]])))
+table(df$Direction[df$Transmission_type=="Vectored"])
+
+print(unname((table(df$Direction[df$Transmission_type=="Non-vectored"])["increase"]/table(df$Direction[df$Transmission_type=="Non-vectored"])["decrease"][[1]])))
+table(df$Direction[df$Transmission_type=="Non-vectored"])
+
 ```
 
 ### Secondary reporting rates
@@ -259,6 +270,7 @@ df = df%>%
   )
 
 df%>%#
+  filter(!is.na(es)) %>% 
   #subset(Linear_Nonlinear == 'Linear')%>%
   count(es_cat, Environmental_condition)%>%
   group_by(Environmental_condition)%>%
@@ -328,6 +340,164 @@ dat_results %<>% filter(list_name!="temp_05")
 
 ### Eggers test
 
+Standardise Journal names and fetch open metrics (OpenAlex)
+
+```{r}
+library(dplyr); library(stringr); library(stringi)
+
+# 1) Robust normaliser for matching keys
+norm_key <- function(x){
+  x %>%
+    # strip common mojibake/zero-widths/BOM/NBSP and the notorious 'Â'
+    str_replace_all("[\\u00A0\\u00AD\\u200B-\\u200D\\u2060\\uFEFF\\u00C2]", "") %>%
+    # normalise punctuation like en-dashes/curly quotes
+    stri_trans_general("Any-ASCII") %>%
+    str_to_lower() %>%
+    str_replace_all("\\s+", " ") %>%
+    str_trim()
+}
+
+# 2) Canonical map (keys are normalised with norm_key)
+fix_map <- c(
+  # canonical case normalisations
+  "emerging infectious diseases" = "Emerging Infectious Diseases",
+  "nature communications" = "Nature Communications",
+  "plos one" = "PLOS ONE",
+  "plos neglected tropical diseases" = "PLOS Neglected Tropical Diseases",
+  "frontiers in veterinary science" = "Frontiers in Veterinary Science",
+
+  # accents / language
+  "cadernos de saude publica" = "Cadernos de Saúde Pública",
+  "ciencia & saude coletiva" = "Ciência & Saúde Coletiva",
+  "epidemiologia e servicos de saude" = "Epidemiologia e Serviços de Saúde",
+
+  # publisher/series tidy-ups
+  "mdpi viruses" = "Viruses",
+  "bmc environmental health" = "Environmental Health",
+  "bmc parasites & vectors" = "Parasites & Vectors",
+  "environmental research and public health" = "International Journal of Environmental Research and Public Health",
+  "environmental and public health" = "Journal of Environmental and Public Health",
+  "proceedings of the national academy of sciences, biological sciences" = "Proceedings of the National Academy of Sciences",
+  "proceedings of the royal society b" = "Proceedings of the Royal Society B: Biological Sciences",
+  "proceedings of the royal society b: biological sciences" = "Proceedings of the Royal Society B: Biological Sciences",
+  "philosophical transaction of the royal society b: biological sciences" = "Philosophical Transactions of the Royal Society B: Biological Sciences",
+  "mary ann liebert: vector-borne and zoonotic diseases" = "Vector-Borne and Zoonotic Diseases",
+
+  # typos
+  "journal of vetinary science" = "Journal of Veterinary Science",
+  "vetinary journal" = "The Veterinary Journal",
+  "j arthropod-borne dis" = "Journal of Arthropod-Borne Diseases",
+  "journal of arthropod borne diseases" = "Journal of Arthropod-Borne Diseases",
+
+  # style nits
+  "science of the total environment" = "Science of the Total Environment",
+  "ambio: a journal of environment and society" = "Ambio",
+
+  # *** explicit catch for your mojibake case(s) ***
+  "emerging microbes & infections" = "Emerging Microbes & Infections",
+  "emerging microbes & infectionsa" = "Emerging Microbes & Infections"  # when 'Â' became 'A'
+)
+
+df <- df %>%
+  mutate(
+    .key_raw = Journal,
+    .key = norm_key(Journal),
+    Journal_std = if_else(.key %in% names(fix_map),
+                          unname(fix_map[.key]),
+                          str_squish(Journal)),
+    Journal_needs_review = .key %in% norm_key(c("DovePress"))   # keep flagging publishers
+  ) %>%
+  select(-.key)
+
+View(df %>% select(Journal, Journal_std, Journal_needs_review, Journal_5yr_Impact) %>% distinct(
+))
+
+```
+
+```{r journal_standardization, message=TRUE, warning=FALSE}
+# install.packages("openalexR")
+library(openalexR)
+library(dplyr); library(purrr); library(stringr)
+
+journals <- df %>% distinct(Journal_std) %>% filter(!is.na(Journal_std)) %>% pull()
+ifs_scored = df %>% select(Journal_5yr_Impact, Journal_std) %>% filter(!is.na(Journal_5yr_Impact)) %>% distinct()
+length(unique(ifs_scored$Journal_std))
+df$Journal_5yr_Impact_merged = NA
+
+for(i in unique(ifs_scored$Journal_std)){
+  score = ifs_scored$Journal_5yr_Impact[ifs_scored$Journal_std==i]
+  df$Journal_5yr_Impact_merged[df$Journal_std==i] = score
+}
+
+View(df %>% select(Journal_std, Journal_5yr_Impact_merged) %>% distinct())
+
+mailto <- "arturtrebski9924@gmail.com"  # <-- put your email here (OpenAlex requests it)
+# install.packages(c("httr2","jsonlite","dplyr","purrr","stringr","tibble"))
+# install.packages(c("jsonlite","dplyr","tibble"))
+library(jsonlite); library(dplyr); library(tibble)
+
+`%||%` <- function(x, y) if (is.null(x)) y else x
+collapse_issn <- function(v) if (is.null(v) || length(v)==0) NA_character_ else paste(v, collapse=";")
+
+oa_sources_search <- function(name, per_page = 10, mailto = "arturtrebski9924@gmail.com", pause = 0.15) {
+  qs  <- paste0("search=", utils::URLencode(name, reserved = TRUE),
+                "&per-page=", per_page,
+                "&mailto=", utils::URLencode(mailto, reserved = TRUE))
+  url <- paste0("https://api.openalex.org/sources?", qs)
+
+  js <- tryCatch(jsonlite::fromJSON(url, simplifyVector = FALSE), error = function(e) NULL)
+  if (is.null(js) || is.null(js$results) || length(js$results) == 0) return(tibble())
+
+  rows <- do.call(rbind, lapply(js$results, function(x) {
+    tibble(
+      Journal_std   = name,
+      oa_display_name = x$display_name %||% NA_character_,
+      type            = x$type %||% NA_character_,
+      issn_l          = x$issn_l %||% NA_character_,
+      issn            = collapse_issn(x$issn),
+      publisher       = x$host_organization_name %||% NA_character_,
+      works_count     = x$works_count %||% NA_real_,
+      openalex_id     = x$id %||% NA_character_,
+      oa_2yr_mean_citedness = (x$summary_stats %||% list())[["2yr_mean_citedness"]] %||% NA_real_,
+      oa_h_index            = as.integer((x$summary_stats %||% list())[["h_index"]] %||% NA_real_),
+      oa_i10_index          = as.integer((x$summary_stats %||% list())[["i10_index"]] %||% NA_real_)
+    )
+  }))
+
+  out <- rows |>
+    mutate(
+      exact = tolower(oa_display_name) == tolower(name),
+      dist  = adist(tolower(oa_display_name), tolower(name))[,1],
+      is_journal = type == "journal"
+    ) |>
+    arrange(desc(exact), desc(is_journal), dist, desc(works_count)) |>
+    slice(1) |>
+    select(Journal_std, oa_display_name, issn_l, issn, publisher, openalex_id,
+           oa_2yr_mean_citedness, oa_h_index, oa_i10_index)
+
+  Sys.sleep(pause)
+  out
+}
+
+# Sanity checks (each should return 1 tidy row)
+oa_sources_search("Nature Communications")
+oa_sources_search("Emerging Infectious Diseases")
+oa_sources_search("Emerging Microbes & Infections")
+
+# Map across your cleaned journals and join back
+journals <- df |>
+  filter(!is.na(Journal_std), Journal_std != "") |>
+  distinct(Journal_std) |>
+  pull()
+
+safe_oa <- function(nm) tryCatch(oa_sources_search(nm), error = function(e) tibble())
+oa_tbl  <- do.call(bind_rows, lapply(journals, safe_oa))
+
+df_with_metrics <- df |> left_join(oa_tbl, by = "Journal_std")
+View(df_with_metrics %>% select(Journal_std, oa_2yr_mean_citedness, oa_h_index, Journal_5yr_Impact_merged) %>% distinct())
+
+```
+
 ```{r eggers_tests}
 
 f1 <- df %>% filter(!is.na(se) & !is.na(es))
@@ -371,7 +541,7 @@ results_regtests <- data.frame(
   P_value = c(pval_all, pval_temp, pval_prec, pval_hum)
 )
 
-#write.csv(results_regtests, 'outputs/tables/TableS9_eggers_funnel_tests.csv', row.names = F)
+write.csv(results_regtests, here('outputs', 'tables_new', 'TableS9_eggers_funnel_tests.csv'), row.names = F)
 ```
 
 ## IF vs Effect Size - looking for publication bias
@@ -524,23 +694,26 @@ print(spearman_corr)
 ## Figure 1
 
 ```{r fig1, echo=TRUE, fig.height=9.5, fig.width=10.5}
-source(here::here('scripts','Figure1.R'))
+source(here::here('scripts','figures','Figure1.R'))
 
 plot(Fig1_new)
+plot(Fig1_smalltext)
 
-#ggsave(Fig1_new, file=here('outputs', 'Figure1.jpg'), device="jpg", units="in", width=10.5, height=9.5, dpi=600, scale=0.93)
-ggsave(Fig1_new, file=here('outputs', 'Figure1.pdf'), device="pdf", units="in", width=10.5, height=9.5, dpi=600, scale=0.93)
 ```
 
 ## Figure 2
 
 ```{r fig2, include=FALSE}
-source(here::here('scripts', '01_AD_KS_Multiple_Testing_Correction.R'))
-source(here::here('scripts','Figure2.R'))
+source(here::here('scripts','analysis', '01_AD_KS_Multiple_Testing_Correction.R'))
+source(here::here('scripts','figures','Fig_2_fin.R'))
 
-print(f2)
 
-#ggsave(f2, file=here('outputs', 'Figure2_new.png'), device="png", units="in", width=12, height=9, dpi=600, scale=0.92)
+print(f2_small)
+
+ggsave(f2_small, file=here::here('outputs','final_figs_new', 'Figure2.pdf'), 
+        device="pdf", units="cm", width=11, height=10, dpi=600, scale=0.88)
+# ggsave(f2, file=here::here('outputs', 'Figure2.png'), 
+#        device="png", units="in", width=11, height=10, dpi=600, scale=0.88)
 ```
 
 ## Figure 3
@@ -550,8 +723,8 @@ source(here::here('scripts','Figure3.R'))
 
 print(f3)
 
-ggsave(f3, file=here('outputs','Figure3_2.png'), device="png", units="in", width=8, height=6, dpi=600, scale=1.1)
-ggsave(f3, file=here('outputs','Figure3_2.pdf'), device="pdf", units="in", width=8, height=6, dpi=600, scale=1.1)
+ggsave(f3, file=here('outputs','final_figs_new','Figure3_2.png'), device="png", units="in", width=8, height=6, dpi=600, scale=1.1)
+ggsave(f3, file=here('outputs','final_figs_new','Figure3_2.pdf'), device="pdf", units="in", width=8, height=6, dpi=600, scale=1.1)
 ```
 
 ## Figure 4
