@@ -99,7 +99,7 @@ createFig2  = function(df, stats, colors){
     axis.text.y = ggtext::element_markdown(),
     axis.ticks.x       = element_line(color = "black", size = 0.25),
     axis.ticks.length  = unit(1.2, "mm"),
-    axis.text.x        = element_text(size = 6)
+    axis.text.x        = element_text(size = 4)
   )
   
   # -------------------- Figure Code  --------------------
@@ -123,8 +123,8 @@ createFig2  = function(df, stats, colors){
     scale_fill_manual(values=colors)+
     scale_x_continuous(expand=c(0,0),limits=c(0,1), breaks=seq(0, 1, by=0.25), labels=c(0, 0.25, 0.5, 0.75, 1))+
     labs(y="", x="")+
-    theme(strip.text = ggtext::element_markdown(size=9, hjust=0.5, margin=margin(b=0), face="bold"),
-          axis.text.y =  element_text(angle=0, size=7, vjust=0.5, hjust=0, face="bold"),
+    theme(strip.text = ggtext::element_markdown(size=7, hjust=0.5, margin=margin(b=0), face="bold"),
+          axis.text.y =  element_text(angle=0, size=6, vjust=0.5, hjust=0, face="bold"),
          panel.spacing = unit(1, "lines"))
   
   # Create horizontal line
@@ -312,8 +312,8 @@ createFig2  = function(df, stats, colors){
   
   # Apply a small margin to each subplot:
   combined <- (p1 + hl + p2 + p3 + p4 + p5 + p7 +
-                 plot_layout(ncol = 1, heights = c(2, 0.1, 2, 2, 2, 4, 4), guides = "collect")) &
-    theme(plot.margin = margin(0, 5, 0, 5))
+                 plot_layout(ncol = 1, heights = c(2, 0.1, 2, 2, 2, 4, 5), guides = "collect")) &
+    theme(plot.margin = margin(0, 3, 0, 3))
   
   # Add an outer margin around the entire combined figure:
   fig <- combined + plot_annotation(theme = theme(plot.margin = margin(5, 0, 5, 0, unit = "pt")))
@@ -339,16 +339,17 @@ print(f2)
 # ─────────────────────────────────────────────────────────
 # 1. GLOBAL THEME  (fonts & spacing in points/mm)
 # ─────────────────────────────────────────────────────────
-font_base <- 6                           # master dial: smaller → everything shrinks
+font_base <- 5                           # master dial: smaller → everything shrinks
 theme_set(
   theme_minimal(base_size = font_base) +
     theme(
       axis.title       = element_text(size = font_base + 1),
-      axis.text        = element_text(size = font_base),
+      #axis.text        = element_text(size = font_base),
+      axis.text.x = element_text(size = font_base - 2),
       legend.title     = element_text(size = font_base + 1),
       legend.text      = element_text(size = font_base),
-      plot.title       = element_text(size = font_base + 4, face = "bold"),
-      plot.tag         = element_text(size = font_base + 3, face = "bold"),
+      plot.title       = element_text(size = font_base + 1, face = "bold"),
+      plot.tag         = element_text(size = font_base + 1, face = "bold"),
       strip.text       = element_text(size = font_base + 1, face = "bold"),
       strip.background = element_rect(fill = NA,   # no fill
                                       colour = NA),# no border
@@ -404,8 +405,8 @@ ggsave(
   file   = here::here("outputs", "final_figs_new", "Figure2.pdf"),
   device = "pdf",
   units  = "cm",
-  width  = 11,
-  height = 10,
+  width  = 7,
+  height = 6,
   dpi    = 600,
-  scale = 1.2 # vector PDF ignores dpi for text & lines
+  scale = 1.9 # vector PDF ignores dpi for text & lines
 )
