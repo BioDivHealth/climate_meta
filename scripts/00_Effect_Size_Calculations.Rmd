@@ -136,58 +136,61 @@ ci_to_sd <- function(ci_lower, ci_upper, n, conf_level = 0.95) {
 
 ```
 
-# Effect sizes
+# Helpers 
 
-### Odds ratizo
+```{r}
+# --- CI divisor helper (supports 90/95/99% CI & 'Credible' wording)
+ci_divisor <- function(err_label) {
+  if (is.na(err_label)) return(NA_real_)
+  lab <- tolower(err_label)
+  if (grepl("90%.*(ci|credible)", lab)) return(2*1.645)   # 3.29
+  if (grepl("95%.*(ci|confidence|credible)", lab)) return(2*1.96)   # 3.92
+  if (grepl("99%.*(ci|credible)", lab)) return(2*2.576)  # 5.152
+  NA_real_
+}
 
-```{r Effect sizes for Odds Ratio, include = TRUE}
 
-# # Subset data for Odds Ratio and 95% Confidence intervals
-# OR.1 <- subset(zooALL, Type %in% c("Odds ratio"))
-# OR <- subset(OR.1, Error %in% c("95% Confidence"))
-# 
-# # Change character columns to numeric
-# OR$Std._error <- as.numeric(OR$Std._error)
-# OR$Value <- as.numeric(OR$Value)
-# OR$N.value <- as.numeric(OR$N.value)
-# OR$Upper <- as.numeric(OR$Upper)
-# OR$Lower <- as.numeric(OR$Lower)
-# 
-# # Conversion from 95% Confidence interval to Standard error
-# OR$Std._error <- (OR$Upper - OR$Lower) / (2 * 1.96)
-# 
-# # Assign median N.value to missing data points
-# OR$N.value[is.na(OR$N.value)] <- median(OR$N.value, na.rm = TRUE)
-# 
-# # Calculate Hedge's g for each row
-# Hedge_OR <- do.call(rbind, lapply(1:nrow(OR), function(i) {
-#   convert_or2d(
-#     or = OR$Value[i], 
-#     se = OR$Std._error[i], 
-#     totaln = OR$N.value[i], 
-#     es.type = "g", 
-#     study = OR$study[i]
-#   )
-# }))
-# 
-# # Convert to a dataframe
-# Hedge_OR <- as.data.frame(Hedge_OR)
-# 
-# # Remove rows with missing standard error
-# Hedge_OR <- Hedge_OR[!is.na(Hedge_OR$se), ]
-# 
-# # Ensure 'study' is correctly formatted
-# Hedge_OR$study <- unlist(Hedge_OR$study)
-# 
-# # Join the original and Hedge's g dataframes by 'study'
-# OR_comp <- left_join(OR, Hedge_OR, by = "study")
-# 
-# # Plotting graph
-# OR_comp$es = unlist(OR_comp$es)
-# OR_comp$Value = unlist(OR_comp$Value)
+se_beta_from_error <- function(Error, Std_error, Upper, Lower) {
+  # flags
+  is_se  <- !is.na(Error) && grepl("^\\s*std\\.?\\s*error\\s*$", Error, ignore.case = TRUE)
+  is_sd  <- !is.na(Error) && grepl("^\\s*std\\.?\\s*dev\\s*$",   Error, ignore.case = TRUE)
+  is_var <- !is.na(Error) && grepl("variance",                   Error, ignore.case = TRUE)
+
+  # 1) explicit Std. error
+  if (is_se && !is.na(Std_error)) return(abs(Std_error))
+
+  # 2) labelled CI (90/95/99)
+  div <- ci_divisor(Error)
+  if (!is.na(div) && !is.na(Upper) && !is.na(Lower)) return(abs(Upper - Lower) / div)
+
+  # 2b) "Std. error" label but SE missing, bounds present -> assume 95% CI
+  if (is_se && is.na(Std_error) && !is.na(Upper) && !is.na(Lower))
+    return(abs(Upper - Lower) / 3.92)
+
+  # 2c)generic unlabeled-bounds fallback (assume 95% CI) when no SE and no CI label
+  if (is.na(div) && is.na(Std_error) && !is.na(Upper) && !is.na(Lower))
+    return(abs(Upper - Lower) / 3.92)
+
+  # 3) Std. dev (posterior SD) as SE, or ±1 SD bounds
+  if (is_sd && !is.na(Std_error)) return(abs(Std_error))
+  if (is_sd && is.na(Std_error) && !is.na(Upper) && !is.na(Lower)) return(abs(Upper - Lower) / 2)
+
+  # 4) (Unconditional) variance
+  if (is_var && !is.na(Std_error)) return(sqrt(abs(Std_error)))
+
+  # 5) Missing label but numeric Std._error
+  if (is.na(Error) && !is.na(Std_error)) return(abs(Std_error))
+
+  NA_real_
+}
+
+
 ```
 
-### ODDS RATIO NEW
+# Effect sizes
+
+
+### Odds ratio new
 
 ```{r}
 library(dplyr)
@@ -341,12 +344,6 @@ OR_comp_scatter <- OR_comp_scatter +
 print(OR_comp_scatter)
 ```
 
-### Beta coefficient
-
-```{r Effect sizes for Beta coefficient, include=TRUE, error=TRUE}
-
-```
-
 ### Beta coefficient standardised new
 
 ```{r}
@@ -431,43 +428,48 @@ Beta <- Z %>%
     fam   = method_family(Statistical_method)
   ) %>%
   # --- NEW: robust bound handling + SE reconstruction even when Error label is wrong/empty ---
+  # mutate(
+  #   # sort bounds; allow for mis-ordered or degenerate entries
+  #   hi   = ifelse(!is.na(Upper) & !is.na(Lower), pmax(Upper, Lower), NA_real_),
+  #   lo   = ifelse(!is.na(Upper) & !is.na(Lower), pmin(Upper, Lower), NA_real_),
+  #   width = ifelse(!is.na(hi) & !is.na(lo), hi - lo, NA_real_),
+  # 
+  #   # labelled CI divisors
+  #   ci_div_labeled = case_when(
+  #     !is.na(Error) & str_detect(Error, regex("90%.*(CI|Credible)",  ignore_case = TRUE)) ~ 3.29,   # 2*1.645
+  #     !is.na(Error) & str_detect(Error, regex("95%.*(CI|Confidence|Credible)", TRUE))     ~ 3.92,   # 2*1.96
+  #     !is.na(Error) & str_detect(Error, regex("99%.*(CI|Credible)", TRUE))                ~ 5.152,  # 2*2.576
+  #     TRUE ~ NA_real_
+  #   ),
+  # 
+  #   # SE from *labelled* CI (if present)
+  #   se_from_ci_labeled = ifelse(!is.na(width) & width > 0 & !is.na(ci_div_labeled),
+  #                               width / ci_div_labeled, NA_real_),
+  # 
+  #   # Fallback: SE from bounds even if label says "Std. error" or is missing
+  #   # Assumes 95% CI when bounds are present but label is not a CI.
+  #   se_from_bounds_default = ifelse(
+  #     !is.na(width) & width > 0 &
+  #     (is.na(ci_div_labeled)) & (is.na(Std._error) | Std._error <= 0),
+  #     width / 3.92,  # assume 95%
+  #     NA_real_
+  #   ),
+  # 
+  #   # One SE to use
+  #   SE_use = coalesce(Std._error, se_from_ci_labeled, se_from_bounds_default),
+  # 
+  #   # Where did SE come from? (useful for auditing rows 28–51)
+  #   se_source = case_when(
+  #     !is.na(Std._error) ~ "reported_se",
+  #     !is.na(se_from_ci_labeled) ~ "labeled_ci",
+  #     !is.na(se_from_bounds_default) ~ "assumed_95pc_from_bounds",
+  #     TRUE ~ NA_character_
+  #   )
+  # ) %>%
+  # --- SE(β*) unified from Error/Std._error/CI/Std. dev/variance ---
   mutate(
-    # sort bounds; allow for mis-ordered or degenerate entries
-    hi   = ifelse(!is.na(Upper) & !is.na(Lower), pmax(Upper, Lower), NA_real_),
-    lo   = ifelse(!is.na(Upper) & !is.na(Lower), pmin(Upper, Lower), NA_real_),
-    width = ifelse(!is.na(hi) & !is.na(lo), hi - lo, NA_real_),
-
-    # labelled CI divisors
-    ci_div_labeled = case_when(
-      !is.na(Error) & str_detect(Error, regex("90%.*(CI|Credible)",  ignore_case = TRUE)) ~ 3.29,   # 2*1.645
-      !is.na(Error) & str_detect(Error, regex("95%.*(CI|Confidence|Credible)", TRUE))     ~ 3.92,   # 2*1.96
-      !is.na(Error) & str_detect(Error, regex("99%.*(CI|Credible)", TRUE))                ~ 5.152,  # 2*2.576
-      TRUE ~ NA_real_
-    ),
-
-    # SE from *labelled* CI (if present)
-    se_from_ci_labeled = ifelse(!is.na(width) & width > 0 & !is.na(ci_div_labeled),
-                                width / ci_div_labeled, NA_real_),
-
-    # Fallback: SE from bounds even if label says "Std. error" or is missing
-    # Assumes 95% CI when bounds are present but label is not a CI.
-    se_from_bounds_default = ifelse(
-      !is.na(width) & width > 0 &
-      (is.na(ci_div_labeled)) & (is.na(Std._error) | Std._error <= 0),
-      width / 3.92,  # assume 95%
-      NA_real_
-    ),
-
-    # One SE to use
-    SE_use = coalesce(Std._error, se_from_ci_labeled, se_from_bounds_default),
-
-    # Where did SE come from? (useful for auditing rows 28–51)
-    se_source = case_when(
-      !is.na(Std._error) ~ "reported_se",
-      !is.na(se_from_ci_labeled) ~ "labeled_ci",
-      !is.na(se_from_bounds_default) ~ "assumed_95pc_from_bounds",
-      TRUE ~ NA_character_
-    )
+    SE_use_raw = mapply(se_beta_from_error, Error, Std._error, Upper, Lower),
+    SE_use     = ifelse(!is.na(SE_use_raw), abs(SE_use_raw), SE_use_raw)
   ) %>%
   # df: prefer residual df if store it; else default ≈ N - 2
   mutate(
@@ -512,13 +514,13 @@ Beta <- Z %>%
     var   = ifelse(!is.na(se), se^2, NA_real_),
     ci.lo = ifelse(!is.na(es) & !is.na(se), es - 1.96*se, NA_real_),
     ci.hi = ifelse(!is.na(es) & !is.na(se), es + 1.96*se, NA_real_),
-    r_est = r_raw, beta_star, fam, se_source
+    r_est = r_raw, beta_star, fam
   )
 
 # Join back to full table if you want the enriched columns alongside originals:
 Beta_comp_full <- Z %>% left_join(Beta, by = "rowid") 
 #View(Beta_comp_full %>% select(Value, N.value, Upper, Lower, Error, Std._error, es, se))
-Beta_comp = Beta_comp_full %>% select(-rowid,-r_est,-beta_star, -fam,-se_source) 
+Beta_comp = Beta_comp_full %>% select(-rowid,-r_est,-beta_star, -fam) 
 
 ```
 
@@ -567,57 +569,6 @@ print(Beta_comp_scatter)
 ```
 
 ### Unstandardized coefficients
-
-```{r Effect sizes for Unstandardised coefficients, include=TRUE}
-
-# # Subset data to include only correlation coefficients
-# B = zooALL %>% filter(Type == "Unstandardised coefficient")
-# #B = zooALL %>% filter(Type == "Correlation coefficient" | Type == "Unstandardised coefficient")
-# #B <- subset(zooALL, zooALL$Type %in% c("Correlation coefficient"))
-# B <- subset(B, !B$Statistical_method %in% c("Spearman rank correlation", "Pearson correlation"))
-# # Let's use gsub to remove "Pearson" and "Spearman" from the 'Statistical_method' column
-# B = B %>% filter(!grepl("Spearman", Statistical_method))
-# B = B %>% filter(!grepl("Pearson", Statistical_method))
-# # Remove rank correlations
-# 
-# # 95% Confidence interval conversion
-# B_95 <- subset(B, B$Error %in% c("95% Confidence", "95% Credible"))
-# B_95$Upper <- as.numeric(B_95$Upper) # Convert type to numeric
-# B_95$Lower <- as.numeric(B_95$Lower) # Convert type to numeric
-# B_95$N.value <- as.numeric(B_95$N.value) # Convert type to numeric
-# B$Std._error <- as.numeric(B$Std._error) # Convert type to numeric
-# B_95_sd <- as.data.frame((sqrt(B_95$N.value) * (B_95$Upper - B_95$Lower)) / 3.92) # Std. deviation from 95% CI
-# B_95 <- cbind(B_95, B_95_sd)
-# names(B_95)[names(B_95) == "(sqrt(B_95$N.value) * (B_95$Upper - B_95$Lower))/3.92"] <- "Std_dev"
-# 
-# # Standard error conversion
-# B_SE <- subset(B, B$Error %in% "Std. error") # Subset data to those with a SE
-# B_SE$Upper <- as.numeric(B_SE$Upper) # Convert type to numeric
-# B_SE$Lower <- as.numeric(B_SE$Lower) # Convert type to numeric
-# B_SE$N.value <- as.numeric(B_SE$N.value) # Convert type to numeric
-# B_SE$Std._error <- as.numeric(B_SE$Std._error) # Convert type to numeric
-# B_SE_sd <- as.data.frame(B_SE$Std._error * sqrt(B_SE$N.value)) # Std. deviation from Std. error
-# B_SE <- cbind(B_SE, B_SE_sd)
-# names(B_SE)[names(B_SE) == "B_SE$Std._error * sqrt(B_SE$N.value)"] <- "Std_dev"
-# 
-# # Calculate Hedge's G effect size
-# B_Stdev <- rbind(B_95, B_SE)
-# B_Stdev$N.value[is.na(B_Stdev$N.value)] <- mean(B_Stdev$N.value, na.rm = TRUE)
-# Hedge_B <- as.data.frame(esc_B(b = B_Stdev$Value, sdy = B_Stdev$Std_dev, grp1n = B_Stdev$N.value / 2, grp2n = B_Stdev$N.value / 2, es.type = "g", study = B_Stdev$study)) # Calculate Hedge's g
-# 
-# # Unit scaling and sanity checks
-# B_comp <- as.data.frame(left_join(B_Stdev, Hedge_B, by = "study"))
-# names(B_comp)[names(B_SE) == "Value"] <- "Correlation"
-# 
-# # Test for Standard error
-# B_test_se <- subset(B_comp, B_comp$Error %in% c("Std. error"))
-# B_test_se <- sample_n(B_test_se, 5)
-# 
-# B_test_se$Std._error <- as.numeric(B_test_se$Std._error)
-# B_test_se$N.value <- as.numeric(B_test_se$N.value)
-# B_test_se$Std_dev <- as.numeric(B_test_se$Std_dev)
-
-```
 
 #### Unstandardized coefficients NEW METHOD
 
@@ -687,7 +638,7 @@ B_corr <- B %>%
 ## ---------- B) UNSTANDARDISED REGRESSION (no SE? use CI / p / R²) ----------
 B_reg <- B %>%
   filter(Type %in% c("Unstandardised coefficient", "Correlation coefficient"),
-         !Statistical_method %in% correlation_methods) %>%
+         !Statistical_method %in% correlation_methods)  %>%
   mutate(
     beta        = suppressWarnings(as.numeric(Value)),
     Upper       = suppressWarnings(as.numeric(Upper)),
@@ -695,50 +646,27 @@ B_reg <- B %>%
     Std._error  = suppressWarnings(as.numeric(Std._error)),
     N.value     = suppressWarnings(as.numeric(N.value)),
     R.squared   = suppressWarnings(as.numeric(R.squared)),
-    # pick p from specific first, then general
+    # p-values: prefer specific, else general (use your parse_p_vec)
     p_spec_raw  = if ("P.value_specific" %in% names(.)) P.value_specific else NA,
     p_gen_raw   = if ("P.value_general"  %in% names(.)) P.value_general  else NA,
-    # vectorized parse to numeric in (0,1); "<…" becomes boundary, ">…" -> NA
     p_spec      = parse_p_vec(p_spec_raw),
     p_gen       = parse_p_vec(p_gen_raw),
-    # use SPECIFIC if available, else GENERAL
-    p_use       = dplyr::coalesce(p_spec, p_gen)
+    p_use       = dplyr::coalesce(p_spec, p_gen),
 
+    # *** unified SE for coefficient (covers "Std. error", "Std. dev", CI, variance) ***
+    SE_use_raw  = mapply(se_beta_from_error, Error, Std._error, Upper, Lower),
+    SE_use      = ifelse(!is.na(SE_use_raw), abs(SE_use_raw), SE_use_raw)
   ) %>%
-  # pick correct CI width divisor based on Error label
   mutate(
-    ci_div = case_when(
-      !is.na(Error) & str_detect(Error, regex("90%.*(CI|Credible)", ignore_case = TRUE)) ~ 3.29,   # 2*1.645
-      !is.na(Error) & str_detect(Error, regex("95%.*(CI|Confidence|Credible)", TRUE))    ~ 3.92,   # 2*1.96
-      !is.na(Error) & str_detect(Error, regex("99%.*(CI|Credible)", TRUE))               ~ 5.152,  # 2*2.576
-      TRUE ~ NA_real_
-    ),
-    se_from_ci = ifelse(!is.na(Upper) & !is.na(Lower) & !is.na(ci_div),
-                        (Upper - Lower) / ci_div, NA_real_),
-    SE_use     = coalesce(Std._error, se_from_ci)
-  ) %>%
-  # t from beta/SE, else from p-value (two-sided), using df ≈ N-2
-  mutate(
-    df_hat = ifelse(!is.na(N.value) & N.value > 2, N.value - 2, NA_real_),
+    df_hat    = ifelse(!is.na(N.value) & N.value > 2, N.value - 2, NA_real_),
     t_from_se = ifelse(!is.na(beta) & !is.na(SE_use) & SE_use > 0, beta / SE_use, NA_real_),
-    # if p is available, reconstruct |t|; sign from beta
-    t_from_p = ifelse(!is.na(p_use) & !is.na(df_hat) & p_use > 0 & p_use < 1,
-                  stats::qt(1 - p_use/2, df = df_hat), NA_real_),
-    t_from_p = ifelse(!is.na(t_from_p) & !is.na(beta), sign(beta) * t_from_p, t_from_p),
-    tval     = dplyr::coalesce(t_from_se, t_from_p)
+    t_from_p  = ifelse(!is.na(p_use) & !is.na(df_hat) & p_use > 0 & p_use < 1,
+                       stats::qt(1 - p_use/2, df = df_hat), NA_real_),
+    t_from_p  = ifelse(!is.na(t_from_p) & !is.na(beta), sign(beta) * t_from_p, t_from_p),
+    tval      = dplyr::coalesce(t_from_se, t_from_p),
+    r_raw     = ifelse(!is.na(tval) & !is.na(df_hat) & df_hat > 0,
+                       tval / sqrt(tval^2 + df_hat), NA_real_)
   ) %>%
-  # r from t, else (simple models only) from R^2
-  mutate(
-    r_from_t   = ifelse(!is.na(tval) & !is.na(df_hat) & df_hat > 0,
-                        tval / sqrt(tval^2 + df_hat), NA_real_),
-    # heuristic "simple model" flag — be conservative
-    simple_flag = grepl("simple|univariate|bivariate|correlation", 
-                        tolower(paste(Statistical_method, General_Stats_Method)), perl = TRUE),
-    r_from_R2  = ifelse(!is.na(R.squared) & R.squared >= 0 & R.squared <= 1 & simple_flag & !is.na(beta),
-                        sign(beta) * sqrt(R.squared), NA_real_),
-    r_raw      = coalesce(r_from_t, r_from_R2)
-  ) %>%
-  # g and se_g from r
   mutate(
     g    = hedges_from_r(r_raw, N.value)$g,
     se_g = hedges_from_r(r_raw, N.value)$se_g
@@ -1895,7 +1823,7 @@ final_plot <- plot_grid(
 print(final_plot)
 
 # Save the final plot
-ggsave(here('outputs','combined_plot_NEWDATA_A4_70percent_signif.png'), final_plot, width = 5.5, height = 6.7, units = "in", dpi = 300, scale = 1.7)
+ggsave(here('outputs','combined_plot_NEWDATA_A4_70percent_signif_17SEP.png'), final_plot, width = 5.5, height = 6.7, units = "in", dpi = 300, scale = 1.7)
 ```
 
 ```{r}

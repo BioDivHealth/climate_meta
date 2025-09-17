@@ -53,17 +53,17 @@ if (!require(metafor, quietly = TRUE)) {
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, include=FALSE)
 
 # load dataset
-df = read.csv(here('data','dataset_final.csv'))
+df = read.csv(here('data','dataset_final_g.csv'))
 
 # change vector names
-df = df%>%
-  mutate(Transmission_type = ifelse(Transmission_type == 'HVH', 'Vectored', 'Non-vectored'))
+#df = df%>%
+#  mutate(Transmission_type = ifelse(Transmission_type == 'HVH', 'Vectored', 'Non-vectored'))
 
 # add parasite group
-df = df%>%
-  mutate(Pathogen = ifelse(Pathogen == 'P', 'Parasite',
-                                ifelse(Pathogen == 'V', 'Virus',
-                                        'Bacteria')))
+#df = df%>%
+#  mutate(Pathogen = ifelse(Pathogen == 'P', 'Parasite',
+#                                ifelse(Pathogen == 'V', 'Virus',
+#                                        'Bacteria')))
 # keep only unique rows
 df = unique(df)
 ```
@@ -228,7 +228,7 @@ Out of the `r length(unique(df$Reference_ID))` source studies, `r sum(studies_wi
 Among these `r sum(studies_with_secondary$secondary)` studies with secondary reporting, `r sum(studies_with_secondary$any_significant[studies_with_secondary$secondary==TRUE])` (`r paste0(round(sum(studies_with_secondary$any_significant[studies_with_secondary$secondary==TRUE])/sum(studies_with_secondary$secondary),2)*100, "%")`) had at least one measure of zoonotic disease risk significant at the α=0.05 level, while `r sum(studies_with_secondary$two_or_more_significant[studies_with_secondary$secondary==TRUE])` (`r paste0(round(sum(studies_with_secondary$two_or_more_significant[studies_with_secondary$secondary==TRUE])/sum(studies_with_secondary$secondary),2)*100,"%")`) reported two or more significant measures of zoonotic risk at the α=0.05 level.
 
 ```{r}
-chi_overall <- read.csv(here('outputs', 'tables', 'TableS2_ChiSquare.csv'))
+chi_overall <- read.csv(here('outputs', 'tables_new', 'TableS3_ChiSquare.csv'))
 
 chi = df %>%
         filter(Direction != "") %>%
@@ -279,13 +279,13 @@ Overall, temperature appears to be the most consistent in terms of the direction
 ## Vector-borne zoonoses show the strongest and most consistent evidence for climate-sensitivity
 
 ```{r}
-source(here('scripts','01_AD_KS_tests.R'))
+source(here('scripts','analysis','01_AD_KS_Multiple_Testing_Correction.R'))
 # Creates: 
 # - results_df (for AD tests)
 # - es_summaries (for KS)
 # - pvals_ks (for KS)
 # - test_stats_ks (for KS)
-results_df
+results_df_corrected
 es_summaries
 pvals_ks
 test_stats_ks
@@ -329,10 +329,10 @@ Climate shifts were categorised using thresholds for temperature (1ºC, 1.5ºC, 
 # on the contingency tables describing the dominant climate change ranges for 
 # sites where disease climate sensitivity was reported. 
 
-dat = read.csv(here('data', 'es_climvars_proportions.csv'))
+dat = read.csv(here('data', 'es_climvars_proportions_new.csv'))
 
 # Produces `dat_results` table summarising test results. 
-source(here('scripts','03_Hedge_vs_ClimChange_Tests.R'))
+source(here('scripts','analysis','03_Hedge_vs_ClimChange_Tests.R'))
 print(dat_results)
 
 # Save the summary table.

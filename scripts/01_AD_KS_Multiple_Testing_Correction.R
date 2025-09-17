@@ -7,19 +7,21 @@ library(dplyr)
 library(here)
 library(magrittr)
 
-df = read.csv(here::here("data","dataset_final.csv"))
+df = read.csv(here::here("data","dataset_final_g.csv"))
 df = unique(df)
 set.seed(123)
-
+sort(table(df$Country))
+df$Country[df$Country == 'United States'] <- 'USA'
+df$Country[df$Country == 'United States of America'] <- 'USA'
 # Change vector names
-df = df%>%
-  mutate(Transmission_type = ifelse(Transmission_type == 'HVH', 'Vectored', 'Non-vectored'))
-
-# add parasite group
-df = df%>%
-  mutate(Pathogen = ifelse(Pathogen == 'P', 'Parasite',
-                           ifelse(Pathogen == 'V', 'Virus',
-                                  'Bacteria')))
+# df = df%>%
+#   mutate(Transmission_type = ifelse(Transmission_type == 'HVH', 'Vectored', 'Non-vectored'))
+# 
+# # add parasite group
+# df = df%>%
+#   mutate(Pathogen = ifelse(Pathogen == 'P', 'Parasite',
+#                            ifelse(Pathogen == 'V', 'Virus',
+#                                   'Bacteria')))
 
 df %<>% filter(!is.na(es))
 
@@ -96,10 +98,10 @@ categories = list(Transmission_type = c('Vectored', 'Non-vectored'),
                                           'Livestock', 'Birds'), 
                   Pathogen = c('Virus', 'Bacteria'), 
                   vector = c('Mosquito', 'Tick', 'Mite'),
-                  Country = c('China','Iran','USA','Argentina','India'),
+                  Country = c('China','Iran','USA','Argentina','India','Northern Arctic Region', 'Russia'),
                   Disease = c('Haemorrhagic fever with renal syndrome', 
                               'Brucellosis', 'Scrub typhus',
-                              'Leptospirosis', 'Japanese encephalitis'))
+                              'Leptospirosis', 'Japanese encephalitis','West Nile Virus'))
 
 
 ### AD Test: WITHOUT SUBSET REMOVAL ----------------------------------------------
@@ -196,9 +198,8 @@ results_df = results_df %>%
   tidyr::separate(id, into = c("Environmental_condition", "Category", "Group"), sep = "\\.")
 
 rownames(results_df) = NULL
-#write.csv(results_df, here('ignore','outputs','tables','TableS467_ADTests_SampleSizes_withCI.csv'), row.names = F)
+write.csv(results_df, here('outputs','tables_new','TableS467_ADTests_SampleSizes_withCI.csv'), row.names = F)
 
-results_df
 
 # -----------------------------------------------------------------------------------|
 # Correction for multiple testing - Bonferroni - 1 correction per climate factor -----
@@ -247,7 +248,7 @@ results_df_corrected %<>% relocate(
   .after = p_val
 )
 
-# write.csv(results_df_corrected, here('ignore','outputs','tables','TableS467_ADTests_MultipleTestingCorrected.csv'), row.names = F)
+write.csv(results_df_corrected, here('outputs','tables_new','TableS467_ADTests_MultipleTestingCorrected.csv'), row.names = F)
 
 # -----------------------------------------------------------------------------------|
 # KS Tests: Comparison of Vector and Non-vector borne disease ------------------
@@ -296,5 +297,5 @@ merged_data <- es_summaries %>%
 # Relocate env. condition as first column
 merged_data %<>% relocate(Environmental_condition, .before = Transmission_type)
 
-#write.csv(merged_data, here('ignore','outputs','tables','TableS5_KS_Tests_Full.csv'), row.names = F)
-#write.csv(ks_results, here('outputs', 'tables', 'TableS5_KS_Tests.csv'), row.names = FALSE)
+write.csv(merged_data, here('outputs','tables_new','TableS5_KS_Tests_Full.csv'), row.names = F)
+write.csv(ks_results, here('outputs', 'tables_new', 'TableS5_KS_Tests.csv'), row.names = FALSE)

@@ -18,7 +18,7 @@ library(gridExtra)
 # 1. Load data ------
 # Load the dataframe with calculated climate data and dominant climate change categories.
 
-dat = read.csv(here('data', 'es_climvars_proportions.csv'))
+dat = read.csv(here('data', 'es_climvars_proportions_new.csv'))
 
 # Ensure 'es_cat' is a factor with ordered levels
 dat <- dat %>%
@@ -326,4 +326,4 @@ dat_results$test_type[dat_results$test_type=="Fisher's Exact Test"] = "Fisher's 
 
 # Edit column names
 names(dat_results) = c("list_name", "TestType", "ClimVar", "MeanPVal", "PVal.CI.Lo", "PVal.CI.Up", "PropPValSignif", "MeanStat", "StatCI.Lo","StatCI.Up")
-
+#write_csv(dat_results, here('outputs','tables_new','TableS8_climvars_hedge_tests.csv'))

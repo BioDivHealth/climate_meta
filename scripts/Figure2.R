@@ -5,7 +5,7 @@ library(ggplot2)
 library(dplyr)
 library(patchwork)
 
-df = read.csv(here::here("data","dataset_final.csv"))
+df = read.csv(here::here("data","dataset_final_g.csv"))
 df = unique(df) #ensure all rows are unique
 
 df %<>% filter(!is.na(es))
@@ -15,15 +15,15 @@ df = df%>%
                          ifelse(abs(es) < 0.2, 'No effect', # otherwise negative
                                 'Positive effect (g > 0.2)')) # or positive
   )
-
-# change vector names
-df = df%>%
-  mutate(Transmission_type = ifelse(Transmission_type == 'HVH', 'Vectored', 'Non-vectored'))
-
-df = df%>%
-  mutate(Pathogen = ifelse(Pathogen == 'P', 'Parasite',
-                           ifelse(Pathogen == 'V', 'Virus',
-                                  'Bacteria')))
+# 
+# # change vector names
+# df = df%>%
+#   mutate(Transmission_type = ifelse(Transmission_type == 'HVH', 'Vectored', 'Non-vectored'))
+# 
+# df = df%>%
+#   mutate(Pathogen = ifelse(Pathogen == 'P', 'Parasite',
+#                            ifelse(Pathogen == 'V', 'Virus',
+#                                   'Bacteria')))
 
 createFig2  = function(df, stats, colors){
   # -------------------- Format data --------------------

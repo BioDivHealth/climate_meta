@@ -18,8 +18,13 @@ knitr::opts_chunk$set(echo = FALSE)
 
 # load dataset
 df = read.csv(here::here("data","dataset_final_g.csv"))
+old = read.csv(here::here("data","dataset_final.csv"))
 df = unique(df) #ensure all rows are unique
 
+# Keep new records:
+df = df %>% filter(!Reference_ID %in% c("118", "164", "214"))
+
+# 118, 164, 214
 # change vector names
 #df = df%>%
 #  mutate(Transmission_type = ifelse(Transmission_type == 'HVH', 'Vectored', 'Non-vectored'))
@@ -133,6 +138,7 @@ df%>%
 **Linear vs Non-linear**
 
 ```{r lnl}
+df$Linear_Nonlinear[df$Linear_Nonlinear=="Nonlinear"] = "Non-linear"
 df%>%
   group_by(Linear_Nonlinear) %>%
   summarise(N = n_distinct(Reference_ID)) %>%#
@@ -144,6 +150,16 @@ df%>%
 **Statistical Method**
 
 ```{r statsmeth2}
+
+
+tmp = old%>%
+  group_by(General_Stats_Method) %>%
+  summarise(N = n_distinct(Reference_ID)) %>%#
+  mutate(P = N/sum(N))%>%
+  arrange(desc(N)) 
+
+print(tmp, n = length(tmp$N))
+
 tmp = df%>%
   group_by(General_Stats_Method) %>%
   summarise(N = n_distinct(Reference_ID)) %>%#
@@ -165,6 +181,42 @@ tmp = df%>%
 print(tmp, n = length(tmp$N))
 
 ```
+
+**Study periods**
+
+```{r statsmeth}
+library(dplyr)
+library(stringr)
+library(purrr)
+
+# helper that counts unique years covered by a Study_period string
+count_years <- function(x) {
+  if (is.na(x) || x == "") return(NA_integer_)
+  # normalise en/em/minus dashes to hyphen
+  x <- str_replace_all(x, "[\u2012-\u2015\u2212]", "-")
+  # split on comma/semicolon into segments
+  segs <- unlist(strsplit(x, "\\s*[,;]\\s*"))
+  yrvec <- lapply(segs, function(s) {
+    ys <- str_extract_all(s, "\\d{4}")[[1]] |> as.integer()
+    if (length(ys) == 0) return(integer(0))     # no year found
+    if (length(ys) == 1) return(ys[1]:ys[1])    # single-year segment
+    ys[1]:ys[2]                                  # inclusive range
+  }) |> unlist()
+  if (length(yrvec) == 0) return(NA_integer_)
+  length(unique(yrvec))
+}
+
+result <- df %>%
+  select(Reference_ID, Study_period) %>%
+  distinct() %>%
+  mutate(years_included = map_int(Study_period, count_years))
+
+result %<>% filter(!is.na(years_included))
+
+summary(result$years_included)
+```
+
+
 
 # Results Section 2: General findings
 
@@ -493,12 +545,13 @@ journals <- df |>
 safe_oa <- function(nm) tryCatch(oa_sources_search(nm), error = function(e) tibble())
 oa_tbl  <- do.call(bind_rows, lapply(journals, safe_oa))
 
-df_with_metrics <- df |> left_join(oa_tbl, by = "Journal_std")
-View(df_with_metrics %>% select(Journal_std, oa_2yr_mean_citedness, oa_h_index, Journal_5yr_Impact_merged) %>% distinct())
+df <- df |> left_join(oa_tbl, by = "Journal_std")
+View(df %>% select(Journal_std, oa_2yr_mean_citedness, oa_h_index, Journal_5yr_Impact_merged) %>% distinct())
 
 ```
 
 ```{r eggers_tests}
+library(metafor)
 
 f1 <- df %>% filter(!is.na(se) & !is.na(es))
 f2 <- df %>% filter(!is.na(se) & !is.na(es)) %>% filter(Environmental_condition == "Temperature")
@@ -554,17 +607,17 @@ library(dplyr)
 # ES VS IF ---
 
 ## Prepare data
-pub1 = df %>% filter(!is.na(es) & !is.na(Journal_5yr_Impact))
-pub1 %<>% dplyr::select(es, Journal_5yr_Impact, Environmental_condition)
+pub1 = df %>% filter(!is.na(es) & !is.na(oa_2yr_mean_citedness))
+pub1 %<>% dplyr::select(es, oa_2yr_mean_citedness, Environmental_condition)
 dat_pub1 = pub1
 dat_pub1$es = abs(dat_pub1$es)
 
 ## Perform Shapiro-Wilk test for normality ----
 print(shapiro.test(abs(dat_pub1$es)))
-print(shapiro.test((dat_pub1$Journal_5yr_Impact)))
+print(shapiro.test((dat_pub1$oa_2yr_mean_citedness)))
 
 # Do correlation test for all data points
-spearman_corr <- cor.test(dat_pub1$Journal_5yr_Impact, 
+spearman_corr <- cor.test(dat_pub1$oa_2yr_mean_citedness, 
                           abs(dat_pub1$es), 
                           method = "spearman", 
                           exact = FALSE)
@@ -573,24 +626,24 @@ print(spearman_corr)
 ## Check outliers-------------
 # IF 
 # Calculate IQR
-Q1 <- quantile(dat_pub1$Journal_5yr_Impact, 0.25)
-Q3 <- quantile(dat_pub1$Journal_5yr_Impact, 0.75)
+Q1 <- quantile(dat_pub1$oa_2yr_mean_citedness, 0.25)
+Q3 <- quantile(dat_pub1$oa_2yr_mean_citedness, 0.75)
 IQR <- Q3 - Q1
 
 # Check outliers using IQR
 lower_bound <- Q1 - 1.5 * IQR
 upper_bound <- Q3 + 1.5 * IQR
-iqr_outliers <- dat_pub1 %>% filter(Journal_5yr_Impact < lower_bound |
-                                     Journal_5yr_Impact > upper_bound)
+iqr_outliers <- dat_pub1 %>% filter(oa_2yr_mean_citedness < lower_bound |
+                                     oa_2yr_mean_citedness > upper_bound)
 # Print the number of outliers among Impact Factors
 cat("Number of outliers detected by IQR method:", nrow(iqr_outliers), "\n")
 
 # Print the outliers detected
 cat("Outliers detected by IQR method:\n")
-print(unique(iqr_outliers$Journal_5yr_Impact))
+print(unique(iqr_outliers$oa_2yr_mean_citedness))
 
 # Remove outliers
-dat_pub1 %<>% filter(!Journal_5yr_Impact %in% unique(iqr_outliers1$Journal_5yr_Impact))
+dat_pub1 %<>% filter(!oa_2yr_mean_citedness %in% unique(iqr_outliers$oa_2yr_mean_citedness))
 
 # ES ! ----
 # Calculate IQR
@@ -614,7 +667,7 @@ dat_pub1 %<>% filter(!es %in% unique(iqr_outliers1$es))
 
 # Calculate Spearman's rank correlation --
 
-spearman_corr <- cor.test(dat_pub1$Journal_5yr_Impact, 
+spearman_corr <- cor.test(dat_pub1$oa_2yr_mean_citedness, 
                           abs(dat_pub1$es), 
                           method = "spearman", 
                           exact = FALSE)
@@ -626,48 +679,49 @@ print(spearman_corr)
 ```{r}
 # p-VALUE VS IF ------------------------------------------------
 ## Prepare data
-pub2 = df %>% filter(!is.na(P.value_specific) & !is.na(Journal_5yr_Impact))
-pub2 %<>% dplyr::select(P.value_specific, Journal_5yr_Impact, Environmental_condition)
+pub2 = df %>% filter(!is.na(P.value_specific) & !is.na(oa_2yr_mean_citedness))
+pub2 %<>% dplyr::select(P.value_specific, oa_2yr_mean_citedness, Environmental_condition)
 dat_pub2 = pub2
+dat_pub2$P.value_specific = as.numeric(dat_pub2$P.value_specific)
 dat_pub2$P.value_specific = abs(dat_pub2$P.value_specific)
 
 # Perform Shapiro-Wilk test for normality
 shapiro_test_es <- shapiro.test((dat_pub2$P.value_specific))
-shapiro_test_impact <- shapiro.test(dat_pub2$Journal_5yr_Impact)
+shapiro_test_impact <- shapiro.test(dat_pub2$oa_2yr_mean_citedness)
 
 # Print the Shapiro-Wilk test results
 print(shapiro_test_es)
 print(shapiro_test_impact)
 
 # Calculate Spearman's rank correlation with outliers
-spearman_corr <- cor.test(dat_pub2$P.value_specific, dat_pub2$Journal_5yr_Impact, method = "spearman", exact = FALSE)
+spearman_corr <- cor.test(dat_pub2$P.value_specific, dat_pub2$oa_2yr_mean_citedness, method = "spearman", exact = FALSE)
 print(spearman_corr)
 
 ## Check outliers ---------------------------------------------
 # IF ! ----|
 # Calculate IQR
-Q1 <- quantile(dat_pub2$Journal_5yr_Impact, 0.25)
-Q3 <- quantile(dat_pub2$Journal_5yr_Impact, 0.75)
+Q1 <- quantile(dat_pub2$oa_2yr_mean_citedness, 0.25)
+Q3 <- quantile(dat_pub2$oa_2yr_mean_citedness, 0.75)
 IQR <- Q3 - Q1
 
 # Check outliers using IQR
 lower_bound <- Q1 - 1.5 * IQR
 upper_bound <- Q3 + 1.5 * IQR
-iqr_outliers2 <- dat_pub2 %>% filter(Journal_5yr_Impact < lower_bound | Journal_5yr_Impact > upper_bound)
+iqr_outliers2 <- dat_pub2 %>% filter(oa_2yr_mean_citedness < lower_bound | oa_2yr_mean_citedness > upper_bound)
 
 # Print the number of outliers
 cat("Number of outliers detected by IQR method:", nrow(iqr_outliers2), "\n")
 
 # Print the outliers detected
 cat("Outliers detected by IQR method:\n")
-print(unique(iqr_outliers2$Journal_5yr_Impact))
+print(unique(iqr_outliers2$oa_2yr_mean_citedness))
 
-dat_pub2 %<>% filter(!Journal_5yr_Impact %in% unique(iqr_outliers2$Journal_5yr_Impact))
+dat_pub2 %<>% filter(!oa_2yr_mean_citedness %in% unique(iqr_outliers2$oa_2yr_mean_citedness))
 
 # P.value_specific ! ----|
 # Calculate IQR
-Q1 <- quantile(dat_pub2$P.value_specific, 0.25)
-Q3 <- quantile(dat_pub2$P.value_specific, 0.75)
+Q1 <- quantile(dat_pub2$P.value_specific, 0.25, na.rm = TRUE)
+Q3 <- quantile(dat_pub2$P.value_specific, 0.75, na.rm = TRUE)
 IQR <- Q3 - Q1
 
 # Check outliers using IQR
@@ -685,7 +739,7 @@ print(unique(iqr_outliers2$P.value_specific))
 dat_pub2 %<>% filter(!P.value_specific %in% unique(iqr_outliers2$P.value_specific))
 
 # Calculate Spearman's rank correlation without outliers
-spearman_corr <- cor.test(dat_pub2$P.value_specific, dat_pub2$Journal_5yr_Impact, method = "spearman", exact = FALSE)
+spearman_corr <- cor.test(dat_pub2$P.value_specific, dat_pub2$oa_2yr_mean_citedness, method = "spearman", exact = FALSE)
 print(spearman_corr)
 ```
 
@@ -710,8 +764,8 @@ source(here::here('scripts','figures','Fig_2_fin.R'))
 
 print(f2_small)
 
-ggsave(f2_small, file=here::here('outputs','final_figs_new', 'Figure2.pdf'), 
-        device="pdf", units="cm", width=11, height=10, dpi=600, scale=0.88)
+# ggsave(f2_small, file=here::here('outputs','final_figs_new', 'Figure2.pdf'), 
+#         device="pdf", units="cm", width=11, height=10, dpi=600, scale=0.88)
 # ggsave(f2, file=here::here('outputs', 'Figure2.png'), 
 #        device="png", units="in", width=11, height=10, dpi=600, scale=0.88)
 ```
@@ -719,23 +773,23 @@ ggsave(f2_small, file=here::here('outputs','final_figs_new', 'Figure2.pdf'),
 ## Figure 3
 
 ```{r fig3, echo=FALSE}
-source(here::here('scripts','Figure3.R'))
+source(here::here('scripts','figures','Figure_3_Combined.R'))
 
-print(f3)
+print(s3)
 
-ggsave(f3, file=here('outputs','final_figs_new','Figure3_2.png'), device="png", units="in", width=8, height=6, dpi=600, scale=1.1)
-ggsave(f3, file=here('outputs','final_figs_new','Figure3_2.pdf'), device="pdf", units="in", width=8, height=6, dpi=600, scale=1.1)
+# ggsave(s3, file=here('outputs','final_figs_new','Figure3_2.png'), device="png", units="in", width=8, height=6, dpi=600, scale=1.1)
+# ggsave(s3, file=here('outputs','final_figs_new','Figure3_2.pdf'), device="pdf", units="in", width=8, height=6, dpi=600, scale=1.1)
 ```
 
 ## Figure 4
 
 ```{r fig4, echo=FALSE}
-source(here::here('scripts','Figure4.R'))
-
-print(f4)
-
-#ggsave(f4, file=here('outputs','Figure4.png'), device="png", units="in", width=8, height=6, dpi=300, scale=1.25)
-ggsave(f4, file=here('outputs','Figure4.pdf'), device="pdf", units="in", width=8, height=6, dpi=600, scale=1.25)
+# source(here::here('scripts','Figure4.R'))
+# 
+# print(f4)
+# 
+# #ggsave(f4, file=here('outputs','Figure4.png'), device="png", units="in", width=8, height=6, dpi=300, scale=1.25)
+# ggsave(f4, file=here('outputs','Figure4.pdf'), device="pdf", units="in", width=8, height=6, dpi=600, scale=1.25)
 ```
 
 # Supplementary figures
@@ -743,12 +797,15 @@ ggsave(f4, file=here('outputs','Figure4.pdf'), device="pdf", units="in", width=8
 ## Figure S2: Impact Factors
 
 ```{r FigS2}
-source(here::here('scripts','FigureS2.R'))
+source(here::here('scripts','figures','FigureS2.R'))
 
 
 FS2 <- (p3 / plot_spacer() /p3_rm) + plot_layout(heights = c(1,0.05,1))
+FS2a <- (p3 / plot_spacer() /p3_both) + plot_layout(heights = c(1,0.05,1))
+FS2_b <- (p3 / plot_spacer() /p3_rm / plot_spacer() / p3_both) + plot_layout(heights = c(1,0.05,1, 0.05, 1))
 
-ggsave(FS2, file=here('outputs','FigureS2.pdf'), device="pdf", 
+
+ggsave(FS2a, file=here('outputs','final_figs_new','FigureS2.pdf'), device="pdf", 
        units="in", width=9, height=8, dpi=1000, scale=1.1)
 
 #ggsave(p3, file=here('outputs','FigureS2_AB.png'), device="png", units="in", width=9.3, height=4, dpi=1000, scale=1)
@@ -759,12 +816,12 @@ ggsave(FS2, file=here('outputs','FigureS2.pdf'), device="pdf",
 
 ```{r FigS3}
 
-source(here::here('scripts','FigureS3.R'))
+source(here::here('scripts','figures','FigureS3.R'))
 
 print(s3)
 
 #ggsave(s3, file=here('outputs','FigureS3.png'), device="png", units="in", width=8.5, height=5, dpi=1000, scale=1)
-ggsave(s3, file=here('outputs','FigureS3.pdf'), device="pdf", units="in", width=7.5, height=5, dpi=1000, scale=1.2)
+ggsave(s3, file=here('outputs','final_figs_new','FigureS3.pdf'), device="pdf", units="in", width=7.5, height=5, dpi=1000, scale=1.2)
 ```
 
 ## Figure S4: p-val distribution
@@ -775,7 +832,7 @@ source(here::here('scripts','FigureS4.R'))
 print(combined_plot_s4)
 
 #ggsave(combined_plot_s4, file="outputs/FigureS4.png", device="png", units="in", width=6.3, height=3.8, dpi=1000, scale=0.95)
-ggsave(combined_plot_s4, file=here('outputs','FigureS4.pdf'), device="pdf", units="in", width=6.3, height=3.8, dpi=1000, scale=1.1)
+# ggsave(combined_plot_s4, file=here('outputs','final_figs_new','FigureS4.pdf'), device="pdf", units="in", width=6.3, height=3.8, dpi=1000, scale=1.1)
 ```
 
 ## Figure S5: Original vs transformed stats
@@ -787,8 +844,8 @@ print(plot_s5)
 
 #ggsave(here::here('outputs','FigureS5_new.png'), plot_s5, width = 5.5, height = 6.7, units = "in", dpi = 300, scale = 1.7)
 
-ggsave(here::here('outputs','FigureS5.pdf'), plot_s5, device = "pdf",
-       width = 5.5, height = 6.7, units = "in", dpi = 600, scale = 1.7)
+ggsave(here::here('outputs','final_figs_new','FigureS5.pdf'), plot_s5, device = "pdf",
+       width = 5.5, height = 6.7, units = "in", dpi = 600, scale = 1.9)
 ```
 
 ## Figure S6: Hedge's g categories vs climate change ranges

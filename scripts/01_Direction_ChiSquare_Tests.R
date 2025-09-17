@@ -13,19 +13,19 @@ library(tidyverse)
 
 # Load files
 
-df = read.csv(here::here("data","dataset_final.csv"))
+df = read.csv(here::here("data","dataset_final_g.csv"))
 df = unique(df) #ensure all rows are unique
 
 # Change vector names
-df = df%>%
-  mutate(Transmission_type = ifelse(Transmission_type == 'HVH', 'Vectored',
-                                    'Non-vectored'))
-
-# Add parasite group
-df = df%>%
-  mutate(Pathogen = ifelse(Pathogen == 'P', 'Parasite',
-                           ifelse(Pathogen == 'V', 'Virus',
-                                  'Bacteria')))
+# df = df%>%
+#   mutate(Transmission_type = ifelse(Transmission_type == 'HVH', 'Vectored',
+#                                     'Non-vectored'))
+# 
+# # Add parasite group
+# df = df%>%
+#   mutate(Pathogen = ifelse(Pathogen == 'P', 'Parasite',
+#                            ifelse(Pathogen == 'V', 'Virus',
+#                                   'Bacteria')))
 
 # ----------------------------------------------------------------|
 # Section 2: Define Helper Functions ----
@@ -342,12 +342,14 @@ chi_all <- list_of_dfs[["Overall"]] %>%
     )
   )
 
+print(chi_all)
+
 # 4.3 Export Overall Results to CSV
- # write.csv(
- #   as.data.frame(chi_all),
- #   'outputs/tables/TableS3_ChiSquare.csv',
- #   row.names = FALSE
- # )
+  write.csv(
+    as.data.frame(chi_all),
+    here('outputs','tables_new','TableS3_ChiSquare'),
+    row.names = FALSE
+  )
 
 # 4.4 Export Additional Environmental Condition Results (Uncomment as Needed)
 # write.csv(as.data.frame(list_of_dfs[["Temperature"]]), 'outputs/tables/chisq_results_temperature2.csv', row.names = FALSE)
