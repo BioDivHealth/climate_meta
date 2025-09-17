@@ -6,10 +6,11 @@ library(dplyr)
 library(cowplot)
 
 # Filter and unify P-values
-df = read.csv(here::here("data","dataset_final.csv"))
+df = read.csv(here::here("data","dataset_final_g.csv"))
 df = unique(df) #ensure all rows are unique
 
-tmp = df %>% filter(P.value_general != "")
+tmp = df
+tmp$P.value_specific = as.numeric((tmp$P.value_specific))
 
 # Filter specific P-values for the plots
 tmp1 = tmp %>% filter(!is.na(P.value_specific)) %>% filter(P.value_specific <= 0.07 & P.value_specific >= 0.03)
@@ -49,3 +50,7 @@ combined_plot_s4 <- ggdraw() +
   draw_plot_label(label = "Zoomed-in view", x = 0.55, y = 0.925, size = 9)
 
 print(combined_plot_s4)
+
+ggsave(combined_plot_s4, 
+       file=here('outputs','final_figs_new','FigureS4.pdf'), 
+       device="pdf", units="in", width=6.3, height=3.8, dpi=1000, scale=1.1)
