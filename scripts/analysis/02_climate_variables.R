@@ -1,12 +1,70 @@
 # Dependencies ------------------------------------------------------------
 library(tidyverse)  
+library(dplyr)
 library(here)       
 library(sp)         
 library(terra)    
+library(magrittr)
+library(rlang)
 
 # Set Up Data --------------------------------------------------------------
 # Load datasets
-dat <- read.csv(here('data', 'dataset_final.csv'))
+dat <- read.csv(here('data', 'dataset_final_g.csv'))
+dat %<>% select(-X, -Y) 
+lw = read.csv(here('data','lewis_dataset','lewis_data.csv'))
+lw = unique(lw)
+
+# dat$X = as.numeric(dat$Longitude)
+# dat$Y = as.numeric(dat$Latitude_)
+
+# reads in extra CSV of country centroid geolocations for ones where finer scale not available
+locs_extra = read.csv(here('data', 'rory_annotations', 'geoloc_harm.csv'))
+
+ll = dat
+
+# ADD COORDINATEs --------------------------------------------------------
+
+## Map new --------------
+ll %<>% dplyr::mutate(
+  Longitude = as.numeric(Longitude), Latitude_ = as.numeric(Latitude_)
+) 
+no_coord = ll %>% dplyr::mutate(
+  Longitude = as.numeric(Longitude), Latitude_ = as.numeric(Latitude_)
+)  %>% filter(is.na(Longitude) | is.na(Latitude_))
+
+l4 = lw %>%
+  dplyr::select(-Longitude, -Latitude_) %>%
+  dplyr::left_join(
+    locs_extra
+  ) %>%
+  dplyr::mutate(
+    Longitude = as.numeric(Longitude), Latitude_ = as.numeric(Latitude_))
+
+l4 = unique(l4)
+dim(l4)
+
+for (i in no_coord$Data_ID){
+    if (i %in% l4$Data_ID){
+    if((unique(is.na(no_coord$Longitude[no_coord$Data_ID==i])) | unique(is.na(no_coord$Latitude_[no_coord$Data_ID==i])))){
+      print(i)
+      if(unique(!is.na(l4$Latitude_)[l4$Data_ID==i]) & unique(!is.na(l4$Longitude)[l4$Data_ID==i])){
+        no_coord$Latitude_[no_coord$Data_ID==i] = l4$Latitude_[l4$Data_ID==i]
+        no_coord$Longitude[no_coord$Data_ID==i] = l4$Longitude[l4$Data_ID==i]
+      }
+    }
+  }
+}
+
+coord = ll %>% filter(!(is.na(Longitude) | is.na(Latitude_)))
+new_coord = rbind(coord, no_coord)
+
+new_coord$X = new_coord$Longitude
+new_coord$Y = new_coord$Latitude_
+
+dat = dat %>% left_join(new_coord %>% select(row_unique, X, Y), by="row_unique")
+# ------------------------------------------------------------------------------
+
+View(dat %>% select(Reference_ID,Latitude_, Longitude, X, Y, measure))
 
 # Filter out rows with missing coordinates
 dat %<>% filter(!is.na(X) & !is.na(Y))
@@ -18,7 +76,7 @@ xy <- sp::SpatialPointsDataFrame(
 )
 
 # Define the path to the raster file
-path <- "/Users/arturtrebski/chelsa_cmip6/1981-2010/CHELSA_bio1_1981-2010_V.2.1.tif"
+path <- "/Volumes/LaCie/pnas_climate_paper/1981-2010/bio/CHELSA_bio1_1981-2010_V.2.1.tif"
 
 # Load the raster file
 raster_file <- rast(path)
@@ -31,7 +89,7 @@ crs(xy_terra) <- crs(raster_file)
 
 # Extract Climate Data -----------------------------------------------------
 # Define the folder containing .tif files
-folder_path <- "/Users/arturtrebski/chelsa_cmip6"
+folder_path <- "/Volumes/LaCie/pnas_climate_paper"
 
 # List all .tif files in the directory and its subdirectories
 tif_files <- list.files(
@@ -53,7 +111,7 @@ for (i in seq_along(tif_files)) {
   raster_file <- rast(tif_files[i])
   
   # Extract raster values at the spatial points
-  extracted_values <- extract(raster_file, xy_terra)
+  extracted_values <- terra::extract(raster_file, xy_terra)
   
   # Store only the extracted values (second column) without file names
   extracted_data[[i + 1]] <- extracted_values[, 2]
@@ -86,11 +144,11 @@ dat %<>% left_join(extracted_df, by = "row_unique") %>%
   relocate(row_unique, .before = Reference_ID)
 
 # Save the dataset with climate variables (optional)
-# write.csv(dat, here('data', 'dataset_with_climatologies.csv'), row.names = FALSE)
+write.csv(dat, here('data', 'dataset_with_climatologies_new.csv'), row.names = FALSE)
 
 # Calculate Differences Between Baseline and Future ---------------------------
 # Load the dataset with climatologies
-extracted_df <- read.csv(here('data', 'dataset_with_climatologies.csv'))
+extracted_df <- read.csv(here('data', 'dataset_with_climatologies_new.csv'))
 
 # Identify the names of all bio1 and bio12 future columns using regex
 future_bio1_cols <- grep("bio1\\.2041\\.2070", names(extracted_df), value = TRUE)
@@ -328,4 +386,4 @@ calculated_differences %<>%
 
 # Save the Final Dataset ----------------------------------------------------
 # Export the calculated differences with classifications to a CSV file
-write.csv(calculated_differences, here('data', 'es_climvars_proportions.csv'), row.names = FALSE)
+write.csv(calculated_differences, here('data', 'es_climvars_proportions_new.csv'), row.names = FALSE)
