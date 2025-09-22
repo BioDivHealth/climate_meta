@@ -19,7 +19,6 @@ smooth_method = "lm"
 pub1 = df %>% filter(!is.na(es) & !is.na(oa_2yr_mean_citedness))
 pub1 %<>% dplyr::select(es, oa_2yr_mean_citedness, Environmental_condition)
 dat_pub1 = pub1
-dat_pub1 %<>% filter(es < 5.5)
 #dat_pub1$es = abs(dat_pub1$es)
 
 # Choose colours

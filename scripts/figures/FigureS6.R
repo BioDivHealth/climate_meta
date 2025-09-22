@@ -22,7 +22,7 @@ tmp <- tmp %>%
                          levels = c('Negative effect (g < -0.2)', 'Positive effect (g > 0.2)'),
                          ordered = TRUE))
 
-base_font = 4
+base_font = 5
 
 tmp %<>% filter(es_cat!="No effect")
 
@@ -250,7 +250,7 @@ plot_temp = plot_temp + guides(fill = guide_colorbar(
                                                         axis.title.y = element_text(size = base_font+1),
                                                         axis.title.x = element_text(size = base_font+1),
                                                         legend.title = element_text(size = 3, face = "bold"),
-                                                        legend.text  = element_text(size = 3))
+                                                        legend.text  = element_text(size = 4))
 
 plot_temp
 plot_prec = draw_facet_heatmap_prec(df_prec, column_names_prec, titles_prec)
@@ -263,7 +263,7 @@ plot_prec = plot_prec + guides(fill = guide_colorbar(
                                                     axis.title.y = element_text(size = base_font+1),
                                                     axis.title.x = element_text(size = base_font+1),
                                                     legend.title = element_text(size = 3, face = "bold"),
-                                                    legend.text  = element_text(size = 3))
+                                                    legend.text  = element_text(size = 4))
 
 
 library(gridExtra)
@@ -274,4 +274,4 @@ combined_plot_S6 <- plot_temp /  plot_prec +
                                                                     #         legend.text  = element_text(size = 5))  # Add spacer in the middle and adjust heights
 
 print(combined_plot_S6)
-ggsave(combined_plot_S6, file=here('outputs', 'final_figs_new', 'Figure_4_new.pdf'), device="pdf", units="cm", width=10, height=7, dpi=1000, scale=1)
+ggsave(combined_plot_S6, file=here('outputs', 'final_figs_new', 'Figure_4_new.pdf'), device="pdf", units="cm", width=10, height=7, dpi=1000, scale=1.2)

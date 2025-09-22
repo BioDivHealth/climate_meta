@@ -221,7 +221,7 @@ build_A2_ridges_disease <- function(dd) {
       plot.tag = element_text(face = "bold"),
       strip.text = element_blank(),
       axis.title.x = ggtext::element_markdown(margin = margin(t = 2))
-    )
+    ) + labs(tag = "B")
 }
 
 
@@ -251,7 +251,7 @@ build_B1_snake_transmission <- function(dd, band_height = 20, gap = 5) {
     # ---- FIXED: give x and y explicitly ----
     geom_text(data = band_map,
             aes(x = es, y = esrank, label = lab),
-            color = "black", hjust = 0, alpha = 0.5, inherit.aes = FALSE) +
+            color = "black", hjust = 0, alpha = 0.5, inherit.aes = FALSE, size = 1.6) +
     facet_grid(~Environmental_condition) +
     labs(x = "", y = "") +
     scale_x_continuous(position = "bottom", limits = c(-2.5, 2.5)) +
@@ -269,11 +269,11 @@ build_B1_snake_transmission <- function(dd, band_height = 20, gap = 5) {
       axis.text.y = element_blank(),
       axis.ticks.y = element_blank(),
       strip.text = element_blank(),
-      plot.tag.position = c(0.05, 0.95),
+      plot.tag.position = c(0.055, 0.95),
       plot.tag = element_text(face = "bold"),
       axis.title.y = element_text(vjust = -10)
     ) +
-    labs(tag = "B")
+    labs(tag = "C")
 }
 
 build_B2_snake_disease <- function(dd, band_height = 20, gap = 8) {
@@ -296,7 +296,7 @@ build_B2_snake_disease <- function(dd, band_height = 20, gap = 8) {
                    height = 0, show.legend = FALSE, size = 0.25, alpha = 0.3) +
     scale_color_manual(values = rev(cols_disease)) +
     geom_text(data = ann_text, aes(label = lab, col = Disease),
-              vjust = -0.5, hjust = 0, alpha = 0.9) +
+              vjust = -0.5, hjust = 0, alpha = 0.9, size = 1.6) +
     facet_grid(~Environmental_condition) +
     labs(x = "Hedges' *g* Effect Size", y = "Effect size rank") +
     scale_x_continuous(position = "bottom", limits = c(-2.5, 2.5)) +
@@ -311,23 +311,25 @@ build_B2_snake_disease <- function(dd, band_height = 20, gap = 8) {
       axis.text.y = element_blank(),
       axis.ticks.y = element_blank(),
       strip.text = element_blank(),
-      plot.tag.position = c(0.05, 0.95),
+      plot.tag.position = c(0.055, 0.95),
       plot.tag = element_text(face = "bold"),
-      axis.title.y = element_text(vjust = -25, hjust = 1),
+      axis.title.y = element_text(vjust = -35, hjust = 0.9),
       axis.title.x = ggtext::element_markdown(margin = margin(t = 2))
-    )
+    ) + labs(tag = "D")
 }
 
 # ─────────────────────────────────────────────────────────
 # 1. GLOBAL THEME  (fonts & spacing in points/mm)
 # ─────────────────────────────────────────────────────────
-font_base <- 6
+font_base <- 8.5
 
 theme_set(
   theme_minimal(base_size = font_base) +
     theme(
       axis.title       = element_text(size = font_base - 1),
       axis.text        = element_text(size = font_base - 2.5),
+      axis.title.y = element_text(size = font_base - 2),
+      axis.title.x = element_text(size = font_base - 2),
       strip.text       = element_text(size = font_base - 1, face = "bold"),
       plot.tag         = element_text(size = font_base - 1, face = "bold"),
       panel.background = element_blank(),
@@ -382,13 +384,13 @@ figure_combined
 
 ggsave(
    figure_combined,
-   file   = here::here("outputs", "final_figs_new", "Figure3_Combined.pdf"),
+   file   = here::here("outputs", "final_figs_new", "Figure3_Combined2.pdf"),
    device = "pdf",
    units  = "cm",
-   width  = 11,
+   width  = 13,
    height = 10,
    dpi    = 600,
-   scale  = 1.1
+   scale  = 1.3
  )
 
 
