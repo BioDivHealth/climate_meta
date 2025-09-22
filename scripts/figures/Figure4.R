@@ -1,4 +1,4 @@
-# =========== GENERATE FIGURE S6 ==========
+# =========== GENERATE FIGURE 4 ==========
 
 #Artur Trebski
 #10 Oct 2024
@@ -14,7 +14,7 @@ library(patchwork)
 
 # Data setup -------
 # Read in the data
-tmp = read.csv(here('data', 'es_climvars_proportions_new.csv'))
+tmp = read.csv(here('data', 'es_climvars_proportions.csv'))
 
 # Ensure 'es_cat' is a factor with ordered levels
 tmp <- tmp %>%
