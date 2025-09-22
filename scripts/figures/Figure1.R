@@ -111,9 +111,9 @@ p1 = table(cats$Response2) %>%
   dplyr::rename(Response=1, N=2) %>%
   dplyr::mutate(
     Response = as.vector(Response),
-    Response = replace(Response, Response == "Human case locations", "Human case\nlocations"),
-    Response = replace(Response, Response == "Human disease incidence", "Human disease\nincidence"),
-    Response = replace(Response, Response == "Human outbreak occurrence", "Human outbreak\noccurrence"),
+    Response = replace(Response, Response == "Human case locations", "Human case locations"),
+    Response = replace(Response, Response == "Human disease incidence", "Human disease incidence"),
+    Response = replace(Response, Response == "Human outbreak occurrence", "Human outbreak occurrence"),
     Response = replace(Response, Response == "Human seroprevalence", "Human seroprevalence")
   ) %>%
   dplyr::filter(Response != "Host occurrence") %>%
@@ -287,7 +287,7 @@ map_new <- ggplot() +
     legend.title = element_text(size = 9),
     legend.text = element_text(size = 8, color = "grey15"), 
     legend.position = "none",  # Remove the legend to make space for the bar plot
-    plot.tag.position = c(0.015, 0.9),
+    plot.tag.position = c(-0.085, 0.9),
     plot.tag = element_text(face = "bold", size = 6)
   )
 
@@ -316,7 +316,7 @@ bar_plot_new <- ggplot(climvars_new, aes(x = n, y = Environmental_condition, fil
 
 combined_plot_new <- ggdraw() +
   draw_plot(map_new, 0, 0, 1, 1) +
-  draw_plot(bar_plot_new, x = 0.03, y = 0.05, width = 0.23, height = 0.25)
+  draw_plot(bar_plot_new, x = 0.03, y = 0.05, width = 0.23, height = 0.28)
 
 
 # design for barplots
@@ -352,7 +352,7 @@ Fig1_smalltext <- Fig1_new &
     legend.title  = element_text(size = 5.5),
     legend.text   = element_text(size = 5.5),
     plot.tag      = element_text(face = "bold", size = 6),
-    plot.margin = unit(c(-0.1, 0, 0.05, 0.05),
+    plot.margin = unit(c(0, 0, 0.05, 0.05),
                         "inches")
   )
 
@@ -364,10 +364,10 @@ ggsave(
   filename = here('outputs','final_figs_new','Figure1.pdf'),
   device   = "pdf",
   units    = "cm",
-  width    = 10,
-  height   = 10,
+  width    = 16,
+  height   = 11,
   dpi      = 600,
-  scale = 1.3
+  scale = 1
 )
 
 
